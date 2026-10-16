@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OpenSkyAtc.App/OpenSkyAtc.App.csproj" />
+    <Project Path="src/OpenSkyAtc.Core/OpenSkyAtc.Core.csproj" />
+    <Project Path="src/OpenSkyAtc.Phraseology/OpenSkyAtc.Phraseology.csproj" />
+    <Project Path="src/OpenSkyAtc.Recorder/OpenSkyAtc.Recorder.csproj" />
+    <Project Path="src/OpenSkyAtc.SimBrief/OpenSkyAtc.SimBrief.csproj" />
+    <Project Path="src/OpenSkyAtc.SimConnect/OpenSkyAtc.SimConnect.csproj" />
+    <Project Path="src/OpenSkyAtc.Voice/OpenSkyAtc.Voice.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OpenSkyAtc.Core.Tests/OpenSkyAtc.Core.Tests.csproj" />
+    <Project Path="tests/OpenSkyAtc.Phraseology.Tests/OpenSkyAtc.Phraseology.Tests.csproj" />
+    <Project Path="tests/OpenSkyAtc.Replay.Tests/OpenSkyAtc.Replay.Tests.csproj" />
+    <Project Path="tests/OpenSkyAtc.Voice.Tests/OpenSkyAtc.Voice.Tests.csproj" />
+  </Folder>
+</Solution>
