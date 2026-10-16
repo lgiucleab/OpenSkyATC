@@ -31,9 +31,12 @@ Export an airport's facility data from the running sim, or survey CENTER frequen
 ```
 dotnet run --project src/OpenSkyAtc.Recorder -- export LEMD --out LEMD.facility.json
 dotnet run --project src/OpenSkyAtc.Recorder -- survey-center LE --max 400
+dotnet run --project src/OpenSkyAtc.Recorder -- taxi LEMD
 ```
 
-Facility dumps (`*.facility.json`) are git-ignored: they are the sim's data, not ours to publish.
+`taxi ICAO` loads the airport live through `SimConnectAirportProvider` (the same path the app uses) and prints its units and a routed taxi from a gate to every runway end.
+
+Facility dumps (`*.facility.json`) are git-ignored: they are the sim's data, not ours to publish. At runtime every airport comes from the player's own sim, so routing works anywhere they have scenery. Tests on real dumps in `tests/fixtures/airports/` run only when the files exist; committed taxi tests use the synthetic airports in `tests/OpenSkyAtc.Core.Tests/Planning/SyntheticAirports.cs` (also linked into Replay.Tests).
 
 Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run the synthetic departure with an intent script; the runner can auto-read back every instruction. Replay transcripts are approval-tested: `tests/fixtures/transcripts/<name>.approved.txt`. On a change the test writes `<name>.received.txt` (git-ignored); review it and rename to `.approved.txt` to accept. Real recordings go in `tests/fixtures/recordings/*.jsonl` and are replayed automatically.
 

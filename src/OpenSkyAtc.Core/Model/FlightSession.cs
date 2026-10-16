@@ -64,6 +64,9 @@ public sealed record GoAroundLogged(TimeSpan Time, FlightPhase Phase) : LogEntry
 
 public sealed record SessionEnded(TimeSpan Time, string Reason) : LogEntry(Time);
 
+/// <summary>No usable taxi route (design doc: log the airport so a fixes list can be built later).</summary>
+public sealed record TaxiFallback(TimeSpan Time, string Icao, string Destination, string Reason) : LogEntry(Time);
+
 /// <summary>The phase was worked out from the aircraft's situation (session start or after a teleport).</summary>
 public sealed record PhaseInferred(TimeSpan Time, FlightPhase Phase, string Reason) : LogEntry(Time);
 

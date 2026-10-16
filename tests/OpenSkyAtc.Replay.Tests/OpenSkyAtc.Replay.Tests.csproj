@@ -19,6 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The synthetic airports from the Core tests, so replays can taxi on a real-format network. -->
+    <Compile Include="..\OpenSkyAtc.Core.Tests\Planning\SyntheticAirports.cs" Link="Harness\SyntheticAirports.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\OpenSkyAtc.Core\OpenSkyAtc.Core.csproj" />
     <ProjectReference Include="..\..\src\OpenSkyAtc.Phraseology\OpenSkyAtc.Phraseology.csproj" />
   </ItemGroup>

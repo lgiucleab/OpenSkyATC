@@ -79,6 +79,8 @@ internal static class Samples
         ("VacateWhenAble", new VacateWhenAble()),
         ("TaxiToStand", new TaxiToStand("27")),
         ("TaxiToStand parking", new TaxiToStand(null)),
+        ("TaxiToStand via", new TaxiToStand("T527", ["M", "A"], ["18L"])),
+        ("CrossRunway", new CrossRunway("24")),
         ("ClosingCall", new ClosingCall()),
         ("ClearedApproach via STAR", new ClearedApproach("ILS", "24R", "NAPSI1A")),
         ("VectoringFor", new VectoringFor("ILS", "24R")),

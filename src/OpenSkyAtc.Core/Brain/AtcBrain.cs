@@ -16,7 +16,7 @@ public sealed record AtcBrainOptions
 {
     public EventEngineOptions Events { get; init; } = new();
     public ConversationTiming Timing { get; init; } = new();
-    public ITaxiPlanner TaxiPlanner { get; init; } = new FallbackTaxiPlanner();
+    public ITaxiPlanner TaxiPlanner { get; init; } = new GraphTaxiPlanner();
     public SquawkConfig Squawks { get; init; } = SquawkConfig.Empty;
     public SopConfig Sops { get; init; } = SopConfig.Empty;
     public ConformanceOptions Conformance { get; init; } = new();

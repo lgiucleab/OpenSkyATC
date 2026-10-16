@@ -38,6 +38,7 @@ public static class ReadbackValues
     public const string Takeoff = "TAKEOFF";
     public const string Land = "LAND";
     public const string Approach = "APPROACH";
+    public const string Cross = "CROSS";
 
     public static string Destination(string icao) => Normalize(icao);
     public static string Route(string? sid) => sid is null ? FlightPlannedRoute : Normalize(sid);

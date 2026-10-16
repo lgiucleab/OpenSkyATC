@@ -138,8 +138,9 @@ public sealed class IcaoRenderer
             $"maintain {_say.Digits(u.Knots)} knots until {_say.Digits((int)Math.Round(u.MilesFinal))} miles final"),
         ReportEstablishedRequest => Text.Same("report established"),
         VacateWhenAble => Text.Same("vacate when able"),
-        TaxiToStand { Stand: { } stand } => new Text($"taxi to stand {stand}", $"taxi to stand {_say.Designator(stand)}"),
-        TaxiToStand => Text.Same("taxi to parking"),
+        TaxiToStand t => (t.Stand is { } stand ? new Text($"taxi to stand {stand}", $"taxi to stand {_say.Designator(stand)}") : Text.Same("taxi to parking"))
+            + ViaAndHolds(t.Segments ?? [], t.HoldShorts ?? []),
+        CrossRunway c => Text.Same("cross ") + RunwayText(c.Runway),
         ClosingCall => Text.Same("good day"),
         Wind w => Text.Same("wind ") + WindValue(w),
         ClearedTakeoff t => RunwayText(t.Runway) + Text.Same(", cleared for takeoff"),
@@ -241,6 +242,15 @@ public sealed class IcaoRenderer
         ControllerRole.Approach => "Approach",
         _ => null, // area control keeps its full name
     };
+
+    private Text ViaAndHolds(IReadOnlyList<string> segments, IReadOnlyList<string> holdShorts)
+    {
+        var via = segments.Count > 0
+            ? new Text($" via {string.Join(", ", segments)}", $" via {string.Join(", ", segments.Select(_say.Designator))}")
+            : Text.Same("");
+        foreach (var h in holdShorts) via += Text.Same(", hold short ") + RunwayText(h);
+        return via;
+    }
 
     private Text Taxi(TaxiVia t)
     {

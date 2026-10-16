@@ -122,8 +122,11 @@ public sealed record SpeedUntil(int Knots, double MilesFinal) : AtcMessagePart;
 public sealed record ReportEstablishedRequest : AtcMessagePart;
 public sealed record VacateWhenAble : AtcMessagePart;
 
-/// <summary>"taxi to stand 27"; a null stand is "taxi to parking".</summary>
-public sealed record TaxiToStand(string? Stand) : AtcMessagePart;
+/// <summary>"taxi to stand 27 via M, A, hold short runway 18L"; a null stand is "taxi to parking".</summary>
+public sealed record TaxiToStand(string? Stand, IReadOnlyList<string>? Segments = null, IReadOnlyList<string>? HoldShorts = null) : AtcMessagePart;
+
+/// <summary>"cross runway 24" (ICAO / CAP 413), given when the aircraft reaches the hold-short.</summary>
+public sealed record CrossRunway(string Runway) : AtcMessagePart;
 
 /// <summary>The closing call when parked.</summary>
 public sealed record ClosingCall : AtcMessagePart;

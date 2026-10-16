@@ -423,6 +423,8 @@ public sealed class LandingRollPhase : Phase
 public sealed class TaxiInPhase : Phase
 {
     private Exchange? _taxi;
+    private Stand? _stand;
+    private readonly CrossingClearances _crossings = new();
 
     public override FlightPhase Id => FlightPhase.TaxiIn;
     public override ControllerUnit? Unit(PhaseContext ctx) => ctx.Airspace.ArrivalGroundUnit;
@@ -432,20 +434,35 @@ public sealed class TaxiInPhase : Phase
         if (intent is not (CheckIn or RequestTaxi or ReportVacated) || !CallsMe(ctx)) return PhaseResult.Unhandled;
         if (_taxi is not null) return PhaseResult.Stay;
 
-        string? stand = ctx.Plan.DestinationStand;
-        var readback = stand is null
-            ? null
-            : ReadbackExpectation.Builder().Add(ReadbackItem.Stand, ReadbackValues.Normalize(stand), new TaxiToStand(stand)).Build();
-        _taxi = ctx.Conversation.Transmit(Unit(ctx)!, [new TaxiToStand(stand)], TransmissionPriority.Reply, ctx.Now + ctx.Conversation.ReplyDelay(), readback,
-            onSent: () => ctx.Clearance.Taxi = new TaxiClearance(stand is null ? "parking" : $"stand {stand}", null, [], [], []), tag: "taxi-in");
+        // Design doc: the plan's stand if the airport has it, otherwise the nearest suitable one; routed like taxi-out.
+        var planner = ctx.Options.TaxiPlanner;
+        _stand = planner.ChooseStand(ctx.Destination, ctx.Plan.DestinationStand, ctx.Position, ctx.State.EngineType);
+        string? stand = _stand?.Name ?? (ctx.Destination.Taxi is null ? ctx.Plan.DestinationStand : null);
+        var route = planner.PlanToStand(ctx.Destination, ctx.Position, _stand);
+        if (route.FallbackReason is { } why) ctx.Session.Log.Add(new TaxiFallback(ctx.Session.SimTime, ctx.Destination.Icao, stand ?? "parking", why));
+
+        var b = ReadbackExpectation.Builder();
+        if (stand is not null) b.Add(ReadbackItem.Stand, ReadbackValues.Normalize(stand), new TaxiToStand(stand));
+        if (route.HoldShorts.Count > 0)
+            b.Add(ReadbackItem.HoldShorts, ReadbackValues.HoldShorts(route.HoldShorts), route.HoldShorts.Select(h => (AtcMessagePart)new HoldShort(h)).ToArray());
+        var expectation = b.Build();
+        _taxi = ctx.Conversation.Transmit(Unit(ctx)!, [new TaxiToStand(stand, route.Via, route.HoldShorts)], TransmissionPriority.Reply,
+            ctx.Now + ctx.Conversation.ReplyDelay(), expectation.Items.Count > 0 ? expectation : null,
+            onSent: () => ctx.Clearance.Taxi = new TaxiClearance(stand is null ? "parking" : $"stand {stand}", null, route.Via, route.HoldShorts, route.Path)
+            {
+                Crossings = route.Crossings.Select(c => (c.Runway, c.HoldShort)).ToList(),
+            }, tag: "taxi-in");
         return PhaseResult.Stay;
     }
 
     public override PhaseResult Tick(PhaseContext ctx)
     {
+        if (Unit(ctx) is { } ground) _crossings.Tick(ctx, ground);
         var s = ctx.State;
         bool sent = _taxi is { State: not ExchangeState.Queued };
-        return sent && s.OnGround && s.GroundSpeedKt < 0.5 && s.ParkingBrakeSet && ctx.Events.CurrentRunway is null
+        // With parking data, "parked" also means at the stand (within its radius plus 30 m).
+        bool atStand = _stand is null || GeoMath.DistanceM(ctx.Position, _stand.Position) <= _stand.RadiusM + 30;
+        return sent && atStand && s.OnGround && s.GroundSpeedKt < 0.5 && s.ParkingBrakeSet && ctx.Events.CurrentRunway is null
             ? PhaseResult.To(FlightPhase.Parked, "parked")
             : PhaseResult.Stay;
     }

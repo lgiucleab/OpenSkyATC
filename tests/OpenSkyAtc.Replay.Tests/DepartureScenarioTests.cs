@@ -180,5 +180,9 @@ public class DepartureScenarioTests
             var fallback = new FallbackTaxiPlanner().PlanToHoldingPoint(airport, from, runway);
             return fallback with { Via = via, HoldShorts = holdShorts };
         }
+
+        public Stand? ChooseStand(AirportData airport, string? planned, Core.Geo.GeoPoint from, EngineType engine) => null;
+
+        public TaxiPlan PlanToStand(AirportData airport, Core.Geo.GeoPoint from, Stand? stand) => new FallbackTaxiPlanner().PlanToStand(airport, from, stand);
     }
 }

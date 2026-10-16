@@ -31,6 +31,32 @@ internal static class FacilityCommands
         return 0;
     }
 
+    /// <summary>Loads an airport live from the sim and prints a taxi route from a gate to every runway end.</summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static int Taxi(string icao)
+    {
+        using var provider = new SimConnectAirportProvider();
+        var airport = provider.LoadAsync(icao).GetAwaiter().GetResult();
+        if (airport is null)
+        {
+            Console.Error.WriteLine($"The sim has no airport {icao}.");
+            return 1;
+        }
+        var planner = new Core.Planning.GraphTaxiPlanner();
+        var gate = airport.Taxi?.Stands.FirstOrDefault(s => s.Gate) ?? airport.Taxi?.Stands.FirstOrDefault();
+        Console.WriteLine($"{airport.Icao} {airport.Name}: {airport.Runways.Count} runways, {airport.Frequencies.Count} frequencies, TA {airport.TransitionAltitudeFt} ft, stands {airport.Taxi?.Stands.Count ?? 0}");
+        foreach (var f in airport.Frequencies.GroupBy(f => f.Role).Select(g => g.First())) Console.WriteLine($"  {f.Callsign} {f.FrequencyKhz / 1000.0:0.000}");
+        if (gate is null) return 0;
+        foreach (var end in airport.Runways.SelectMany(r => new[] { r.First, r.Second }))
+        {
+            var plan = planner.PlanToHoldingPoint(airport, gate.Position, end);
+            Console.WriteLine($"  stand {gate.Name} -> runway {end.Designator} ({end.ApproachType ?? "no approach"}): " + (plan.IsFallback
+                ? $"taxi to holding point runway {end.Designator} (fallback: {plan.FallbackReason})"
+                : $"via {string.Join(", ", plan.Via)}{string.Concat(plan.HoldShorts.Select(h => $", hold short runway {h}"))}"));
+        }
+        return 0;
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static int SurveyCenter(string icaoPrefix, int max, string? output)
     {

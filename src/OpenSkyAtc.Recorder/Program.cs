@@ -14,7 +14,7 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length > 0 && args[0] is "export" or "survey-center") return Facilities(args);
+        if (args.Length > 0 && args[0] is "export" or "survey-center" or "taxi") return Facilities(args);
 
         string? output = null;
         string? simConnectDir = null;
@@ -76,7 +76,12 @@ internal static class Program
         }
         try
         {
-            return args[0] == "export" ? FacilityCommands.Export(args[1], output) : FacilityCommands.SurveyCenter(args[1], max, output);
+            return args[0] switch
+            {
+                "export" => FacilityCommands.Export(args[1], output),
+                "taxi" => FacilityCommands.Taxi(args[1]),
+                _ => FacilityCommands.SurveyCenter(args[1], max, output),
+            };
         }
         catch (System.Runtime.InteropServices.COMException)
         {

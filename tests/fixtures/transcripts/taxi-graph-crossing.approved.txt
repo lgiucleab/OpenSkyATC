@@ -1,0 +1,22 @@
+[00:00:10.000] PILOT (121.850) RequestClearance
+[00:00:13.500] ATC Gridtown Delivery: Vueling 1234, cleared to XDST via GRID1A departure, climb 5000 ft, squawk 0443
+[00:00:17.500] PILOT (121.850) Readback Destination=XDST Route=GRID1A InitialClimb=5000FT Squawk=0443
+[00:00:17.500] READBACK #1 ifr-clearance: correct
+[00:00:17.750] PHASE Preflight -> Cleared (clearance read back correctly)
+[00:00:19.750] ATC Gridtown Delivery: Vueling 1234, readback correct, when ready for push and start contact Gridtown Ground 121.700
+[00:00:23.750] PILOT (121.850) Readback Frequency=121700
+[00:00:23.750] READBACK #2 contact-ground: correct
+[00:00:45.000] PILOT (121.700) RequestPushStart
+[00:00:47.750] ATC Gridtown Ground: Vueling 1234, push and start approved
+[00:00:48.000] PHASE Cleared -> Pushback (push and start approved)
+[00:01:40.000] PILOT (121.700) RequestTaxi
+[00:01:40.000] PHASE Pushback -> TaxiOut (taxi requested)
+[00:01:42.750] ATC Gridtown Ground: Vueling 1234, taxi to holding point runway 18 via A, B, C, hold short runway 27
+[00:01:46.750] PILOT (121.700) Readback Runway=18 HoldShorts=27
+[00:01:46.750] READBACK #4 taxi: correct
+[00:03:34.750] ATC Gridtown Ground: Vueling 1234, cross runway 27
+[00:03:38.750] PILOT (121.700) Readback Runway=27 Clearance=CROSS
+[00:03:38.750] READBACK #5 cross: correct
+[00:05:11.250] ATC Gridtown Ground: Vueling 1234, contact Gridtown Tower 118.100
+[00:05:15.250] PILOT (121.700) Readback Frequency=118100
+[00:05:15.250] READBACK #6 contact-tower: correct

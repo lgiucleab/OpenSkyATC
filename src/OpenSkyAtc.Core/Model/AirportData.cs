@@ -75,6 +75,10 @@ public sealed record AirportData
     /// <summary>STAR names the sim has for this airport (step 9 fills these).</summary>
     public IReadOnlyList<string> Stars { get; init; } = [];
 
+    /// <summary>The taxi network from the sim's facility data; null when unknown (fixtures without one).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public TaxiGraph? Taxi { get; init; }
+
     /// <summary>From the configurable transition data file; null when unknown. Never invented.</summary>
     public int? TransitionAltitudeFt { get; init; }
 

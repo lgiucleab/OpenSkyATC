@@ -158,6 +158,10 @@ doc     | vacate when able | vacate when able
 doc     | taxi to stand 27 | taxi to stand two seven
 ## TaxiToStand parking
 doc     | taxi to parking | taxi to parking
+## TaxiToStand via
+doc     | taxi to stand T527 via M, A, hold short runway 18L | taxi to stand Tango five two seven via Mike, Alpha, hold short runway one eight left
+## CrossRunway
+doc     | cross runway 24 | cross runway two four
 ## ClosingCall
 doc     | good day | good day
 ## ClearedApproach via STAR

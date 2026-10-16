@@ -13,7 +13,11 @@ public sealed record TaxiClearance(
     string? Runway,
     IReadOnlyList<string> Via,
     IReadOnlyList<string> HoldShorts,
-    IReadOnlyList<GeoPoint> Path);
+    IReadOnlyList<GeoPoint> Path)
+{
+    /// <summary>Runway crossings on the route with the hold-short position before each (for crossing clearances and the arrows).</summary>
+    public IReadOnlyList<(string Runway, GeoPoint HoldShort)> Crossings { get; init; } = [];
+}
 
 /// <summary>
 /// The single source of truth for what ATC has cleared. Every ATC instruction updates it, and

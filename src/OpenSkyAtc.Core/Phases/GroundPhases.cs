@@ -123,6 +123,43 @@ public sealed class PushbackPhase : Phase
 }
 
 /// <summary>
+/// Runway crossing clearances on a taxi route (design doc: given as separate exchanges when the aircraft reaches
+/// each hold-short): "cross runway 24", read back, then the cross clearance is withdrawn once off that runway.
+/// </summary>
+internal sealed class CrossingClearances
+{
+    private const double ReachedHoldShortM = 80;
+    private int _next;
+    private string? _crossing;
+
+    public void Tick(PhaseContext ctx, ControllerUnit unit)
+    {
+        var taxi = ctx.Clearance.Taxi;
+        if (taxi is null) return;
+
+        // Off the runway that was crossed: withdraw that clearance.
+        if (_crossing is { } rwy && ctx.NewEvents.OfType<Events.ExitedRunway>().Any(e => e.Runway.Has(rwy)))
+        {
+            ctx.Clearance.RemoveCrossClearance(rwy);
+            _crossing = null;
+        }
+
+        if (_next >= taxi.Crossings.Count || _crossing is not null || ctx.Conversation.IsBusy(unit)) return;
+        var (runway, holdShort) = taxi.Crossings[_next];
+        if (GeoMath.DistanceM(ctx.Position, holdShort) > ReachedHoldShortM) return;
+
+        var readback = ReadbackExpectation.Builder()
+            .Add(ReadbackItem.Runway, ReadbackValues.Runway(runway), new RunwayIs(runway))
+            .Add(ReadbackItem.Clearance, ReadbackValues.Cross, new CrossRunway(runway))
+            .Build();
+        ctx.Conversation.Transmit(unit, [new CrossRunway(runway)], TransmissionPriority.Instruction, ctx.Now, readback,
+            onSent: () => ctx.Clearance.ClearToCross(runway), tag: "cross");
+        _crossing = runway;
+        _next++;
+    }
+}
+
+/// <summary>
 /// Phase 4: taxi to the holding point. Within 150 m of it and below 5 kt, Ground hands off to Tower;
 /// the phase ends when the pilot calls Tower.
 /// </summary>
@@ -133,6 +170,7 @@ public sealed class TaxiOutPhase : Phase
 
     private TaxiPlan? _plan;
     private Exchange? _handoff;
+    private readonly CrossingClearances _crossings = new();
 
     public override FlightPhase Id => FlightPhase.TaxiOut;
     public override ControllerUnit? Unit(PhaseContext ctx) => ctx.Airspace.GroundUnit;
@@ -157,14 +195,19 @@ public sealed class TaxiOutPhase : Phase
             ctx.Now + ctx.Conversation.ReplyDelay(), b.Build(),
             onSent: () =>
             {
-                ctx.Clearance.Taxi = new TaxiClearance(hpName ?? $"holding point runway {rwy}", rwy, plan.Via, plan.HoldShorts, plan.Path);
+                ctx.Clearance.Taxi = new TaxiClearance(hpName ?? $"holding point runway {rwy}", rwy, plan.Via, plan.HoldShorts, plan.Path)
+                {
+                    Crossings = plan.Crossings.Select(c => (c.Runway, c.HoldShort)).ToList(),
+                };
                 ctx.Clearance.CurrentFrequencyKhz = unit.FrequencyKhz;
             },
             tag: "taxi");
+        if (plan.FallbackReason is { } why) ctx.Session.Log.Add(new TaxiFallback(ctx.Session.SimTime, ctx.Origin.Icao, runway.Designator, why));
     }
 
     public override PhaseResult Tick(PhaseContext ctx)
     {
+        if (Unit(ctx) is { } ground) _crossings.Tick(ctx, ground);
         if (_plan is null || _handoff is not null || ctx.Airspace.OriginTower is not { } tower) return PhaseResult.Stay;
 
         // The design doc's exit condition is numeric (150 m, 5 kt), so it is read directly here.
