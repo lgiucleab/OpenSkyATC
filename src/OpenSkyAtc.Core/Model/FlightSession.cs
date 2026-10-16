@@ -53,6 +53,9 @@ public sealed record ReadbackMissed(TimeSpan Time, int ExchangeId, string? Tag) 
 /// <summary>A queued transmission was dropped because the aircraft left the frequency first.</summary>
 public sealed record TransmissionDropped(TimeSpan Time, ControllerUnit Unit, IReadOnlyList<AtcMessagePart> Parts) : LogEntry(Time);
 
+/// <summary>The pilot called <paramref name="Called"/> instead of the unit the handoff was to (design doc edge case).</summary>
+public sealed record HandoffSkipped(TimeSpan Time, ControllerUnit Expected, ControllerUnit Called) : LogEntry(Time);
+
 /// <summary>A pilot request the current phase does not handle, with how ATC answered.</summary>
 public sealed record RequestRejected(TimeSpan Time, PilotIntent Intent, string Reason) : LogEntry(Time);
 

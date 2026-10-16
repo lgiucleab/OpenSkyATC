@@ -104,3 +104,27 @@ Owner's choices: ICAO wording plus European variants, destination spoken by name
 - **Renderer seeding:** the renderer uses its own RNG stream derived from the session seed, so wording never changes the brain's choices.
 - **Callsign table:** `CallsignTable` reads "ICAO,TELEPHONY" lines; the shipped data file is pending the owner's choice of source.
 - **Airline telephony data (owner's choice):** Wikidata, CC0. `tools/airline-callsigns/generate.py` queries P230 + P432 and writes `data/airline-callsigns.csv`. When several entities share a designator, operating airlines win over dissolved ones, then the entity with the most Wikipedia sitelinks (Wikidata often tags subsidiaries with the parent's code, e.g. TAP Express under TAP). Remaining ties are left out. Display title-cases the telephony; words without vowels stay upper case ("KLM").
+
+## 2026-10-16 - Answers before step 5
+
+1. **Escalation timing:** level 1 after the grace time; level 2 one more grace period later and level 3 one more after that, never less than 15 s apart. Zero-grace checks (incursion, takeoff/landing without clearance) fire level 1 at once, repeat after 10 s where the doc has a level-2 text, and are logged as serious immediately.
+2. **Debrief record:** every episode is logged (check, start/end, highest level, worst value). It counts as a deviation when it reached level 3 or is a serious check; level 1-2 episodes are warnings.
+3. **Off route:** only in En route and Descent until SID/STAR geometry exists. Level 2 is a heading back towards the next waypoint at a 30 degree intercept.
+4. **Heading check:** starts once the aircraft first comes within 20 degrees of the assigned heading, or 60 s after the assignment, whichever is first.
+5. **Climb/descent started:** moved 300 ft towards the target, or vertical speed at least 500 fpm towards it.
+6. **On final (landing without clearance):** airborne, below 200 ft AGL, within 2 nm of a destination runway threshold and within 10 degrees of its extended centreline, or over the runway.
+7. **Missed handoff:** level 2 goes out on 121.5 only when a radio is tuned to it; otherwise straight to the lost-comms note. A handoff is complete once the new frequency is tuned; calling another unit logs a skipped handoff.
+8. **Transponder:** once airborne only ALT (Mode C) passes.
+- Also: 250 kt below FL100 with no exemptions; altitude busts compare indicated altitude with the cleared value.
+
+## 2026-10-16 - Step 5
+
+- **Monitor placement:** `ConformanceMonitor` runs every tick after the phase, from `AtcBrain`, frozen while paused or settling. Each check reads the `Clearance` and `SimState` only; level-2 instructions that need a readback (altitude, heading, re-route) go through the conversation manager as exchanges.
+- **Which unit speaks:** normal warnings come from the unit in control (`Session.CurrentUnit`); serious ones (incursion, takeoff/landing without clearance) from the unit on the pilot's frequency, so they are heard. A missed-handoff repeat comes from the unit that issued the handoff.
+- **Altitude bust direction:** set when the clearance changes: climb if the cleared altitude is more than 300 ft above, descent if more than 300 ft below, otherwise "maintain", where either side counts.
+- **Not complying** counts from the later of the clearance and lift-off, so a clearance received at the gate is not punished.
+- **Handoff completion:** tuning the new frequency completes a handoff (decision 7), done by the brain each tick; a call to a third unit while a handoff is pending is logged as `HandoffSkipped`.
+- **Landing check** ignores departure phases (Preflight to Initial climb) and requires the aircraft to fly within 30 degrees of the landing direction, so a climb-out over the runway is not a "final".
+- **Episodes fixed within the grace time** (level 0) are not logged unless serious.
+- **Vector back to route** sets the assigned heading when sent, so the heading check takes over from the route check.
+- **Simulated pilot:** the replay runner sets the transponder to the assigned squawk (`ReplayOptions.SetsSquawk`), since a recording cannot know the code in advance.

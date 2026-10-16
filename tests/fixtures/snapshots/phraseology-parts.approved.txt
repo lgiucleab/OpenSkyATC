@@ -108,6 +108,32 @@ variant | say again your request | say again your request
 doc     | unable, contact Barcelona Delivery 121.850 | unable, contact Barcelona Delivery one two one decimal eight five zero
 ## Roger
 doc     | roger | roger
+## ClimbTo immediately
+doc     | climb immediately FL120 | climb immediately flight level one two zero
+## DescendTo immediately
+doc     | descend immediately 5000 ft | descend immediately five thousand feet
+## CheckAltitude
+doc     | check altitude, cleared FL120 | check altitude, cleared flight level one two zero
+## ConfirmVertical climbing
+doc     | confirm climbing FL240 | confirm climbing flight level two four zero
+## ConfirmVertical descending
+doc     | confirm descending 3000 ft | confirm descending three thousand feet
+## TurnHeading immediately
+doc     | turn left immediately heading 270 | turn left immediately heading two seven zero
+## CheckHeading
+doc     | check heading | check heading
+## SayIntentions
+doc     | say intentions | say intentions
+## Squawk recycle
+doc     | recycle squawk 4521 | recycle squawk four five two one
+## HoldPosition
+doc     | hold position | hold position
+## StopImmediately
+doc     | stop immediately | stop immediately
+## StopImmediately emphasis
+doc     | stop immediately, I say again, stop | stop immediately, I say again, stop
+## GoAround
+doc     | go around | go around
 ## Mayday
 doc     | roger mayday | roger mayday
 ## PanPan

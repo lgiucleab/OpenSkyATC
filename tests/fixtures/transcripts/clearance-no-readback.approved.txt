@@ -6,3 +6,6 @@
 [00:00:38.000] READBACK #1 ifr-clearance: correct
 [00:00:38.250] PHASE Preflight -> Cleared (clearance read back correctly)
 [00:00:40.250] DROPPED Testville Delivery: readback correct, when ready for push and start contact Testville Ground 121.700
+[00:07:14.000] CONFORMANCE TakeoffWithoutClearance level 1 (serious)
+[00:07:14.000] ATC Testville Tower: Vueling 1234, stop immediately, I say again, stop
+[00:07:24.750] CONFORMANCE TakeoffWithoutClearance ended: level 1, worst 147.5kt, deviation

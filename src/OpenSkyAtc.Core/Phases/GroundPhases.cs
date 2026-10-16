@@ -65,7 +65,7 @@ public sealed class PreflightPhase : Phase
                 .Build();
             ctx.Conversation.Transmit(unit, [new ReadbackCorrect(), contact], TransmissionPriority.Reply,
                 ctx.Now + ctx.Conversation.CorrectionDelay(), expectation,
-                onSent: () => ctx.Clearance.NextFrequencyKhz = ground.FrequencyKhz, tag: "contact-ground");
+                onSent: () => ctx.Clearance.SetHandoff(unit, ground), tag: "contact-ground");
         }
         else
         {

@@ -20,3 +20,6 @@
 [00:05:04.000] ATC Testville Ground: Vueling 1234, negative, contact Testville Tower 118.100
 [00:05:08.000] PILOT (121.700) Readback Frequency=118100
 [00:05:08.000] READBACK #5 contact-tower: correct
+[00:07:14.000] CONFORMANCE TakeoffWithoutClearance level 1 (serious)
+[00:07:14.000] ATC Testville Tower: Vueling 1234, stop immediately, I say again, stop
+[00:07:24.750] CONFORMANCE TakeoffWithoutClearance ended: level 1, worst 147.5kt, deviation

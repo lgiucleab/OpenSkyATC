@@ -91,14 +91,21 @@ public sealed class IcaoRenderer
                           + Text.Same(", ") + Climb(c.InitialClimb) + Text.Same(", ") + SquawkText(c.Squawk),
         ClearedTo c => Text.Same("cleared to ") + Destination(c.Destination, c.DestinationName),
         Via v => Text.Same("via ") + Route(v.Sid),
+        ClimbTo { Immediately: true } c => Text.Same("climb immediately ") + AltitudeText(c.Altitude),
+        DescendTo { Immediately: true } d => Text.Same("descend immediately ") + AltitudeText(d.Altitude),
         ClimbTo c => Climb(c.Altitude),
         DescendTo d => Descend(d.Altitude),
+        CheckAltitude c => Text.Same("check altitude, cleared ") + AltitudeText(c.Cleared),
+        ConfirmVertical v => Text.Same(v.Climbing ? "confirm climbing " : "confirm descending ") + AltitudeText(v.Altitude),
         TurnHeading t => Heading(t),
+        CheckHeading => Text.Same("check heading"),
+        SayIntentions => Text.Same("say intentions"),
         Direct d => Pick(
             new Text($"proceed direct {d.Fix}", $"proceed direct {_say.Designator(d.Fix)}"),
             new Text($"route direct {d.Fix}", $"route direct {_say.Designator(d.Fix)}", European: true)),
         Speed s => SpeedText(s),
         Qnh q => new Text($"QNH {q.Hpa}", $"QNH {_say.Qnh(q.Hpa)}"),
+        Squawk { Recycle: true } s => Text.Same("recycle ") + SquawkText(s.Code),
         Squawk s => SquawkText(s.Code),
         ReadbackCorrect => Pick(Text.Same("readback correct"), Text.Same("correct", european: true)),
         Contact c => ContactText(c),
@@ -108,6 +115,10 @@ public sealed class IcaoRenderer
         RunwayIs r => RunwayText(r.Runway),
         HoldShort h => Text.Same("hold short ") + RunwayText(h.Runway),
         LineUpAndWait l => RunwayText(l.Runway) + Text.Same(", line up and wait"),
+        HoldPosition => Text.Same("hold position"),
+        StopImmediately { Emphasis: true } => Text.Same("stop immediately, I say again, stop"),
+        StopImmediately => Text.Same("stop immediately"),
+        GoAround => Text.Same("go around"),
         Wind w => Text.Same("wind ") + WindValue(w),
         ClearedTakeoff t => RunwayText(t.Runway) + Text.Same(", cleared for takeoff"),
         ClearedLand l => RunwayText(l.Runway) + Text.Same(", cleared to land"),
@@ -154,11 +165,12 @@ public sealed class IcaoRenderer
 
     private Text Heading(TurnHeading t)
     {
+        string now = t.Immediately ? " immediately" : "";
         string verb = t.Direction switch
         {
-            TurnDirection.Left => "turn left heading",
-            TurnDirection.Right => "turn right heading",
-            _ => "fly heading",
+            TurnDirection.Left => $"turn left{now} heading",
+            TurnDirection.Right => $"turn right{now} heading",
+            _ => $"fly{now} heading",
         };
         return new Text($"{verb} {t.HeadingDeg:000}", $"{verb} {_say.Heading(t.HeadingDeg)}");
     }

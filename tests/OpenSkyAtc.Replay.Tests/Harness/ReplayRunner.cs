@@ -1,5 +1,6 @@
 using System.Globalization;
 using OpenSkyAtc.Core.Brain;
+using OpenSkyAtc.Core.Conformance;
 using OpenSkyAtc.Core.Conversation;
 using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Sim;
@@ -15,6 +16,9 @@ public sealed record ReplayOptions
     public TimeSpan AutoReadbackDelay { get; init; } = TimeSpan.FromSeconds(4);
 
     public PhraseologyOptions? Phraseology { get; init; }
+
+    /// <summary>Simulated pilot: sets the transponder to the assigned squawk (the recording cannot know it in advance).</summary>
+    public bool SetsSquawk { get; init; } = true;
 }
 
 /// <summary>
@@ -40,8 +44,10 @@ public static class ReplayRunner
         TimeSpan? autoReadbackAt = null;
         foreach (var state in recording)
         {
+            var s = options.SetsSquawk && brain.Session.Clearance.Squawk is { } code ? state with { TransponderCode = code } : state;
+
             // Tick first so the brain's clock is at this sample when the pilot speaks.
-            brain.Tick(state, state.Time);
+            brain.Tick(s, s.Time);
 
             while (next < script.Count && script[next].Time <= state.Time)
                 brain.HandlePilotIntent(IntentFactory.Create(script[next++], brain.AvailableIntents));
@@ -80,6 +86,9 @@ public static class ReplayRunner
                 ReadbackMissed m => $"READBACK #{m.ExchangeId} {m.Tag}: missed",
                 TransmissionDropped d => $"DROPPED {d.Unit.Callsign}: {string.Join(", ", d.Parts.Select(x => droppedRenderer.RenderPart(x).Display))}",
                 RequestRejected r => $"REJECTED {IntentFactory.Describe(r.Intent)}: {r.Reason}",
+                HandoffSkipped h => $"HANDOFF SKIPPED: expected {h.Expected.Callsign}, called {h.Called.Callsign}",
+                ConformanceWarning w => $"CONFORMANCE {w.Check} level {w.Level}{(w.Serious ? " (serious)" : "")}",
+                ConformanceEpisode e => $"CONFORMANCE {e.Check} ended: level {e.MaxLevel}, worst {e.Worst}{e.Unit}, {(e.IsDeviation ? "deviation" : "warning")}",
                 _ => null,
             };
             if (line is not null) lines.Add($"[{t}] {line}");

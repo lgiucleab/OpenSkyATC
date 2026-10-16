@@ -1,4 +1,5 @@
 using OpenSkyAtc.Core.Airspace;
+using OpenSkyAtc.Core.Conformance;
 using OpenSkyAtc.Core.Conversation;
 using OpenSkyAtc.Core.Events;
 using OpenSkyAtc.Core.Messages;
@@ -17,6 +18,7 @@ public sealed record AtcBrainOptions
     public ConversationTiming Timing { get; init; } = new();
     public ITaxiPlanner TaxiPlanner { get; init; } = new FallbackTaxiPlanner();
     public SquawkConfig Squawks { get; init; } = SquawkConfig.Empty;
+    public ConformanceOptions Conformance { get; init; } = new();
 
     /// <summary>Chance that Tower says "line up and wait" before the takeoff clearance (decision 7, step 3).</summary>
     public double LineUpAndWaitProbability { get; init; } = 0.3;
@@ -45,10 +47,14 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
     private AirspaceModel _airspace = null!;
     private IRandom _rng = null!;
     private IPhase _phase = null!;
+    private ConformanceMonitor _monitor = null!;
     private bool _phaseEntered;
     private SimState? _state;
 
     public FlightSession Session { get; private set; } = new(0);
+
+    /// <summary>The conformance monitor, for the UI (active warnings).</summary>
+    public ConformanceMonitor Conformance => _monitor;
 
     public event Action<AtcMessage>? Transmission;
 
@@ -65,6 +71,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         _queue = new TransmissionQueue();
         _conversation = new ConversationManager(_queue, _rng, Session.Log, _options.Timing);
         _airspace = AirspaceModel.Build(origin, destination);
+        _monitor = new ConformanceMonitor(_options.Conformance);
         _deferred.Clear();
         _state = null;
         // Step 6 infers the phase for sessions that start in the air or on the runway.
@@ -105,7 +112,15 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         // Paused or settling after a teleport: every timer and the queue are frozen.
         if (state.IsPaused || _events.IsSettling) return;
 
+        // A handoff is complete once the new frequency is tuned (step 5, decision 7).
+        if (Session.Clearance.HandoffTo is { } to && state.IsTunedTo(to.FrequencyKhz))
+        {
+            Session.Clearance.CurrentFrequencyKhz = to.FrequencyKhz;
+            Session.Clearance.ClearHandoff();
+        }
+
         Apply(_phase.Tick(Context(newEvents)), null, null);
+        _monitor.Tick(Context(newEvents));
         _conversation.Tick(_events.ActiveTime, simTime);
         DispatchDeferred();
         Release(state, simTime);
@@ -121,8 +136,22 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         Session.Log.Add(new PilotIntentLogged(Session.SimTime, intent, khz, unit));
         if (unit is null) return; // nobody on this frequency: silence, as in reality
 
+        TrackHandoff(unit);
         Dispatch(intent, unit, allowDefer: true);
         Release(state, Session.SimTime);
+    }
+
+    /// <summary>
+    /// A call to a third unit (neither the one that issued the handoff nor the one it is to) while a handoff is
+    /// pending means the pilot skipped it: that unit takes the call and the skip is logged.
+    /// </summary>
+    private void TrackHandoff(ControllerUnit unit)
+    {
+        var c = Session.Clearance;
+        if (c.HandoffTo is not { } expected || unit == c.HandoffFrom) return;
+        if (unit != expected) Session.Log.Add(new HandoffSkipped(Session.SimTime, expected, unit));
+        c.CurrentFrequencyKhz = unit.FrequencyKhz;
+        c.ClearHandoff();
     }
 
     private void Dispatch(PilotIntent intent, ControllerUnit unit, bool allowDefer)

@@ -89,6 +89,6 @@ public abstract class Phase : IPhase
             .Add(ReadbackItem.Frequency, ReadbackValues.Frequency(next.FrequencyKhz), contact)
             .Build();
         return ctx.Conversation.Transmit(from, [contact], priority, due, expectation,
-            onSent: () => ctx.Clearance.NextFrequencyKhz = next.FrequencyKhz, tag: tag);
+            onSent: () => ctx.Clearance.SetHandoff(from, next), tag: tag);
     }
 }

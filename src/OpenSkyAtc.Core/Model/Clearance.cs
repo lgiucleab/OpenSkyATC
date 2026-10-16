@@ -44,7 +44,15 @@ public sealed class Clearance
     public TaxiClearance? Taxi { get; internal set; }
 
     public int? CurrentFrequencyKhz { get; internal set; }
+
+    /// <summary>Frequency the aircraft was handed off to and has not called on yet.</summary>
     public int? NextFrequencyKhz { get; internal set; }
+
+    /// <summary>The unit that issued the pending handoff (it repeats it if the aircraft does not change frequency).</summary>
+    public ControllerUnit? HandoffFrom { get; internal set; }
+
+    /// <summary>The unit the pending handoff is to.</summary>
+    public ControllerUnit? HandoffTo { get; internal set; }
 
     public string? LineUpCleared { get; internal set; }
     public string? TakeoffCleared { get; internal set; }
@@ -55,6 +63,19 @@ public sealed class Clearance
     public bool IsTakeoffCleared(Runway rwy) => TakeoffCleared is { } d && rwy.Has(d);
     public bool IsLandingCleared(Runway rwy) => LandingCleared is { } d && rwy.Has(d);
     public bool IsCrossCleared(Runway rwy) => _crossCleared.Contains(rwy.First.Designator) || _crossCleared.Contains(rwy.Second.Designator);
+
+    internal void SetHandoff(ControllerUnit from, ControllerUnit to)
+    {
+        HandoffFrom = from;
+        HandoffTo = to;
+        NextFrequencyKhz = to.FrequencyKhz;
+    }
+
+    internal void ClearHandoff()
+    {
+        HandoffFrom = HandoffTo = null;
+        NextFrequencyKhz = null;
+    }
 
     internal void ClearToCross(string runway) => _crossCleared.Add(runway);
     internal void RemoveCrossClearance(string runway) => _crossCleared.Remove(runway);

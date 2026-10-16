@@ -28,8 +28,15 @@ public sealed record IfrClearance(string Destination, string? DestinationName, s
 
 public sealed record ClearedTo(string Destination, string? DestinationName) : AtcMessagePart;
 public sealed record Via(string? Sid) : AtcMessagePart;
-public sealed record ClimbTo(AltitudeTarget Altitude) : AtcMessagePart;
-public sealed record DescendTo(AltitudeTarget Altitude) : AtcMessagePart;
+/// <param name="Immediately">"descend immediately FL120" (conformance level 2).</param>
+public sealed record ClimbTo(AltitudeTarget Altitude, bool Immediately = false) : AtcMessagePart;
+public sealed record DescendTo(AltitudeTarget Altitude, bool Immediately = false) : AtcMessagePart;
+
+/// <summary>"check altitude, cleared FL120".</summary>
+public sealed record CheckAltitude(AltitudeTarget Cleared) : AtcMessagePart;
+
+/// <summary>"confirm climbing FL240" / "confirm descending FL80".</summary>
+public sealed record ConfirmVertical(bool Climbing, AltitudeTarget Altitude) : AtcMessagePart;
 
 public enum TurnDirection
 {
@@ -39,7 +46,13 @@ public enum TurnDirection
     Right,
 }
 
-public sealed record TurnHeading(TurnDirection Direction, int HeadingDeg) : AtcMessagePart;
+/// <param name="Immediately">"turn left immediately heading 270" (conformance level 2).</param>
+public sealed record TurnHeading(TurnDirection Direction, int HeadingDeg, bool Immediately = false) : AtcMessagePart;
+
+/// <summary>"check heading" (followed by the heading).</summary>
+public sealed record CheckHeading : AtcMessagePart;
+
+public sealed record SayIntentions : AtcMessagePart;
 public sealed record Direct(string Fix) : AtcMessagePart;
 
 public enum SpeedAction
@@ -51,7 +64,8 @@ public enum SpeedAction
 
 public sealed record Speed(int Knots, SpeedAction Action = SpeedAction.Maintain) : AtcMessagePart;
 public sealed record Qnh(int Hpa) : AtcMessagePart;
-public sealed record Squawk(int Code) : AtcMessagePart;
+/// <param name="Recycle">"recycle squawk 4521" (conformance level 2).</param>
+public sealed record Squawk(int Code, bool Recycle = false) : AtcMessagePart;
 public sealed record ReadbackCorrect : AtcMessagePart;
 
 public enum ContactCondition
@@ -72,6 +86,12 @@ public sealed record TaxiHoldingPoint(string Name) : AtcMessagePart;
 public sealed record RunwayIs(string Runway) : AtcMessagePart;
 public sealed record HoldShort(string Runway) : AtcMessagePart;
 public sealed record LineUpAndWait(string Runway) : AtcMessagePart;
+public sealed record HoldPosition : AtcMessagePart;
+
+/// <param name="Emphasis">"stop immediately, I say again, stop" (takeoff without clearance).</param>
+public sealed record StopImmediately(bool Emphasis = false) : AtcMessagePart;
+
+public sealed record GoAround : AtcMessagePart;
 
 /// <summary>Surface wind in degrees magnetic, rounded to 10 degrees. Speed 0 means calm.</summary>
 public sealed record Wind(int DirectionMagDeg, int SpeedKt) : AtcMessagePart;

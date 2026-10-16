@@ -48,6 +48,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 - Projects that touch SimConnect target `net10.0-windows` with `PlatformTarget` x64.
 - The brain's randomness goes through `IRandom` / `SeededRandom` (SplitMix64), never `System.Random`.
 - Brain flow: `AtcBrain` ticks the `EventEngine`, the current `IPhase` and the `ConversationManager`, then releases due transmissions from the `TransmissionQueue`. Phases return transitions; the brain applies and logs them. Phases send ATC messages only through `ctx.Conversation`, with a `ReadbackExpectation` when a readback is required, and update the `Clearance` in the `onSent` callback.
+- Conformance: `Conformance/ConformanceMonitor` runs after the phase each tick. Each check is a read/warn pair with grace and escalation handled centrally; thresholds live in `ConformanceOptions`. Synthetic-state tests use `tests/OpenSkyAtc.Core.Tests/Conformance/MonitorRig.cs`.
 - Text comes from `OpenSkyAtc.Phraseology.IcaoRenderer` (display + speech, one instance per flight, render messages in order); number rules live in `Spoken`. Core never builds message strings. Wording variants are marked European and can be turned off; every part and variant is in `tests/fixtures/snapshots/phraseology-parts.approved.txt`.
 - Phraseology reference: design doc first, then UK CAA CAP 413 edition 24; never invent wording without a source.
 - Phases never read raw `SimState` numbers; they react to `EventEngine` events. Thresholds live in `EventEngineOptions`.

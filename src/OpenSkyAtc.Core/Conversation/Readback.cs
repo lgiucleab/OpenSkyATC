@@ -39,6 +39,8 @@ public static class ReadbackValues
     public static string Destination(string icao) => Normalize(icao);
     public static string Route(string? sid) => sid is null ? FlightPlannedRoute : Normalize(sid);
     public static string Altitude(AltitudeTarget alt) => alt.Kind == AltitudeKind.FlightLevel ? $"FL{alt.Value:000}" : $"{alt.Value}FT";
+    public static string Heading(int degrees) => degrees.ToString("000", CultureInfo.InvariantCulture);
+    public static string Speed(int knots) => knots.ToString(CultureInfo.InvariantCulture);
     public static string Squawk(int code) => code.ToString("0000", CultureInfo.InvariantCulture);
     public static string Runway(string designator) => Normalize(designator);
     public static string HoldingPoint(string name) => Normalize(name);
