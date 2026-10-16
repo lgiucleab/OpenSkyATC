@@ -84,7 +84,7 @@ public abstract class Phase : IPhase
     /// <summary>Hands off to <paramref name="next"/>: "contact Tower 118.100", expecting the frequency read back.</summary>
     protected static Exchange Handoff(PhaseContext ctx, ControllerUnit from, ControllerUnit next, TimeSpan due, TransmissionPriority priority, string tag)
     {
-        var contact = new Contact(next.Callsign, next.FrequencyKhz);
+        var contact = new Contact(next);
         var expectation = ReadbackExpectation.Builder()
             .Add(ReadbackItem.Frequency, ReadbackValues.Frequency(next.FrequencyKhz), contact)
             .Build();

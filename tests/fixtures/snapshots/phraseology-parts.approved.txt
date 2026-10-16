@@ -1,0 +1,114 @@
+## IfrClearance SID
+doc     | cleared to LEMD via NAPSI1C departure, climb 5000 ft, squawk 4521 | cleared to Madrid via Napsi one Charlie departure, climb five thousand feet, squawk four five two one
+variant | cleared to LEMD via NAPSI1C departure, climb to altitude 5000 ft, squawk 4521 | cleared to Madrid via Napsi one Charlie departure, climb to altitude five thousand feet, squawk four five two one
+## IfrClearance no SID, no name
+doc     | cleared to LEMD via flight planned route, climb FL70, squawk 0443 | cleared to Lima Echo Mike Delta via flight planned route, climb flight level seven zero, squawk zero four four three
+## ClearedTo
+doc     | cleared to LEMD | cleared to Madrid
+## Via SID
+doc     | via NAPSI1C departure | via Napsi one Charlie departure
+## Via route
+doc     | via flight planned route | via flight planned route
+## ClimbTo FL
+doc     | climb FL120 | climb flight level one two zero
+## ClimbTo altitude
+doc     | climb 3500 ft | climb three thousand five hundred feet
+variant | climb to altitude 3500 ft | climb to altitude three thousand five hundred feet
+## DescendTo FL
+doc     | descend FL80 | descend flight level eight zero
+## DescendTo altitude
+doc     | descend 2000 ft | descend two thousand feet
+variant | descend to altitude 2000 ft | descend to altitude two thousand feet
+## TurnHeading left
+doc     | turn left heading 270 | turn left heading two seven zero
+## TurnHeading right
+doc     | turn right heading 090 | turn right heading zero nine zero
+## TurnHeading fly
+doc     | fly heading 005 | fly heading zero zero five
+## Direct
+doc     | proceed direct NAPSI | proceed direct Napsi
+variant | route direct NAPSI | route direct Napsi
+## Speed maintain
+doc     | maintain 250 knots | maintain two five zero knots
+## Speed reduce
+doc     | reduce speed 180 knots | reduce speed one eight zero knots
+variant | reduce speed to 180 knots | reduce speed to one eight zero knots
+## Speed increase
+doc     | increase speed 220 knots | increase speed two two zero knots
+variant | increase speed to 220 knots | increase speed to two two zero knots
+## Qnh
+doc     | QNH 1013 | QNH one zero one three
+## Squawk
+doc     | squawk 4521 | squawk four five two one
+## ReadbackCorrect
+doc     | readback correct | readback correct
+variant | correct | correct
+## Contact
+doc     | contact Barcelona Tower 118.100 | contact Barcelona Tower one one eight decimal one
+variant | contact Barcelona Tower 118.100, bye bye | contact Barcelona Tower one one eight decimal one, bye bye
+variant | contact Barcelona Tower 118.100, good day | contact Barcelona Tower one one eight decimal one, good day
+variant | contact Tower 118.100, bye bye | contact Tower one one eight decimal one, bye bye
+variant | contact Tower 118.100, good day | contact Tower one one eight decimal one, good day
+## Contact area control
+doc     | contact Madrid Control 132.350 | contact Madrid Control one three two decimal three five zero
+variant | contact Madrid Control 132.350, bye bye | contact Madrid Control one three two decimal three five zero, bye bye
+variant | contact Madrid Control 132.350, good day | contact Madrid Control one three two decimal three five zero, good day
+## Contact when ready
+doc     | when ready for push and start contact Barcelona Ground 121.700 | when ready for push and start contact Barcelona Ground one two one decimal seven
+variant | contact Barcelona Ground 121.700, bye bye | contact Barcelona Ground one two one decimal seven, bye bye
+variant | contact Barcelona Ground 121.700, good day | contact Barcelona Ground one two one decimal seven, good day
+variant | contact Ground 121.700, bye bye | contact Ground one two one decimal seven, bye bye
+variant | contact Ground 121.700, good day | contact Ground one two one decimal seven, good day
+variant | for push and start contact Barcelona Ground 121.700, bye bye | for push and start contact Barcelona Ground one two one decimal seven, bye bye
+variant | for push and start contact Barcelona Ground 121.700, good day | for push and start contact Barcelona Ground one two one decimal seven, good day
+variant | for push and start contact Ground 121.700, bye bye | for push and start contact Ground one two one decimal seven, bye bye
+variant | for push and start contact Ground 121.700, good day | for push and start contact Ground one two one decimal seven, good day
+variant | when ready for push and start contact Barcelona Ground 121.700, bye bye | when ready for push and start contact Barcelona Ground one two one decimal seven, bye bye
+variant | when ready for push and start contact Barcelona Ground 121.700, good day | when ready for push and start contact Barcelona Ground one two one decimal seven, good day
+variant | when ready for push and start contact Ground 121.700, bye bye | when ready for push and start contact Ground one two one decimal seven, bye bye
+variant | when ready for push and start contact Ground 121.700, good day | when ready for push and start contact Ground one two one decimal seven, good day
+## PushStartApproved
+doc     | push and start approved | push and start approved
+variant | pushback and start up approved | pushback and start up approved
+## TaxiVia fallback
+doc     | taxi to holding point runway 24L | taxi to holding point runway two four left
+variant | taxi holding point runway 24L | taxi holding point runway two four left
+## TaxiVia route
+doc     | taxi to holding point A1 runway 24L via K, M, hold short runway 02 | taxi to holding point Alpha one runway two four left via Kilo, Mike, hold short runway zero two
+variant | taxi holding point A1 runway 24L via K, M, hold short runway 02 | taxi holding point Alpha one runway two four left via Kilo, Mike, hold short runway zero two
+## TaxiHoldingPoint
+doc     | holding point G2 | holding point Golf two
+## RunwayIs
+doc     | runway 06R | runway zero six right
+## HoldShort
+doc     | hold short runway 02 | hold short runway zero two
+## LineUpAndWait
+doc     | runway 24L, line up and wait | runway two four left, line up and wait
+## Wind
+doc     | wind 250/12 | wind two five zero degrees, one two knots
+## Wind calm
+doc     | wind calm | wind calm
+## ClearedTakeoff
+doc     | runway 24L, cleared for takeoff | runway two four left, cleared for takeoff
+## ClearedLand
+doc     | runway 24R, cleared to land | runway two four right, cleared to land
+## Negative
+doc     | negative | negative
+## Negative repeated
+doc     | negative, I say again | negative, I say again
+## ReadBackRequest
+doc     | read back the squawk and initial climb | read back the squawk and initial climb
+variant | read back squawk and initial climb | read back squawk and initial climb
+## StandBy
+doc     | stand by | stand by
+## SayAgainRequest
+doc     | say again | say again
+variant | say again your request | say again your request
+## UnableContact
+doc     | unable, contact Barcelona Delivery 121.850 | unable, contact Barcelona Delivery one two one decimal eight five zero
+## Roger
+doc     | roger | roger
+## Mayday
+doc     | roger mayday | roger mayday
+## PanPan
+doc     | roger pan pan | roger pan pan

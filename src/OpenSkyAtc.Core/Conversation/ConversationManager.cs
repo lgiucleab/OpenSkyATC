@@ -76,7 +76,7 @@ public sealed class ConversationManager(TransmissionQueue queue, IRandom rng, Ev
 
         // Correct wrong items first ("Negative, squawk 4521"); otherwise ask for the missing ones.
         IReadOnlyList<AtcMessagePart> parts = verdict.Wrong.Count > 0
-            ? [new Negative(), .. verdict.Wrong.SelectMany(i => exchange.Expectation!.Corrections[i])]
+            ? [new Negative(Repeated: exchange.Corrections > 0), .. verdict.Wrong.SelectMany(i => exchange.Expectation!.Corrections[i])]
             : [new ReadBackRequest(verdict.Missing)];
         exchange.Narrow(verdict.Wrong.Concat(verdict.Missing));
         exchange.Corrections++;

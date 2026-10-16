@@ -13,6 +13,8 @@ public sealed record ReplayOptions
     public bool AutoReadback { get; init; } = true;
 
     public TimeSpan AutoReadbackDelay { get; init; } = TimeSpan.FromSeconds(4);
+
+    public PhraseologyOptions? Phraseology { get; init; }
 }
 
 /// <summary>
@@ -54,25 +56,29 @@ public static class ReplayRunner
                 autoReadbackAt = null;
             }
         }
-        return Transcript(brain.Session);
+        return Transcript(brain.Session, new IcaoRenderer(seed, options.Phraseology));
     }
 
-    /// <summary>Pilot calls, ATC transmissions, phase changes and readback verdicts, one line each.</summary>
-    public static IReadOnlyList<string> Transcript(FlightSession session)
+    /// <summary>
+    /// Pilot calls, ATC transmissions (display text), phase changes and readback verdicts, one line each.
+    /// ATC messages go through <paramref name="renderer"/> in order, as in the app.
+    /// </summary>
+    public static IReadOnlyList<string> Transcript(FlightSession session, IcaoRenderer renderer)
     {
+        var droppedRenderer = new IcaoRenderer(session.Seed, new PhraseologyOptions { EuropeanVariants = false, Courtesy = false });
         var lines = new List<string>();
         foreach (var entry in session.Log.Entries)
         {
             string t = entry.Time.ToString(@"hh\:mm\:ss\.fff", CultureInfo.InvariantCulture);
             string? line = entry switch
             {
-                PilotIntentLogged p => $"PILOT ({DisplayRenderer.Frequency(p.FrequencyKhz)}{(p.Unit is null ? ", no station" : "")}) {IntentFactory.Describe(p.Intent)}",
-                AtcTransmissionLogged a => $"ATC {a.Message.Unit.Callsign}: {DisplayRenderer.Render(a.Message)}",
+                PilotIntentLogged p => $"PILOT ({Spoken.DisplayFrequency(p.FrequencyKhz)}{(p.Unit is null ? ", no station" : "")}) {IntentFactory.Describe(p.Intent)}",
+                AtcTransmissionLogged a => $"ATC {a.Message.Unit.Callsign}: {renderer.Render(a.Message).Display}",
                 PhaseChanged c => $"PHASE {c.From} -> {c.To} ({c.Reason})",
                 ReadbackChecked { Verdict.IsCorrect: true } r => $"READBACK #{r.ExchangeId} {r.Tag}: correct",
                 ReadbackChecked r => $"READBACK #{r.ExchangeId} {r.Tag}: wrong [{string.Join(",", r.Verdict.Wrong)}] missing [{string.Join(",", r.Verdict.Missing)}]",
                 ReadbackMissed m => $"READBACK #{m.ExchangeId} {m.Tag}: missed",
-                TransmissionDropped d => $"DROPPED {d.Unit.Callsign}: {string.Join(", ", d.Parts.Select(DisplayRenderer.Part))}",
+                TransmissionDropped d => $"DROPPED {d.Unit.Callsign}: {string.Join(", ", d.Parts.Select(x => droppedRenderer.RenderPart(x).Display))}",
                 RequestRejected r => $"REJECTED {IntentFactory.Describe(r.Intent)}: {r.Reason}",
                 _ => null,
             };

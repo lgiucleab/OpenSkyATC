@@ -30,13 +30,13 @@ public sealed class PreflightPhase : Phase
         string? sid = ctx.Plan.PlannedSid;
 
         var expectation = ReadbackExpectation.Builder()
-            .Add(ReadbackItem.Destination, ReadbackValues.Destination(ctx.Plan.Destination), new ClearedTo(ctx.Plan.Destination))
+            .Add(ReadbackItem.Destination, ReadbackValues.Destination(ctx.Plan.Destination), new ClearedTo(ctx.Plan.Destination, ctx.Destination.Name))
             .Add(ReadbackItem.Route, ReadbackValues.Route(sid), new Via(sid))
             .Add(ReadbackItem.InitialClimb, ReadbackValues.Altitude(climb), new ClimbTo(climb))
             .Add(ReadbackItem.Squawk, ReadbackValues.Squawk(squawk), new Squawk(squawk))
             .Build();
 
-        _clearance = ctx.Conversation.Transmit(unit, [new IfrClearance(ctx.Plan.Destination, sid, climb, squawk)],
+        _clearance = ctx.Conversation.Transmit(unit, [new IfrClearance(ctx.Plan.Destination, ctx.Destination.Name, sid, climb, squawk)],
             TransmissionPriority.Reply, ctx.Now + ctx.Conversation.ReplyDelay(), expectation,
             onSent: () =>
             {
@@ -59,7 +59,7 @@ public sealed class PreflightPhase : Phase
         var ground = ctx.Airspace.GroundUnit;
         if (ground is not null && ground != unit)
         {
-            var contact = new Contact(ground.Callsign, ground.FrequencyKhz, ContactCondition.WhenReadyForPushAndStart);
+            var contact = new Contact(ground, ContactCondition.WhenReadyForPushAndStart);
             var expectation = ReadbackExpectation.Builder()
                 .Add(ReadbackItem.Frequency, ReadbackValues.Frequency(ground.FrequencyKhz), contact)
                 .Build();

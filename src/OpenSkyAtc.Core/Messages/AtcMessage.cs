@@ -18,15 +18,39 @@ public sealed record AtcMessage(
     IReadOnlyList<AtcMessagePart> Parts,
     TransmissionPriority Priority);
 
-/// <summary>A building block of an ATC message. Step 4 adds the remaining parts from the design doc.</summary>
+/// <summary>A building block of an ATC message. The phraseology layer renders each part.</summary>
 public abstract record AtcMessagePart;
 
 /// <summary>"cleared to LEMD via NAPSI1C departure, climb 5000 ft, squawk 4521". A null SID means flight planned route.</summary>
-public sealed record IfrClearance(string Destination, string? Sid, AltitudeTarget InitialClimb, int Squawk) : AtcMessagePart;
+/// <param name="Destination">ICAO code, shown in display text.</param>
+/// <param name="DestinationName">Name spoken instead of the code ("Madrid"); null to spell the code.</param>
+public sealed record IfrClearance(string Destination, string? DestinationName, string? Sid, AltitudeTarget InitialClimb, int Squawk) : AtcMessagePart;
 
-public sealed record ClearedTo(string Destination) : AtcMessagePart;
+public sealed record ClearedTo(string Destination, string? DestinationName) : AtcMessagePart;
 public sealed record Via(string? Sid) : AtcMessagePart;
 public sealed record ClimbTo(AltitudeTarget Altitude) : AtcMessagePart;
+public sealed record DescendTo(AltitudeTarget Altitude) : AtcMessagePart;
+
+public enum TurnDirection
+{
+    /// <summary>"fly heading 270": no turn direction given.</summary>
+    None,
+    Left,
+    Right,
+}
+
+public sealed record TurnHeading(TurnDirection Direction, int HeadingDeg) : AtcMessagePart;
+public sealed record Direct(string Fix) : AtcMessagePart;
+
+public enum SpeedAction
+{
+    Maintain,
+    Reduce,
+    Increase,
+}
+
+public sealed record Speed(int Knots, SpeedAction Action = SpeedAction.Maintain) : AtcMessagePart;
+public sealed record Qnh(int Hpa) : AtcMessagePart;
 public sealed record Squawk(int Code) : AtcMessagePart;
 public sealed record ReadbackCorrect : AtcMessagePart;
 
@@ -36,7 +60,8 @@ public enum ContactCondition
     WhenReadyForPushAndStart,
 }
 
-public sealed record Contact(string Unit, int FrequencyKhz, ContactCondition Condition = ContactCondition.None) : AtcMessagePart;
+/// <summary>"contact Barcelona Tower 118.100". The unit carries the callsign, role and frequency.</summary>
+public sealed record Contact(ControllerUnit Unit, ContactCondition Condition = ContactCondition.None) : AtcMessagePart;
 
 public sealed record PushStartApproved : AtcMessagePart;
 
@@ -52,12 +77,14 @@ public sealed record LineUpAndWait(string Runway) : AtcMessagePart;
 public sealed record Wind(int DirectionMagDeg, int SpeedKt) : AtcMessagePart;
 
 public sealed record ClearedTakeoff(string Runway) : AtcMessagePart;
+public sealed record ClearedLand(string Runway) : AtcMessagePart;
 
-public sealed record Negative : AtcMessagePart;
+/// <param name="Repeated">True on a second or later correction of the same exchange ("negative, I say again").</param>
+public sealed record Negative(bool Repeated = false) : AtcMessagePart;
 public sealed record ReadBackRequest(IReadOnlyList<ReadbackItem> Items) : AtcMessagePart;
 public sealed record StandBy : AtcMessagePart;
 public sealed record SayAgainRequest : AtcMessagePart;
-public sealed record UnableContact(string Unit, int FrequencyKhz) : AtcMessagePart;
+public sealed record UnableContact(ControllerUnit Unit) : AtcMessagePart;
 public sealed record Roger : AtcMessagePart;
 
 public enum EmergencyKind

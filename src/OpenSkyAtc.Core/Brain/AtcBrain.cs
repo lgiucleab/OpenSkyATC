@@ -171,7 +171,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         var now = _events.ActiveTime;
         if (_phase.Unit(Context([])) is { } right && right != unit)
         {
-            _conversation.Say(unit, [new UnableContact(right.Callsign, right.FrequencyKhz)], TransmissionPriority.Reply, now + _conversation.ReplyDelay());
+            _conversation.Say(unit, [new UnableContact(right)], TransmissionPriority.Reply, now + _conversation.ReplyDelay());
             Session.Log.Add(new RequestRejected(Session.SimTime, intent, $"wrong unit, {right.Callsign} handles {_phase.Id}"));
         }
         else

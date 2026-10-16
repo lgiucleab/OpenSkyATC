@@ -87,3 +87,19 @@ Log of decisions made while building. Newest last.
 - **Departure phase (8)** is a placeholder that accepts the check-in; step 6 builds it.
 - **Sessions that start in the air or on the runway** always start in Preflight for now; phase inference is step 6.
 - **Simulated pilot (first part):** the replay runner can read back every instruction correctly after 4 s (`ReplayOptions.AutoReadback`); scripts override single items (`Readback squawk=1234 -initialclimb`).
+
+## 2026-10-16 - Step 4
+
+Owner's choices: ICAO wording plus European variants, destination spoken by name (ICAO code shown), courtesy phrases on every handoff, "niner/tree" off by default.
+
+- **Source check:** the variants were checked against UK CAA CAP 413 edition 24 (Radiotelephony Manual, effective 1 July 2026). ICAO Doc 4444 itself is not freely available, so where the design doc gives a wording it stays the default ("doc") wording. CAP 413 is used as a reference only; nothing from it is redistributed.
+- **Variants dropped because no source supported them:** "climb initially", "SID + flight planned route", "taxi via K, M to holding point", "line up and wait runway 24L", "start-up and pushback approved", "for clearance contact Delivery".
+- **Variants kept (doc wording first, then CAP 413/common European):** readback correct / correct; push and start approved / pushback and start up approved; taxi to holding point / taxi holding point; climb 5000 ft / climb to altitude 5000 ft (flight levels never take "to"); proceed direct / route direct; reduce speed 180 knots / reduce speed to 180 knots; read back the squawk / read back squawk; say again / say again your request; contact Barcelona Tower / contact Tower (not for area control); for the push-and-start handoff: when ready for push and start / for push and start / plain contact.
+- **Wind placement:** design doc order "wind 250/12, runway 24L, cleared for takeoff", or CAP 413 edition 24 order "runway 24L, cleared for takeoff, surface wind 250/12". Same for landing.
+- **"Negative, I say again"** is used only on the second or later correction of the same exchange (CAP 413: for repeated incorrect readbacks), not as a random variant.
+- **Courtesy:** "good day" or "bye bye" (the latter counts as a European variant) on every handoff (`Contact`), not on "unable, contact".
+- **Number rules beyond the doc table (CAP 413 2.13):** flight levels are spoken digit by digit without padding (FL70 "flight level seven zero") and whole hundreds use "hundred" (FL100 "flight level one hundred"); display follows (FL70). Frequencies drop both final zeros when both are zero (118.100 "one one eight decimal one"), read as the doc's "drop the last zero" rule. Altitudes that are not whole hundreds are spoken digit by digit.
+- **Station name on first contact:** each unit's first transmission includes its callsign after the aircraft's (CAP 413 example: "BIGJET 347, Stourton Tower, ...").
+- **Registrations:** full on a unit's first transmission, then abbreviated (first character + last two, "E-BC"). Airline designators without a known telephony are spelled.
+- **Renderer seeding:** the renderer uses its own RNG stream derived from the session seed, so wording never changes the brain's choices.
+- **Callsign table:** `CallsignTable` reads "ICAO,TELEPHONY" lines; the shipped data file is pending the owner's choice of source.

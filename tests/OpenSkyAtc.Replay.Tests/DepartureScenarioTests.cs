@@ -2,6 +2,7 @@ using OpenSkyAtc.Core.Brain;
 using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Planning;
 using OpenSkyAtc.Core.Sim;
+using OpenSkyAtc.Phraseology;
 using OpenSkyAtc.Replay.Tests.Harness;
 using static OpenSkyAtc.Replay.Tests.Harness.SyntheticDeparture;
 
@@ -27,7 +28,11 @@ public class DepartureScenarioTests
     internal static IReadOnlyList<string> RunScenario(string script, int seed, ReplayOptions? options = null, AtcBrainOptions? brain = null) =>
         ReplayRunner.Run(new AtcBrain(brain), Recording, IntentScript.Parse(script), Plan, Origin, Destination, seed, options);
 
-    private static readonly ReplayOptions Manual = new() { AutoReadback = false };
+    /// <summary>One fixed wording (design doc text, no courtesy or station name), for tests that assert exact sentences.</summary>
+    private static readonly PhraseologyOptions Fixed = new() { EuropeanVariants = false, Courtesy = false, StationNameOnFirstContact = false };
+
+    private static readonly ReplayOptions Manual = new() { AutoReadback = false, Phraseology = Fixed };
+    private static readonly ReplayOptions AutoFixed = new() { Phraseology = Fixed };
 
     [Fact]
     public void NormalDeparture_DirectTakeoffClearance()
@@ -142,7 +147,7 @@ public class DepartureScenarioTests
             00:10 RequestClearance
             00:45 RequestPushStart
             00:46 RequestTaxi
-            """, seed: 1);
+            """, seed: 1, AutoFixed);
         Fixtures.VerifyTranscript("standby-then-taxi", t);
         int standBy = t.ToList().FindIndex(l => l.EndsWith("Vueling 1234, stand by"));
         int taxi = t.ToList().FindIndex(l => l.Contains("taxi to holding point"));
