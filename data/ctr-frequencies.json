@@ -1,0 +1,4 @@
+{
+  "_comment": "Area-control (CTR/ACC) frequencies, used together with the CENTER frequencies in the sim's airport data. Each entry: { \"name\": \"Madrid Control\", \"frequencyMhz\": 133.100, \"latitude\": 40.0, \"longitude\": -3.7 } where the position is a point inside the sector the frequency serves. Fill in from a source you trust; values here are never invented. Empty: flights without sim CENTER data go straight from Departure to Approach.",
+  "sectors": []
+}

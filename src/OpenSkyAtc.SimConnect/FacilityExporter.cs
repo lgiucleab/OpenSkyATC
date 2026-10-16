@@ -18,33 +18,33 @@ public sealed class FacilityExporter : IDisposable
 
     // ---- Structs: one per facility data type, fields in the order they are added below.
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct AirportData
     {
         public double Latitude, Longitude, Altitude;
         public float MagVar;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string Name;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)] public string Icao;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)] public string Region;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)] public byte[] Name;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)] public byte[] Icao;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)] public byte[] Region;
         public float TransitionAltitude, TransitionLevel;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)] public string CityState;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)] public byte[] CityState;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct RunwayData
     {
         public double Latitude, Longitude, Altitude;
         public float Heading, Length, Width;
         public int PrimaryNumber, PrimaryDesignator, SecondaryNumber, SecondaryDesignator;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)] public string PrimaryIls;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)] public string SecondaryIls;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)] public byte[] PrimaryIls;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)] public byte[] SecondaryIls;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct FrequencyData
     {
         public int Type, Frequency;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)] public string Name;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)] public byte[] Name;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -72,24 +72,24 @@ public sealed class FacilityExporter : IDisposable
         public uint NameIndex;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct TaxiNameData
     {
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string Name;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)] public byte[] Name;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct ApproachData
     {
         public int Type, Suffix, RunwayNumber, RunwayDesignator;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)] public string FafIcao;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)] public byte[] FafIcao;
         public float FafAltitude, MissedAltitude;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct ProcedureNameData
     {
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)] public string Name;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)] public byte[] Name;
     }
 
     private readonly AutoResetEvent _signal = new(false);
@@ -212,10 +212,10 @@ public sealed class FacilityExporter : IDisposable
         return new FacilityDump
         {
             ExportedUtc = DateTime.UtcNow,
-            Icao = a.Icao,
-            Region = a.Region,
-            Name = a.Name,
-            City = a.CityState,
+            Icao = Text(a.Icao)!,
+            Region = Text(a.Region),
+            Name = Text(a.Name),
+            City = Text(a.CityState),
             Latitude = a.Latitude,
             Longitude = a.Longitude,
             ElevationM = a.Altitude,
@@ -265,11 +265,11 @@ public sealed class FacilityExporter : IDisposable
             case SIMCONNECT_FACILITY_DATA_TYPE.RUNWAY:
                 var r = (RunwayData)item;
                 _runways.Add(new FacilityRunway(r.Latitude, r.Longitude, r.Altitude, r.Heading, r.Length, r.Width,
-                    r.PrimaryNumber, r.PrimaryDesignator, r.SecondaryNumber, r.SecondaryDesignator, Blank(r.PrimaryIls), Blank(r.SecondaryIls)));
+                    r.PrimaryNumber, r.PrimaryDesignator, r.SecondaryNumber, r.SecondaryDesignator, Text(r.PrimaryIls), Text(r.SecondaryIls)));
                 break;
             case SIMCONNECT_FACILITY_DATA_TYPE.FREQUENCY:
                 var f = (FrequencyData)item;
-                _frequencies.Add(new FacilityFrequency(f.Type, f.Frequency, Blank(f.Name)));
+                _frequencies.Add(new FacilityFrequency(f.Type, f.Frequency, Text(f.Name)));
                 break;
             case SIMCONNECT_FACILITY_DATA_TYPE.TAXI_POINT:
                 _points.Add((index, (TaxiPointData)item));
@@ -282,22 +282,29 @@ public sealed class FacilityExporter : IDisposable
                 _paths.Add(new FacilityTaxiPath(p.Type, p.Width, p.RunwayNumber, p.RunwayDesignator, p.Start, p.End, p.NameIndex));
                 break;
             case SIMCONNECT_FACILITY_DATA_TYPE.TAXI_NAME:
-                _names.Add(((TaxiNameData)item).Name ?? "");
+                _names.Add(Text(((TaxiNameData)item).Name) ?? "");
                 break;
             case SIMCONNECT_FACILITY_DATA_TYPE.APPROACH:
                 var ap = (ApproachData)item;
-                _approaches.Add(new FacilityApproach(ap.Type, ap.Suffix, ap.RunwayNumber, ap.RunwayDesignator, Blank(ap.FafIcao), ap.FafAltitude, ap.MissedAltitude));
+                _approaches.Add(new FacilityApproach(ap.Type, ap.Suffix, ap.RunwayNumber, ap.RunwayDesignator, Text(ap.FafIcao), ap.FafAltitude, ap.MissedAltitude));
                 break;
             case SIMCONNECT_FACILITY_DATA_TYPE.DEPARTURE:
-                _departures.Add(((ProcedureNameData)item).Name ?? "");
+                _departures.Add(Text(((ProcedureNameData)item).Name) ?? "");
                 break;
             case SIMCONNECT_FACILITY_DATA_TYPE.ARRIVAL:
-                _arrivals.Add(((ProcedureNameData)item).Name ?? "");
+                _arrivals.Add(Text(((ProcedureNameData)item).Name) ?? "");
                 break;
         }
     }
 
-    private static string? Blank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+    /// <summary>The sim's strings are UTF-8, NUL-terminated (ANSI marshalling turned "León" into "LeÃ³n").</summary>
+    private static string? Text(byte[]? bytes)
+    {
+        if (bytes is null) return null;
+        int end = Array.IndexOf(bytes, (byte)0);
+        string s = System.Text.Encoding.UTF8.GetString(bytes, 0, end < 0 ? bytes.Length : end).Trim();
+        return s.Length == 0 ? null : s;
+    }
 
     private void Reset()
     {

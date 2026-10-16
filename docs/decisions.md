@@ -188,3 +188,9 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **City** comes back as a localisation key ("TT:AIRPORTLR.LEMD.city"), not a name.
 - **Pause flag:** the sim reported "sim only" pause while parked with the app out of focus; to be checked with the sim focused.
 - **Data licence:** facility data comes from the sim's navigation and scenery data, which the project does not own. Exported dumps are not committed until the owner decides how fixtures are handled.
+- **Owner's decisions on the findings:**
+  - **CTR in Europe:** a new owner-filled file `data/ctr-frequencies.json` (name, frequency, position) is used alongside the sim's CENTER data; empty means Departure hands straight to Approach. Nothing is invented. The app merges both into `AtcBrainOptions.CenterFrequencies` (host side, step 9/13).
+  - **Fixtures:** real exports stay on the owner's PC in `tests/fixtures/airports/*.facility.json` (git-ignored); tests on them run when the files exist and skip otherwise. Committed tests use hand-made synthetic airports, including a deliberately broken one.
+  - **Fixture airports:** chosen by me: LEMD, LEBL, EGLL, KJFK, LEVC (medium), a small regional field, and the worst-scoring default airport from a scan.
+- **Fixture airports exported (local only):** LEMD, LEBL, EGLL, KJFK, LEVC, LELN, plus the broken ones from a scan of 47 Spanish airports: LECO (A Coruña, 100 % of taxiway paths unnamed) and LEVD (Valladolid: frequencies but no runways or taxi network). Unnamed taxiway share: EGLL 7 %, LEMD 12 %, KJFK 30 %, LEBL 50 %, LELN 71 %, LEVC 75 %, so the doc's "more than 40 % unnamed" fallback will be common even at large airports.
+- **Strings from the sim are UTF-8:** the exporter decodes them explicitly (ANSI marshalling garbled "León").
