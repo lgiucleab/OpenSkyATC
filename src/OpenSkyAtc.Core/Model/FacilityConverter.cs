@@ -58,14 +58,35 @@ public static class FacilityConverter
     /// </summary>
     private static string? PlaceName(FacilityDump d)
     {
-        string? fromRadar = d.Frequencies.FirstOrDefault(f => f.Type is 8 or 9 && !string.IsNullOrWhiteSpace(f.Name))?.Name;
+        string? fromRadar = d.Frequencies.Where(f => f.Type is 8 or 9).Select(f => StationName(f.Name, d.Icao)).FirstOrDefault(n => n is not null);
         string? raw = fromRadar ?? d.Name;
         return raw is null ? null : TitleCase(raw);
+    }
+
+    private static readonly HashSet<string> RoleWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CONTROL", "RADAR", "APPROACH", "APP", "DEPARTURE", "DEP", "DIRECTOR", "TOWER", "TWR", "GROUND", "GND",
+        "DELIVERY", "DEL", "CLEARANCE", "CLR", "INFORMATION", "INFO", "ATIS",
+    };
+
+    /// <summary>
+    /// The place part of a sim frequency name: trailing role words dropped ("PALMA CONTROL" -> "PALMA", so the
+    /// callsign is not "Palma Control Approach"); null when nothing is left or it is just the ICAO code (ATIS
+    /// frequencies are often named "LFPG").
+    /// </summary>
+    internal static string? StationName(string? raw, string icao)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        var words = raw.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+        while (words.Count > 1 && RoleWords.Contains(words[^1])) words.RemoveAt(words.Count - 1);
+        string name = string.Join(' ', words);
+        return name.Equals(icao, StringComparison.OrdinalIgnoreCase) || RoleWords.Contains(name) ? null : name;
     }
 
     private static List<AirportFrequency> Frequencies(FacilityDump d, string? place)
     {
         var list = new List<AirportFrequency>();
+        string? tower = d.Frequencies.Where(f => f.Type == 6).Select(f => StationName(f.Name, d.Icao)).FirstOrDefault(n => n is not null);
         foreach (var f in d.Frequencies)
         {
             ControllerRole? role = f.Type switch
@@ -79,7 +100,7 @@ public static class FacilityConverter
                 _ => null, // CENTER goes to the airspace model; UNICOM/CTAF/AWOS etc. are not ATC units here
             };
             if (role is not { } r) continue;
-            string name = f.Name is { Length: > 0 } n ? TitleCase(n) : place ?? d.Icao;
+            string name = StationName(f.Name, d.Icao) is { } n ? TitleCase(n) : tower is not null ? TitleCase(tower) : place ?? d.Icao;
             list.Add(new AirportFrequency(r, Khz(f.FrequencyHz), $"{name} {AirspaceModel.RoleName(r)}"));
         }
         return list;

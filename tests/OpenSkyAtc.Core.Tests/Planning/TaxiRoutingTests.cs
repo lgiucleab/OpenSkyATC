@@ -33,6 +33,33 @@ public class FacilityConverterTests
         Assert.Equal("Grid City", Grid.Name); // spoken name from the radar frequency
     }
 
+    [Theory]
+    [InlineData("PALMA CONTROL", "Palma")]
+    [InlineData("DE GAULLE", "De Gaulle")]
+    [InlineData("LFPG", null)]
+    [InlineData("SOCAL APPROACH", "Socal")]
+    [InlineData("TOWER", null)]
+    [InlineData("", null)]
+    public void StationNames_DropRoleWordsAndBareIcao(string raw, string? expected)
+    {
+        var name = FacilityConverter.StationName(raw, "LFPG");
+        Assert.Equal(expected, name is null ? null : System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(name.ToLowerInvariant()));
+    }
+
+    [Fact]
+    public void UnnamedOrIcaoNamedFrequencies_TakeTheTowerName()
+    {
+        var dump = SyntheticAirports.Grid() with
+        {
+            Frequencies = [new FacilityFrequency(1, 127_130_000, "XGRD"), new FacilityFrequency(6, 118_100_000, "GRIDTOWN TOWER"), new FacilityFrequency(8, 120_000_000, "GRID CITY CONTROL")],
+        };
+        var a = FacilityConverter.ToAirportData(dump);
+        Assert.Contains(a.Frequencies, f => f.Callsign == "Gridtown Information");
+        Assert.Contains(a.Frequencies, f => f.Callsign == "Gridtown Tower");
+        Assert.Contains(a.Frequencies, f => f.Callsign == "Grid City Approach");
+        Assert.Equal("Grid City", a.Name);
+    }
+
     [Fact]
     public void AirportFields_Convert()
     {
