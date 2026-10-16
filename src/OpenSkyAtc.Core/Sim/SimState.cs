@@ -109,4 +109,7 @@ public sealed record SimState
 
     /// <summary>True when either COM radio's active frequency is <paramref name="khz"/>.</summary>
     public bool IsTunedTo(int khz) => Com1ActiveKhz == khz || Com2ActiveKhz == khz;
+
+    /// <summary>COM1 or COM2 is on any of the unit's frequencies.</summary>
+    public bool IsTunedTo(Model.ControllerUnit unit) => unit.Answers(Com1ActiveKhz) || unit.Answers(Com2ActiveKhz);
 }

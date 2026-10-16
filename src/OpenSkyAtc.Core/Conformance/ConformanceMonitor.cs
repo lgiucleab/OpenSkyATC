@@ -349,7 +349,7 @@ public sealed class ConformanceMonitor
 
     private Reading ReadMissedHandoff(PhaseContext ctx)
     {
-        if (ctx.Clearance.HandoffTo is not { } to || ctx.State.IsTunedTo(to.FrequencyKhz)) return Reading.Inside;
+        if (ctx.Clearance.HandoffTo is not { } to || ctx.State.IsTunedTo(to)) return Reading.Inside;
         return Reading.Out(0);
     }
 

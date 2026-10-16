@@ -87,7 +87,7 @@ public abstract class AreaPhase : Phase
     public override void OnEnter(PhaseContext ctx)
     {
         _unit = ctx.Session.CurrentUnit;
-        CheckedIn = _unit is not null && ctx.Clearance.HandoffTo is null && ctx.State.IsTunedTo(_unit.FrequencyKhz);
+        CheckedIn = _unit is not null && ctx.Clearance.HandoffTo is null && ctx.State.IsTunedTo(_unit);
     }
 
     /// <summary>Hands off to the next CTR sector 5 nm before the boundary.</summary>

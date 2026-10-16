@@ -60,6 +60,9 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
 
     public FlightSession Session { get; private set; } = new(0);
 
+    /// <summary>The unit the pilot should be talking to now (for hints in the UI); null before the first tick.</summary>
+    public ControllerUnit? ExpectedUnit => _state is null ? null : Session.Clearance.HandoffTo ?? _phase.Unit(Context([]));
+
     /// <summary>The conformance monitor, for the UI (active warnings).</summary>
     public ConformanceMonitor Conformance => _monitor;
 
@@ -125,7 +128,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         if (state.IsPaused || _events.IsSettling) return;
 
         // A handoff is complete once the new frequency is tuned (step 5, decision 7).
-        if (Session.Clearance.HandoffTo is { } to && state.IsTunedTo(to.FrequencyKhz))
+        if (Session.Clearance.HandoffTo is { } to && state.IsTunedTo(to))
         {
             Session.Clearance.CurrentFrequencyKhz = to.FrequencyKhz;
             Session.Clearance.ClearHandoff();
@@ -263,7 +266,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
     {
         foreach (var t in _queue.TakeDue(_events.ActiveTime))
         {
-            if (!state.IsTunedTo(t.Unit.FrequencyKhz))
+            if (!state.IsTunedTo(t.Unit))
             {
                 _conversation.OnDropped(t);
                 Session.Log.Add(new TransmissionDropped(simTime, t.Unit, t.Parts));

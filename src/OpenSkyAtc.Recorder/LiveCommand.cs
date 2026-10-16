@@ -114,6 +114,7 @@ internal static class LiveCommand
 
         var bridge = new SimBridge(new SimBridgeOptions { PushToTalkInput = args.PushToTalk, UseAtcKey = args.AtcKey });
         long samples = 0;
+        int lastTransmitKhz = 0;
         bridge.Connected += () => Console.WriteLine("[sim] connected, 4 Hz");
         bridge.Disconnected += () => { if (!cancel.IsCancellationRequested) Console.WriteLine("[sim] connection lost: ATC paused, retrying every 5 s"); };
         bridge.TitleReceived += t => Console.WriteLine($"[sim] aircraft: {t}");
@@ -124,6 +125,7 @@ internal static class LiveCommand
             lock (gate)
             {
                 brain.Tick(s, s.Time);
+                lastTransmitKhz = s.TransmitFrequencyKhz;
                 printer.PrintNew();
                 if (++samples % 40 == 0) Console.Title = $"OpenSkyATC live - {brain.Session.Phase} - {s.Time:hh\\:mm\\:ss} - COM1 {s.Com1ActiveKhz / 1000.0:0.000}{(s.IsPaused ? " - paused" : "")}";
             }
@@ -136,8 +138,18 @@ internal static class LiveCommand
         while (!cancel.IsCancellationRequested)
         {
             IReadOnlyList<PilotIntent> intents;
-            lock (gate) intents = brain.AvailableIntents.Take(9).ToList();
+            ControllerUnit? expected;
+            int tuned;
+            lock (gate)
+            {
+                intents = brain.AvailableIntents.Take(9).ToList();
+                expected = brain.ExpectedUnit;
+                tuned = lastTransmitKhz;
+            }
             string list = string.Join(" | ", intents.Select((x, i) => $"{i + 1} {Describe(x)}"));
+            if (expected is not null)
+                list += $"   -> call {expected.Callsign} {Mhz(expected.FrequencyKhz)}" +
+                        (tuned != 0 && !expected.Answers(tuned) ? $" (you are on {Mhz(tuned)})" : "");
             if (list != shown)
             {
                 Console.WriteLine($"[you] {(list.Length == 0 ? "(nothing to say)" : list)}");
@@ -209,6 +221,8 @@ internal static class LiveCommand
     private static void Describe(AirportData a) =>
         Console.WriteLine($"  {a.Icao} {a.Name}: {a.Runways.Count} runways, TA {a.TransitionAltitudeFt?.ToString(CultureInfo.InvariantCulture) ?? "?"} ft, " +
                           $"{a.Taxi?.Stands.Count ?? 0} stands, units: {string.Join(", ", a.Frequencies.GroupBy(f => f.Role).Select(g => $"{g.First().Callsign} {g.First().FrequencyKhz / 1000.0:0.000}"))}");
+
+    private static string Mhz(int khz) => (khz / 1000.0).ToString("0.000", CultureInfo.InvariantCulture);
 
     private static string Describe(PilotIntent intent) => intent switch
     {

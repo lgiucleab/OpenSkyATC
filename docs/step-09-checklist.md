@@ -6,7 +6,7 @@ Run from the repository root. Start a flight in MSFS 2024, cold and dark or read
 dotnet run --project src/OpenSkyAtc.Recorder -- live --from LEMD --to LEBL --callsign IBE1234 --type A320 --cruise 330 --ptt "VK_LCONTROL+T"
 ```
 
-Keys in the console: `1`-`9` send the pilot call shown with that number, `L` shows the list again, `Q` quits. The console title shows the phase, the session clock and COM1.
+Keys in the console: `1`-`9` send the pilot call shown with that number, `L` shows the list again, `Q` quits. The end of that line says which unit to call and on what frequency, and warns when COM1 is on another one. The console title shows the phase, the session clock and COM1.
 
 Tick each line, and note what you saw if a line fails.
 

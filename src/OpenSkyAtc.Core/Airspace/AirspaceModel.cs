@@ -79,7 +79,10 @@ public sealed class AirspaceModel
     public ControllerUnit? ArrivalGroundUnit => DestinationGround ?? DestinationTower;
 
     /// <summary>The unit on a frequency, or null when nobody is there. ATIS is not a unit you talk to.</summary>
-    public ControllerUnit? UnitOn(int khz) => _units.FirstOrDefault(u => u.FrequencyKhz == khz && u.Role != ControllerRole.Atis);
+    /// <summary>The unit a call on <paramref name="khz"/> reaches: its main frequency first, then the other frequencies.</summary>
+    public ControllerUnit? UnitOn(int khz) =>
+        _units.FirstOrDefault(u => u.FrequencyKhz == khz && u.Role != ControllerRole.Atis)
+        ?? _units.FirstOrDefault(u => u.Answers(khz) && u.Role != ControllerRole.Atis);
 
     /// <summary>The CTR sector covering an along-route distance, or null outside them (or when there are none).</summary>
     public CtrSector? SectorAt(double alongNm) =>
@@ -120,8 +123,12 @@ public sealed class AirspaceModel
 
         ControllerUnit? Unit(AirportData airport, ControllerRole role)
         {
-            var f = airport.Frequencies.FirstOrDefault(x => x.Role == role);
-            return f is null ? null : new ControllerUnit(role, f.Callsign ?? $"{airport.Name ?? airport.Icao} {RoleName(role)}", f.FrequencyKhz);
+            var all = airport.Frequencies.Where(x => x.Role == role).ToList();
+            if (all.Count == 0) return null;
+            var f = all[0];
+            var others = all.Skip(1).Select(x => x.FrequencyKhz).Where(k => k != f.FrequencyKhz).Distinct().ToList();
+            return new ControllerUnit(role, f.Callsign ?? $"{airport.Name ?? airport.Icao} {RoleName(role)}", f.FrequencyKhz,
+                OtherFrequenciesKhz: others.Count > 0 ? others : null);
         }
 
         var model = new AirspaceModel(options, route)
