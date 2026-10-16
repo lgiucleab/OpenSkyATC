@@ -53,10 +53,11 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 - `src/OpenSkyAtc.SimConnect` - sim bridge: `SimBridge` (SimState at 4 Hz, push-to-talk, reconnect every 5 s; its `SimState.Time` only advances while connected), `SimConnectAirportProvider` (airports from the sim, reopens its connection after the sim restarts), `FacilityExporter`. References Core.
 - `src/OpenSkyAtc.Voice` - Piper TTS, radio filter, Whisper STT, intent parser, push-to-talk. References Core.
 - `src/OpenSkyAtc.SimBrief` - flight plan import. References Core.
+- `src/OpenSkyAtc.TaxiArrows` - taxi arrow logic (app layer, pure): `TaxiArrowController` (which arrows where, from `FlightSession`) and `ArrowPool` (sim-object changes). References Core.
 - `src/OpenSkyAtc.App` - WPF app (net10.0-windows). References all libraries.
 - `src/OpenSkyAtc.Recorder` - console tool, records SimState to JSON-lines.
 - `tests/*` - xUnit test projects; `tests/fixtures` holds airport JSON and recorded flights.
-- `toolbar/` - MSFS 2024 Community-folder packages (toolbar panel, taxi arrow model).
+- `toolbar/` - MSFS 2024 Community-folder packages (toolbar panel, taxi arrow model). `toolbar/opensky-atc-taxi-arrows`: build with `"C:\MSFS 2024 SDK\Toolsinspackagetool.exe" toolbar\opensky-atc-taxi-arrows\opensky-atc-taxi-arrows.xml -nopause` with the sim closed (it starts the sim to build); the model comes from its `tools/generate_arrow.py`.
 
 ## Conventions
 
@@ -74,6 +75,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 - Phraseology reference: design doc first, then UK CAA CAP 413 edition 24; never invent wording without a source.
 - Phases never read raw `SimState` numbers; they react to `EventEngine` events. Thresholds live in `EventEngineOptions`.
 - Owner-filled data files (`data/*.json`) are parsed by `Core/Config/DataFiles` from text the host reads; CENTER frequencies for a flight are the sim's (searched along `CenterSearch.RoutePoints`) merged with `data/ctr-frequencies.json`.
+- Taxi arrows: the brain never knows about them. It exposes the route (`Clearance.Taxi`), `TaxiReadBack` and `IsCrossReadBack`; `TaxiArrowController` reads those and `SimBridge.ShowArrows` places them. Checklist: `docs/step-10-checklist.md`.
 - Recordings: JSON-lines, header line then one `SimState` per line (`RecordingFormat`). Core converts lines only; callers do file I/O.
 - Shared build settings live in `Directory.Build.props`: nullable on, implicit usings, warnings are errors.
 - Every dependency, model, voice or dataset must be GPL-3.0-compatible and listed in `THIRD_PARTY_NOTICES.md` before it is added.

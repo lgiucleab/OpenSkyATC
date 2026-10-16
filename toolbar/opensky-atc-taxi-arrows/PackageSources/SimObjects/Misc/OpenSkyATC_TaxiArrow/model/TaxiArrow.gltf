@@ -1,0 +1,113 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "OpenSkyATC generate_arrow.py",
+    "copyright": "OpenSkyATC, GPL-3.0"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "TaxiArrow",
+      "mesh": 0
+    }
+  ],
+  "meshes": [
+    {
+      "name": "TaxiArrow",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "TaxiArrowBlue",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.05,
+          0.35,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.6
+      },
+      "emissiveFactor": [
+        0.0,
+        0.22,
+        0.85
+      ]
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "TaxiArrow.bin",
+      "byteLength": 168
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 72,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72,
+      "byteLength": 72,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 144,
+      "byteLength": 24,
+      "target": 34963
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 6,
+      "type": "VEC3",
+      "min": [
+        -1,
+        0.05,
+        -1.4
+      ],
+      "max": [
+        1,
+        0.05,
+        1.6
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 6,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5123,
+      "count": 12,
+      "type": "SCALAR"
+    }
+  ]
+}

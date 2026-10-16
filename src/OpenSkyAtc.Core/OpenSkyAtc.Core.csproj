@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="OpenSkyAtc.Core.Tests" />
+    <InternalsVisibleTo Include="OpenSkyAtc.TaxiArrows.Tests" />
   </ItemGroup>
 
 </Project>

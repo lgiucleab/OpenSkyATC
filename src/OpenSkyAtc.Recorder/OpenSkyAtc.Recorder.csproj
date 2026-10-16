@@ -4,6 +4,7 @@
     <ProjectReference Include="..\OpenSkyAtc.Core\OpenSkyAtc.Core.csproj" />
     <ProjectReference Include="..\OpenSkyAtc.Phraseology\OpenSkyAtc.Phraseology.csproj" />
     <ProjectReference Include="..\OpenSkyAtc.SimConnect\OpenSkyAtc.SimConnect.csproj" />
+    <ProjectReference Include="..\OpenSkyAtc.TaxiArrows\OpenSkyAtc.TaxiArrows.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

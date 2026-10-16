@@ -35,7 +35,8 @@ public static class ReplayRunner
         AirportData origin,
         AirportData destination,
         int seed,
-        ReplayOptions? options = null)
+        ReplayOptions? options = null,
+        Action<IAtcBrain, SimState>? afterTick = null)
     {
         options ??= new ReplayOptions();
         brain.Start(plan, origin, destination, seed);
@@ -48,6 +49,7 @@ public static class ReplayRunner
 
             // Tick first so the brain's clock is at this sample when the pilot speaks.
             brain.Tick(s, s.Time);
+            afterTick?.Invoke(brain, s);
 
             while (next < script.Count && script[next].Time <= state.Time)
                 brain.HandlePilotIntent(IntentFactory.Create(script[next++], brain.AvailableIntents));

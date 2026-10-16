@@ -8,6 +8,7 @@ using OpenSkyAtc.Core.Conversation;
 using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Phraseology;
 using OpenSkyAtc.SimConnect;
+using OpenSkyAtc.TaxiArrows;
 
 namespace OpenSkyAtc.Recorder;
 
@@ -30,18 +31,23 @@ internal static class LiveCommand
         public string? Stand { get; init; }
         public string? PushToTalk { get; init; }
         public bool AtcKey { get; init; } = true;
+        public bool Arrows { get; init; } = true;
+        public double ArrowLookAheadM { get; init; } = 300;
+        public double ArrowSpacingM { get; init; } = 10;
         public int Seed { get; init; } = Environment.TickCount;
     }
 
     public const string Usage =
         "live --from ICAO --to ICAO --callsign VLG1234 [--type A320] [--cruise 350] [--sid NAME] [--star NAME] [--stand NAME]\n" +
-        "     [--ptt \"VK_LCONTROL+T\" | --ptt \"joystick:0:button:3\"] [--no-atc-key] [--seed N]";
+        "     [--ptt \"VK_LCONTROL+T\" | --ptt \"joystick:0:button:3\"] [--no-atc-key] [--seed N]\n" +
+        "     [--no-arrows] [--arrow-lookahead M] [--arrow-spacing M]";
 
     public static Args? Parse(string[] a)
     {
         string? from = null, to = null, callsign = null, type = null, sid = null, star = null, stand = null, ptt = null;
         int? cruise = null, seed = null;
-        bool atcKey = true;
+        bool atcKey = true, arrows = true;
+        double lookAhead = 300, spacing = 10;
         for (int i = 1; i < a.Length; i++)
         {
             string? Next() => i + 1 < a.Length ? a[++i] : null;
@@ -57,6 +63,9 @@ internal static class LiveCommand
                 case "--stand": stand = Next(); break;
                 case "--ptt": ptt = Next(); break;
                 case "--no-atc-key": atcKey = false; break;
+                case "--no-arrows": arrows = false; break;
+                case "--arrow-lookahead": lookAhead = double.Parse(Next() ?? "", CultureInfo.InvariantCulture); break;
+                case "--arrow-spacing": spacing = double.Parse(Next() ?? "", CultureInfo.InvariantCulture); break;
                 case "--seed": seed = int.Parse(Next() ?? "", CultureInfo.InvariantCulture); break;
                 default: return null;
             }
@@ -66,6 +75,7 @@ internal static class LiveCommand
         {
             From = from, To = to, Callsign = callsign, Type = type, CruiseFl = cruise, Sid = sid, Star = star, Stand = stand,
             PushToTalk = ptt, AtcKey = atcKey, Seed = seed ?? Environment.TickCount,
+            Arrows = arrows, ArrowLookAheadM = lookAhead, ArrowSpacingM = spacing,
         };
     }
 
@@ -114,7 +124,8 @@ internal static class LiveCommand
 
         var bridge = new SimBridge(new SimBridgeOptions { PushToTalkInput = args.PushToTalk, UseAtcKey = args.AtcKey });
         long samples = 0;
-        int lastTransmitKhz = 0;
+        int lastTransmitKhz = 0, lastArrowCount = -1;
+        var arrowController = new TaxiArrowController(new TaxiArrowOptions { Enabled = args.Arrows, LookAheadM = args.ArrowLookAheadM, SpacingM = args.ArrowSpacingM });
         bridge.Connected += () => Console.WriteLine("[sim] connected, 4 Hz");
         bridge.Disconnected += () => { if (!cancel.IsCancellationRequested) Console.WriteLine("[sim] connection lost: ATC paused, retrying every 5 s"); };
         bridge.TitleReceived += t => Console.WriteLine($"[sim] aircraft: {t}");
@@ -126,6 +137,11 @@ internal static class LiveCommand
             {
                 brain.Tick(s, s.Time);
                 lastTransmitKhz = s.TransmitFrequencyKhz;
+                var arrows = arrowController.Update(brain.Session, s);
+                bridge.ShowArrows(arrows);
+                if ((arrows.Count == 0) != (lastArrowCount == 0))
+                    Console.WriteLine(arrows.Count == 0 ? "[arrows] none" : $"[arrows] showing {arrows.Count} along the route");
+                lastArrowCount = arrows.Count;
                 printer.PrintNew();
                 if (++samples % 40 == 0) Console.Title = $"OpenSkyATC live - {brain.Session.Phase} - {s.Time:hh\\:mm\\:ss} - COM1 {s.Com1ActiveKhz / 1000.0:0.000}{(s.IsPaused ? " - paused" : "")}";
             }
@@ -133,7 +149,7 @@ internal static class LiveCommand
         var loop = new Thread(() => bridge.Run(cancel.Token)) { IsBackground = true, Name = "SimBridge" };
         loop.Start();
 
-        Console.WriteLine("Keys: 1-9 send a pilot call from the list, L lists them again, Q quits.");
+        Console.WriteLine("Keys: 1-9 send a pilot call from the list, L lists them again, A turns taxi arrows on/off, Q quits.");
         string shown = "";
         while (!cancel.IsCancellationRequested)
         {
@@ -163,6 +179,12 @@ internal static class LiveCommand
             }
             if (c is 'q' or 'Q') break;
             if (c is 'l' or 'L') { shown = ""; continue; }
+            if (c is 'a' or 'A')
+            {
+                lock (gate) arrowController.Options = arrowController.Options with { Enabled = !arrowController.Options.Enabled };
+                Console.WriteLine($"[arrows] turned {(arrowController.Options.Enabled ? "on" : "off")}");
+                continue;
+            }
             int n = c - '1';
             if (n < 0 || n >= intents.Count) continue;
             lock (gate)
@@ -171,6 +193,8 @@ internal static class LiveCommand
                 printer.PrintNew();
             }
         }
+        bridge.ShowArrows([]);
+        Thread.Sleep(500); // let the bridge remove them (the sim would also remove them on disconnect)
         cancel.Cancel();
         loop.Join(TimeSpan.FromSeconds(3));
         Console.WriteLine("Stopped.");

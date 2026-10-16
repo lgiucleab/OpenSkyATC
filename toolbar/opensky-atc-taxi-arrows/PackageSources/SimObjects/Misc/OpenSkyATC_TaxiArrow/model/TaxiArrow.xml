@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo version="1.1" guid="{5a1f3c8e-7b2d-4e6a-9c1f-0d4b8e2a6f31}">
+    <LODS>
+        <LOD minSize="0" ModelFile="TaxiArrow.gltf"/>
+    </LODS>
+</ModelInfo>

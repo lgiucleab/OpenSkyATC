@@ -62,6 +62,9 @@ public sealed class Exchange
     /// <summary>Parts of the latest transmission, repeated when there is no readback.</summary>
     internal IReadOnlyList<AtcMessagePart> LastParts { get; set; } = [];
 
+    /// <summary>Runs once when the pilot reads the exchange back correctly (also a late readback).</summary>
+    internal Action? OnReadBack { get; init; }
+
     public int Repeats { get; internal set; }
     public int Corrections { get; internal set; }
 

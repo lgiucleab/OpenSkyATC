@@ -153,7 +153,7 @@ internal sealed class CrossingClearances
             .Add(ReadbackItem.Clearance, ReadbackValues.Cross, new CrossRunway(runway))
             .Build();
         ctx.Conversation.Transmit(unit, [new CrossRunway(runway)], TransmissionPriority.Instruction, ctx.Now, readback,
-            onSent: () => ctx.Clearance.ClearToCross(runway), tag: "cross");
+            onSent: () => ctx.Clearance.ClearToCross(runway), tag: "cross", onReadBack: () => ctx.Clearance.ConfirmCrossing(runway));
         _crossing = runway;
         _next++;
     }
@@ -191,17 +191,18 @@ public sealed class TaxiOutPhase : Phase
         if (plan.HoldShorts.Count > 0)
             b.Add(ReadbackItem.HoldShorts, ReadbackValues.HoldShorts(plan.HoldShorts), plan.HoldShorts.Select(h => (AtcMessagePart)new HoldShort(h)).ToArray());
 
+        var taxi = new TaxiClearance(hpName ?? $"holding point runway {rwy}", rwy, plan.Via, plan.HoldShorts, plan.Path)
+        {
+            Crossings = plan.Crossings.Select(c => (c.Runway, c.HoldShort)).ToList(),
+        };
         ctx.Conversation.Transmit(unit, [new TaxiVia(hpName, rwy, plan.Via, plan.HoldShorts)], TransmissionPriority.Reply,
             ctx.Now + ctx.Conversation.ReplyDelay(), b.Build(),
             onSent: () =>
             {
-                ctx.Clearance.Taxi = new TaxiClearance(hpName ?? $"holding point runway {rwy}", rwy, plan.Via, plan.HoldShorts, plan.Path)
-                {
-                    Crossings = plan.Crossings.Select(c => (c.Runway, c.HoldShort)).ToList(),
-                };
+                ctx.Clearance.Taxi = taxi;
                 ctx.Clearance.CurrentFrequencyKhz = unit.FrequencyKhz;
             },
-            tag: "taxi");
+            tag: "taxi", onReadBack: () => ctx.Clearance.ConfirmTaxi(taxi));
         if (plan.FallbackReason is { } why) ctx.Session.Log.Add(new TaxiFallback(ctx.Session.SimTime, ctx.Origin.Icao, runway.Designator, why));
     }
 

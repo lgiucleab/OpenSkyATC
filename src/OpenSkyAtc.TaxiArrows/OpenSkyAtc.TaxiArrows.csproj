@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- App-layer taxi arrows (step 10): which arrows to show where. Pure logic, so it can be tested; the sim side is in OpenSkyAtc.SimConnect. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenSkyAtc.Core\OpenSkyAtc.Core.csproj" />
+  </ItemGroup>
+
+</Project>

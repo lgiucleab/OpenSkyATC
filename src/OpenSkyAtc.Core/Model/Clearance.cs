@@ -26,6 +26,8 @@ public sealed record TaxiClearance(
 public sealed class Clearance
 {
     private readonly HashSet<string> _crossCleared = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _crossReadBack = new(StringComparer.OrdinalIgnoreCase);
+    private TaxiClearance? _taxi;
 
     public AltitudeTarget? ClearedAltitude { get; internal set; }
 
@@ -45,7 +47,23 @@ public sealed class Clearance
     /// <summary>Runway in use for this flight's departure or arrival.</summary>
     public string? Runway { get; internal set; }
 
-    public TaxiClearance? Taxi { get; internal set; }
+    /// <summary>The active taxi route. A new one (a re-route) starts unconfirmed.</summary>
+    public TaxiClearance? Taxi
+    {
+        get => _taxi;
+        internal set
+        {
+            _taxi = value;
+            TaxiReadBack = false;
+            _crossReadBack.Clear();
+        }
+    }
+
+    /// <summary>The pilot read the active taxi route back correctly (or it needed no readback). Taxi arrows wait for this.</summary>
+    public bool TaxiReadBack { get; private set; }
+
+    /// <summary>The crossing clearance for this runway was read back correctly; arrows go past its hold-short only then.</summary>
+    public bool IsCrossReadBack(string runway) => _crossReadBack.Contains(runway);
 
     public int? CurrentFrequencyKhz { get; internal set; }
 
@@ -82,5 +100,21 @@ public sealed class Clearance
     }
 
     internal void ClearToCross(string runway) => _crossCleared.Add(runway);
-    internal void RemoveCrossClearance(string runway) => _crossCleared.Remove(runway);
+
+    internal void RemoveCrossClearance(string runway)
+    {
+        _crossCleared.Remove(runway);
+        _crossReadBack.Remove(runway);
+    }
+
+    /// <summary>Marks <paramref name="taxi"/> read back, if it is still the active route (not replaced by a re-route).</summary>
+    internal void ConfirmTaxi(TaxiClearance taxi)
+    {
+        if (ReferenceEquals(_taxi, taxi)) TaxiReadBack = true;
+    }
+
+    internal void ConfirmCrossing(string runway)
+    {
+        if (_crossCleared.Contains(runway)) _crossReadBack.Add(runway);
+    }
 }

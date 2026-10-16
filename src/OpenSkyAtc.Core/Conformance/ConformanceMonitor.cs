@@ -461,8 +461,12 @@ public sealed class ConformanceMonitor
         b.Add(ReadbackItem.Runway, ReadbackValues.Runway(rwy), new RunwayIs(rwy));
         if (plan.HoldShorts.Count > 0)
             b.Add(ReadbackItem.HoldShorts, ReadbackValues.HoldShorts(plan.HoldShorts), plan.HoldShorts.Select(h => (AtcMessagePart)new HoldShort(h)).ToArray());
+        var taxi = new TaxiClearance(hp ?? $"holding point runway {rwy}", rwy, plan.Via, plan.HoldShorts, plan.Path)
+        {
+            Crossings = plan.Crossings.Select(c => (c.Runway, c.HoldShort)).ToList(),
+        };
         return Instruct(ctx, [new TaxiVia(hp, rwy, plan.Via, plan.HoldShorts)], b.Build(),
-            onSent: () => ctx.Clearance.Taxi = new TaxiClearance(hp ?? $"holding point runway {rwy}", rwy, plan.Via, plan.HoldShorts, plan.Path));
+            onSent: () => ctx.Clearance.Taxi = taxi, onReadBack: () => ctx.Clearance.ConfirmTaxi(taxi));
     }
 
     // ---- Transmission helpers. Normal warnings come from the unit in control; serious ones from the unit the pilot is on.
@@ -477,10 +481,10 @@ public sealed class ConformanceMonitor
         return true;
     }
 
-    private static bool Instruct(PhaseContext ctx, IReadOnlyList<AtcMessagePart> parts, ReadbackExpectation readback, Action? onSent = null)
+    private static bool Instruct(PhaseContext ctx, IReadOnlyList<AtcMessagePart> parts, ReadbackExpectation readback, Action? onSent = null, Action? onReadBack = null)
     {
         if (ControllingUnit(ctx) is not { } unit) return false;
-        ctx.Conversation.Transmit(unit, parts, TransmissionPriority.Instruction, ctx.Now, readback, onSent, tag: "conformance");
+        ctx.Conversation.Transmit(unit, parts, TransmissionPriority.Instruction, ctx.Now, readback, onSent, tag: "conformance", onReadBack: onReadBack);
         return true;
     }
 

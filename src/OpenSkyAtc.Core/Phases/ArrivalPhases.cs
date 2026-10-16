@@ -446,12 +446,19 @@ public sealed class TaxiInPhase : Phase
         if (route.HoldShorts.Count > 0)
             b.Add(ReadbackItem.HoldShorts, ReadbackValues.HoldShorts(route.HoldShorts), route.HoldShorts.Select(h => (AtcMessagePart)new HoldShort(h)).ToArray());
         var expectation = b.Build();
+        bool needsReadback = expectation.Items.Count > 0;
+        var taxi = new TaxiClearance(stand is null ? "parking" : $"stand {stand}", null, route.Via, route.HoldShorts, route.Path)
+        {
+            Crossings = route.Crossings.Select(c => (c.Runway, c.HoldShort)).ToList(),
+        };
         _taxi = ctx.Conversation.Transmit(Unit(ctx)!, [new TaxiToStand(stand, route.Via, route.HoldShorts)], TransmissionPriority.Reply,
-            ctx.Now + ctx.Conversation.ReplyDelay(), expectation.Items.Count > 0 ? expectation : null,
-            onSent: () => ctx.Clearance.Taxi = new TaxiClearance(stand is null ? "parking" : $"stand {stand}", null, route.Via, route.HoldShorts, route.Path)
+            ctx.Now + ctx.Conversation.ReplyDelay(), needsReadback ? expectation : null,
+            onSent: () =>
             {
-                Crossings = route.Crossings.Select(c => (c.Runway, c.HoldShort)).ToList(),
-            }, tag: "taxi-in");
+                ctx.Clearance.Taxi = taxi;
+                if (!needsReadback) ctx.Clearance.ConfirmTaxi(taxi); // nothing to read back: confirmed once said
+            },
+            tag: "taxi-in", onReadBack: () => ctx.Clearance.ConfirmTaxi(taxi));
         return PhaseResult.Stay;
     }
 

@@ -37,10 +37,11 @@ public sealed class ConversationManager(TransmissionQueue queue, IRandom rng, Ev
     /// <param name="due">Active-clock time it may be sent.</param>
     /// <param name="readback">What the pilot must read back; null when no readback is required.</param>
     /// <param name="onSent">Updates the clearance record when the transmission is actually sent.</param>
+    /// <param name="onReadBack">Runs when the pilot reads it back correctly.</param>
     public Exchange Transmit(ControllerUnit unit, IReadOnlyList<AtcMessagePart> parts, TransmissionPriority priority, TimeSpan due,
-        ReadbackExpectation? readback = null, Action? onSent = null, string? tag = null)
+        ReadbackExpectation? readback = null, Action? onSent = null, string? tag = null, Action? onReadBack = null)
     {
-        var exchange = new Exchange(_nextId++, unit, parts, readback, tag);
+        var exchange = new Exchange(_nextId++, unit, parts, readback, tag) { OnReadBack = onReadBack };
         _exchanges.Add(exchange);
         exchange.LastParts = parts;
         queue.Enqueue(unit, parts, priority, due, exchange, onSent);
@@ -71,6 +72,7 @@ public sealed class ConversationManager(TransmissionQueue queue, IRandom rng, Ev
         if (verdict.IsCorrect)
         {
             exchange.State = ExchangeState.Correct;
+            exchange.OnReadBack?.Invoke();
             return true;
         }
 

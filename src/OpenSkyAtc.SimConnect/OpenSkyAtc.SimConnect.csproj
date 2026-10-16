@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenSkyAtc.Core\OpenSkyAtc.Core.csproj" />
+    <ProjectReference Include="..\OpenSkyAtc.TaxiArrows\OpenSkyAtc.TaxiArrows.csproj" />
   </ItemGroup>
 
   <!-- Users supply the SimConnect DLLs from their own MSFS 2024 SDK (see LICENSE-EXCEPTION.md).

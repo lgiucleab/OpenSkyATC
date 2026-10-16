@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.FlightSimulator.SimConnect;
 using OpenSkyAtc.Core.Sim;
+using OpenSkyAtc.TaxiArrows;
 using SC = Microsoft.FlightSimulator.SimConnect.SimConnect;
 
 namespace OpenSkyAtc.SimConnect;
@@ -33,6 +34,9 @@ public sealed record SimBridgeOptions
 
     /// <summary>Take over the sim's "ATC" control as a push-to-talk toggle and keep it from opening the default ATC window.</summary>
     public bool UseAtcKey { get; init; } = true;
+
+    /// <summary>Title of the taxi arrow SimObject in the opensky-atc-taxi-arrows Community package.</summary>
+    public string ArrowTitle { get; init; } = "OpenSkyATC Taxi Arrow";
 }
 
 /// <summary>
@@ -43,7 +47,7 @@ public sealed record SimBridgeOptions
 /// </summary>
 public sealed class SimBridge
 {
-    private enum Definitions { State, Title }
+    private enum Definitions { State, Title, ArrowPosition }
     private enum Requests { State, Title }
     private enum Events { Pause, PttDown, PttUp, Atc }
     private enum Groups { Atc }
@@ -54,6 +58,11 @@ public sealed class SimBridge
     private TimeSpan _timeBase;
     private PauseFlags _pause;
     private bool _holdDown, _toggleOn;
+    private readonly object _arrowLock = new();
+    private IReadOnlyList<ArrowPose> _wantedArrows = [];
+    private bool _arrowsChanged;
+    private SimArrows? _arrows;
+    private double _groundFt;
 
     public SimBridge(SimBridgeOptions? options = null) => _o = options ?? new SimBridgeOptions();
 
@@ -69,6 +78,22 @@ public sealed class SimBridge
     public event Action<string>? Warning;
 
     public bool IsConnected { get; private set; }
+
+    /// <summary>Arrows currently placed in the sim.</summary>
+    public int ArrowCount => _arrows?.Count ?? 0;
+
+    /// <summary>
+    /// The taxi arrows to show (from <see cref="TaxiArrowController"/>); applied on the bridge thread at the next
+    /// message loop pass. Safe to call from any thread. An empty list removes them all.
+    /// </summary>
+    public void ShowArrows(IReadOnlyList<ArrowPose> arrows)
+    {
+        lock (_arrowLock)
+        {
+            _wantedArrows = arrows;
+            _arrowsChanged = true;
+        }
+    }
     public bool PushToTalkHeld => _holdDown || _toggleOn;
 
     /// <summary>Connects, polls and reconnects until <paramref name="cancel"/> fires.</summary>
@@ -95,7 +120,8 @@ public sealed class SimBridge
                 }
                 finally
                 {
-                    sim.Dispose();
+                    sim.Dispose(); // the sim removes this client's arrows itself
+                    _arrows = null;
                     _timeBase += _connected.Elapsed;
                     _connected.Reset();
                     ReleasePushToTalk();
@@ -116,7 +142,11 @@ public sealed class SimBridge
         sim.OnRecvQuit += (_, _) => quit = true;
         sim.OnRecvSimobjectData += OnData;
         sim.OnRecvEvent += OnEvent;
-        sim.OnRecvException += (_, e) => Warning?.Invoke($"SimConnect refused a call: {(SIMCONNECT_EXCEPTION)e.dwException} (send {e.dwSendID}, parameter {e.dwIndex})");
+        sim.OnRecvException += (_, e) =>
+        {
+            if ((SIMCONNECT_EXCEPTION)e.dwException == SIMCONNECT_EXCEPTION.CREATE_OBJECT_FAILED) _arrows?.CreateFailed();
+            else Warning?.Invoke($"SimConnect refused a call: {(SIMCONNECT_EXCEPTION)e.dwException} (send {e.dwSendID}, parameter {e.dwIndex})");
+        };
 
         foreach (var (name, unit) in RawSimData.Definition)
             sim.AddToDataDefinition(Definitions.State, name, unit, SIMCONNECT_DATATYPE.FLOAT64, 0, SC.SIMCONNECT_UNUSED);
@@ -125,6 +155,8 @@ public sealed class SimBridge
         sim.RegisterDataDefineStruct<RawTitle>(Definitions.Title);
         sim.SubscribeToSystemEvent(Events.Pause, "Pause_EX1");
         SetUpPushToTalk(sim);
+        _arrows = new SimArrows(sim, _o.ArrowTitle, Definitions.ArrowPosition, w => Warning?.Invoke(w));
+        lock (_arrowLock) _arrowsChanged = true; // a new connection starts with no arrows: place the wanted ones again
 
         sim.RequestDataOnSimObject(Requests.Title, Definitions.Title, SC.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.ONCE, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
         _pause = PauseFlags.None;
@@ -141,6 +173,7 @@ public sealed class SimBridge
                 next += _o.Interval;
                 if (next < _connected.Elapsed) next = _connected.Elapsed + _o.Interval; // fell behind: do not burst
             }
+            ApplyArrows();
             var wait = next - _connected.Elapsed;
             signal.WaitOne(wait > TimeSpan.Zero ? wait : TimeSpan.Zero);
             try
@@ -178,7 +211,9 @@ public sealed class SimBridge
         switch ((Requests)data.dwRequestID)
         {
             case Requests.State:
-                StateReceived?.Invoke(((RawSimData)data.dwData[0]).ToSimState(_timeBase + _connected.Elapsed, _pause));
+                var state = ((RawSimData)data.dwData[0]).ToSimState(_timeBase + _connected.Elapsed, _pause);
+                _groundFt = state.AltitudeMslFt - state.AltitudeAglFt;
+                StateReceived?.Invoke(state);
                 break;
             case Requests.Title:
                 TitleReceived?.Invoke(((RawTitle)data.dwData[0]).Title);
@@ -208,6 +243,18 @@ public sealed class SimBridge
                 if (PushToTalkHeld != before) PushToTalkChanged?.Invoke(PushToTalkHeld, PushToTalkSource.AtcKey);
                 break;
         }
+    }
+
+    private void ApplyArrows()
+    {
+        IReadOnlyList<ArrowPose> wanted;
+        lock (_arrowLock)
+        {
+            if (!_arrowsChanged || _arrows is null) return;
+            wanted = _wantedArrows;
+            _arrowsChanged = false;
+        }
+        _arrows.Show(wanted, _groundFt);
     }
 
     /// <summary>A lost connection never leaves the microphone open.</summary>
