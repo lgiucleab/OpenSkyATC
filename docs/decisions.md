@@ -186,7 +186,7 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **Taxi network:** taxiways are path type 4 (PATH), not 1 (TAXI); type 7 (road) and 6 (vehicle) are service roads. 12 % of LEMD taxiway paths are unnamed. Hold-shorts are types 5/6 (not drawn variants).
 - **Procedures:** SIDs, STARs and approaches with FAF altitude and missed-approach altitude are available.
 - **City** comes back as a localisation key ("TT:AIRPORTLR.LEMD.city"), not a name.
-- **Pause flag:** the sim reported "sim only" pause while parked with the app out of focus; to be checked with the sim focused.
+- **Pause flag:** works. With the sim window focused it reads "none" (80/80 samples); "sim only" pause appeared only while the sim was in the background (MSFS pauses when it loses focus), and the brain correctly freezes then. Indicated airspeed reads up to about 11 kt at a standstill (pitot noise), so no logic should rely on IAS on the ground.
 - **Data licence:** facility data comes from the sim's navigation and scenery data, which the project does not own. Exported dumps are not committed until the owner decides how fixtures are handled.
 - **Owner's decisions on the findings:**
   - **CTR in Europe:** a new owner-filled file `data/ctr-frequencies.json` (name, frequency, position) is used alongside the sim's CENTER data; empty means Departure hands straight to Approach. Nothing is invented. The app merges both into `AtcBrainOptions.CenterFrequencies` (host side, step 9/13).
