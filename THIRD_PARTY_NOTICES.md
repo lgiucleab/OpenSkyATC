@@ -16,3 +16,9 @@ Apache-2.0 and MIT are compatible with GPL-3.0.
 ## Shipped dependencies
 
 None yet.
+
+## Required but not shipped (user supplies)
+
+| Component | Licence | Notes |
+| --- | --- | --- |
+| Microsoft.FlightSimulator.SimConnect.dll, SimConnect.dll (MSFS 2024 SDK) | Microsoft Flight Simulator SDK EULA (proprietary) | Not in the repo or releases. Loaded at runtime from the user's SDK install. Linking is allowed by `LICENSE-EXCEPTION.md`. |

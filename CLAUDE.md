@@ -18,6 +18,16 @@ dotnet test             # all test projects
 
 SDK is pinned in `global.json` (10.0.301, rollForward latestFeature).
 
+`OpenSkyAtc.SimConnect`, the recorder and the app need the MSFS 2024 SDK: the build reads the managed SimConnect DLL from `$(MSFS2024_SDK)SimConnect SDK\lib\managed` and fails with a clear error if it is missing. A shell opened before the SDK was installed will not have the variable yet.
+
+Record a flight (the sim must be running or the recorder waits for it):
+
+```
+dotnet run --project src/OpenSkyAtc.Recorder -- --out flight.jsonl
+```
+
+Replay transcripts are approval-tested: `tests/fixtures/transcripts/<name>.approved.txt`. On a change the test writes `<name>.received.txt` (git-ignored); review it and rename to `.approved.txt` to accept. Real recordings go in `tests/fixtures/recordings/*.jsonl` and are replayed automatically.
+
 ## Layout
 
 - `src/OpenSkyAtc.Core` - the brain (phases, events, clearance, conformance, airspace, planning, taxi routing). No project or package references.
@@ -34,6 +44,10 @@ SDK is pinned in `global.json` (10.0.301, rollForward latestFeature).
 
 - `OpenSkyAtc.Core` must stay pure: no SimConnect, audio, WPF or I/O. It takes `SimState` + `PilotIntent` and emits `AtcMessage`.
 - Namespaces are `OpenSkyAtc.*` (the design doc's `Atc.*` names are renamed).
+- SimConnect DLLs are never committed or shipped (GPL linking exception, `LICENSE-EXCEPTION.md`). They are referenced with `Private=false` and loaded at runtime by `SimConnectLibrary.EnsureLoaded`, which must run before any SimConnect type is touched.
+- Projects that touch SimConnect target `net10.0-windows` with `PlatformTarget` x64.
+- The brain's randomness goes through `IRandom` / `SeededRandom` (SplitMix64), never `System.Random`.
+- Recordings: JSON-lines, header line then one `SimState` per line (`RecordingFormat`). Core converts lines only; callers do file I/O.
 - Shared build settings live in `Directory.Build.props`: nullable on, implicit usings, warnings are errors.
 - Every dependency, model, voice or dataset must be GPL-3.0-compatible and listed in `THIRD_PARTY_NOTICES.md` before it is added.
 - No cloud APIs, telemetry or accounts.

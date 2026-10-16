@@ -20,7 +20,7 @@ The ATC logic is specified in [docs/ATC-Brain-Design.md](docs/ATC-Brain-Design.m
 
 ## Building
 
-Requirements: Windows 10/11 x64 and the .NET 10 SDK.
+Requirements: Windows 10/11 x64, the .NET 10 SDK, and the Microsoft Flight Simulator 2024 SDK (for the SimConnect libraries; the build finds them through the `MSFS2024_SDK` environment variable).
 
 ```
 dotnet build
@@ -29,6 +29,8 @@ dotnet test
 
 ## Licence
 
-GPL-3.0. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+GPL-3.0, with an additional permission to link with Microsoft's SimConnect libraries. See [LICENSE](LICENSE), [LICENSE-EXCEPTION.md](LICENSE-EXCEPTION.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+OpenSkyATC does not ship the SimConnect DLLs. You need them from your own MSFS 2024 SDK installation.
 
 OpenSkyATC is not affiliated with Microsoft, Asobo Studio or BeyondATC.
