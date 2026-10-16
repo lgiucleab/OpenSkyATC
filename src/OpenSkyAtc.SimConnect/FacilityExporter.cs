@@ -96,6 +96,9 @@ public sealed class FacilityExporter : IDisposable
     private readonly SC _sim;
     private bool _quit;
 
+    /// <summary>The sim sent its quit message; this exporter can no longer be used.</summary>
+    public bool IsClosed => _quit;
+
     // State of the request in flight.
     private AirportData? _airport;
     private readonly List<FacilityRunway> _runways = [];

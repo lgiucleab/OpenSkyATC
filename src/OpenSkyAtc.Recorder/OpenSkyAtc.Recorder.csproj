@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenSkyAtc.Core\OpenSkyAtc.Core.csproj" />
+    <ProjectReference Include="..\OpenSkyAtc.Phraseology\OpenSkyAtc.Phraseology.csproj" />
     <ProjectReference Include="..\OpenSkyAtc.SimConnect\OpenSkyAtc.SimConnect.csproj" />
   </ItemGroup>
 

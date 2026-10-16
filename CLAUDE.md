@@ -34,6 +34,12 @@ dotnet run --project src/OpenSkyAtc.Recorder -- survey-center LE --max 400
 dotnet run --project src/OpenSkyAtc.Recorder -- taxi LEMD
 ```
 
+Run the brain against the live sim in a console (step 9 checklist: `docs/step-09-checklist.md`):
+
+```
+dotnet run --project src/OpenSkyAtc.Recorder -- live --from LEMD --to LEBL --callsign IBE1234 --type A320 --cruise 330 --ptt "VK_LCONTROL+T"
+```
+
 `taxi ICAO` loads the airport live through `SimConnectAirportProvider` (the same path the app uses) and prints its units and a routed taxi from a gate to every runway end.
 
 Facility dumps (`*.facility.json`) are git-ignored: they are the sim's data, not ours to publish. At runtime every airport comes from the player's own sim, so routing works anywhere they have scenery. Tests on real dumps in `tests/fixtures/airports/` run only when the files exist; committed taxi tests use the synthetic airports in `tests/OpenSkyAtc.Core.Tests/Planning/SyntheticAirports.cs` (also linked into Replay.Tests).
@@ -44,7 +50,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 
 - `src/OpenSkyAtc.Core` - the brain (phases, events, clearance, conformance, airspace, planning, taxi routing). No project or package references.
 - `src/OpenSkyAtc.Phraseology` - ICAO renderer (display + speech text). References Core.
-- `src/OpenSkyAtc.SimConnect` - sim bridge (SimState, facility data, key events). References Core.
+- `src/OpenSkyAtc.SimConnect` - sim bridge: `SimBridge` (SimState at 4 Hz, push-to-talk, reconnect every 5 s; its `SimState.Time` only advances while connected), `SimConnectAirportProvider` (airports from the sim, reopens its connection after the sim restarts), `FacilityExporter`. References Core.
 - `src/OpenSkyAtc.Voice` - Piper TTS, radio filter, Whisper STT, intent parser, push-to-talk. References Core.
 - `src/OpenSkyAtc.SimBrief` - flight plan import. References Core.
 - `src/OpenSkyAtc.App` - WPF app (net10.0-windows). References all libraries.
@@ -67,6 +73,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 - Text comes from `OpenSkyAtc.Phraseology.IcaoRenderer` (display + speech, one instance per flight, render messages in order); number rules live in `Spoken`. Core never builds message strings. Wording variants are marked European and can be turned off; every part and variant is in `tests/fixtures/snapshots/phraseology-parts.approved.txt`.
 - Phraseology reference: design doc first, then UK CAA CAP 413 edition 24; never invent wording without a source.
 - Phases never read raw `SimState` numbers; they react to `EventEngine` events. Thresholds live in `EventEngineOptions`.
+- Owner-filled data files (`data/*.json`) are parsed by `Core/Config/DataFiles` from text the host reads; CENTER frequencies for a flight are the sim's (searched along `CenterSearch.RoutePoints`) merged with `data/ctr-frequencies.json`.
 - Recordings: JSON-lines, header line then one `SimState` per line (`RecordingFormat`). Core converts lines only; callers do file I/O.
 - Shared build settings live in `Directory.Build.props`: nullable on, implicit usings, warnings are errors.
 - Every dependency, model, voice or dataset must be GPL-3.0-compatible and listed in `THIRD_PARTY_NOTICES.md` before it is added.

@@ -207,3 +207,20 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **Taxi-in stand:** the plan's stand when the sim has one with that name ("Gate 12", "12" and "T527" style names all match), otherwise the nearest gate at least 18 m in radius for jets, or the nearest ramp spot for others. "Parked" also needs the aircraft within the stand's radius + 30 m. Stand names: name prefix + number + suffix (GATE_T 527 -> "T527"); suffixes 1-26 read as A-Z (not yet confirmed against the sim UI).
 - **Checked on the owner's sim exports:** routes at EGLL, KJFK, LEMD, LELN and most ends at LEBL/LEVC; fallbacks at LECO (all unnamed) and some LEBL/LEVC ends; LEVD has no taxi data.
 - **Live check (owner's sim, LFPG, EDDF, LEPA, KLAX):** routes from a gate to every runway end at all four, with crossings where expected. Two callsign fixes: trailing role words are dropped from sim frequency names ("PALMA CONTROL" gave "Palma Control Approach", now "Palma Approach"), and a frequency named only by the ICAO code (ATIS, "LFPG") takes the tower's place name ("De Gaulle Information"). Known gap: the airport's spoken name comes from its radar frequency, so KLAX is "Socal".
+
+## 2026-10-16 - Answers before step 9
+
+- **Licensing:** settled before step 2 (option B: GPL linking exception, users supply the SimConnect DLLs).
+- **Push-to-talk through SimConnect:** the MSFS 2024 SDK has no push-to-talk event, so both: (1) hold-to-talk on a key or joystick button set in OpenSkyATC, caught with `MapInputEventToClientEvent_EX1` (real press and release, only while the sim has focus); (2) the sim's own `ATC` key event (MSFS Controls "ATC", Scroll Lock by default) taken over as press-to-start/press-to-stop and masked so the default ATC window does not open.
+- **Test host:** a console `live` command in the Recorder (connects, loads both airports from the sim, runs the brain at 4 Hz, prints ATC calls, pilot calls from number keys). Throwaway until the app UI.
+- **Reconnect:** retry every 5 s; while disconnected the brain is not ticked and the session is kept; the session clock does not advance while disconnected, so no timer runs out during the gap; a position jump on reconnect is handled by the existing teleport rule.
+
+## 2026-10-16 - Step 9
+
+- **`SimBridge`** replaces the recorder's poller: one connection for state (4 Hz, requested ONCE per tick, no catch-up bursts after a stall), the pause flag, and push-to-talk. Push-to-talk is released when the connection drops, so the microphone never stays open.
+- **Hold-to-talk** uses two private client events (`OpenSkyATC.PttDown`/`PttUp`) and an input group at highest priority; the input string is SimConnect's own format, so any key combination (two modifiers, two keys) or joystick button works. **ATC key** is the `ATC` key event in a notification group at highest-maskable priority, added as maskable, so the default ATC window should not open (to confirm in the checklist). Either source holds push-to-talk down; both must be released for it to go up.
+- **Airport provider** reconnects: its exporter is opened on first use and opened again when the sim closed it.
+- **CENTER search** before a flight: route points every 50 nm (origin, plan waypoints, destination), CENTER frequencies at airports within 100 nm of them (up to 150 airports), merged with `data/ctr-frequencies.json` (the file wins when both list the same frequency within 1 nm).
+- **Data files** are parsed in Core from text (`DataFiles`): squawk codes must be four octal digits, CTR frequencies 118-137 MHz; a malformed file is an error, not silently empty.
+- **Transition altitude** now comes from the sim's airport data through the provider (the 10,000 ft default is only used when the sim has none).
+- **Live smoke run** (my side, LEMD-LEBL with the owner's aircraft airborne elsewhere): connected, both airports and units loaded, 1 sim CENTER frequency found, phase inferred as Departure, calls on a frequency with no unit logged as "nobody on this frequency". Seen: conformance warnings (squawk, altitude) run in an inferred phase before any contact; to look at in a later step.

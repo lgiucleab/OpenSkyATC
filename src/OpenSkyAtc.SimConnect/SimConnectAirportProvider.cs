@@ -12,7 +12,7 @@ namespace OpenSkyAtc.SimConnect;
 /// </summary>
 public sealed class SimConnectAirportProvider : IAirportDataProvider, IDisposable
 {
-    private readonly FacilityExporter _exporter = new("OpenSkyATC airport data");
+    private FacilityExporter? _exporter;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private IReadOnlyList<(string Icao, string Region, double Lat, double Lon)>? _allAirports;
 
@@ -23,15 +23,15 @@ public sealed class SimConnectAirportProvider : IAirportDataProvider, IDisposabl
 
     public async Task<AirportData?> LoadAsync(string icao)
     {
-        var dump = await Locked(() => _exporter.Export(icao, Timeout));
+        var dump = await Locked(e => e.Export(icao, Timeout));
         return dump is null ? null : FacilityConverter.ToAirportData(dump);
     }
 
     public async Task<IReadOnlyList<CenterFrequency>> CenterFrequenciesAlongAsync(IReadOnlyList<GeoPoint> route, double radiusNm)
     {
-        return await Locked(() =>
+        return await Locked(exporter =>
         {
-            _allAirports ??= _exporter.AllAirports(TimeSpan.FromMinutes(2));
+            _allAirports ??= exporter.AllAirports(TimeSpan.FromMinutes(2));
             var nearby = _allAirports
                 .Where(a => a.Icao.Length == 4)
                 .Select(a => (a.Icao, Nm: route.Min(p => GeoMath.DistanceNm(p, new GeoPoint(a.Lat, a.Lon)))))
@@ -43,19 +43,39 @@ public sealed class SimConnectAirportProvider : IAirportDataProvider, IDisposabl
             var result = new List<CenterFrequency>();
             foreach (var (icao, _) in nearby)
             {
-                if (_exporter.Export(icao, TimeSpan.FromSeconds(10), frequenciesOnly: true) is { } dump)
+                if (exporter.Export(icao, TimeSpan.FromSeconds(10), frequenciesOnly: true) is { } dump)
                     result.AddRange(FacilityConverter.CenterFrequencies(dump));
             }
             return (IReadOnlyList<CenterFrequency>)result;
         });
     }
 
-    private async Task<T> Locked<T>(Func<T> work)
+    /// <summary>
+    /// Runs <paramref name="work"/> on its own connection, opened on first use and opened again after the sim went
+    /// away. Throws <see cref="System.Runtime.InteropServices.COMException"/> when the sim is not running.
+    /// </summary>
+    private async Task<T> Locked<T>(Func<FacilityExporter, T> work)
     {
         await _lock.WaitAsync();
         try
         {
-            return await Task.Run(work);
+            return await Task.Run(() =>
+            {
+                for (int attempt = 0; ; attempt++)
+                {
+                    _exporter ??= new FacilityExporter("OpenSkyATC airport data");
+                    try
+                    {
+                        if (!_exporter.IsClosed) return work(_exporter);
+                    }
+                    catch (System.Runtime.InteropServices.COMException) when (attempt == 0)
+                    {
+                    }
+                    _exporter.Dispose();
+                    _exporter = null;
+                    if (attempt > 0) throw new System.Runtime.InteropServices.COMException("The sim closed the connection.");
+                }
+            });
         }
         finally
         {
@@ -65,7 +85,7 @@ public sealed class SimConnectAirportProvider : IAirportDataProvider, IDisposabl
 
     public void Dispose()
     {
-        _exporter.Dispose();
+        _exporter?.Dispose();
         _lock.Dispose();
     }
 }

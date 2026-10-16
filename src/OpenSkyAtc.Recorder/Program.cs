@@ -15,6 +15,7 @@ internal static class Program
     private static int Main(string[] args)
     {
         if (args.Length > 0 && args[0] is "export" or "survey-center" or "taxi") return Facilities(args);
+        if (args.Length > 0 && args[0] == "live") return Live(args);
 
         string? output = null;
         string? simConnectDir = null;
@@ -90,6 +91,26 @@ internal static class Program
         }
     }
 
+    /// <summary>"live --from ICAO --to ICAO --callsign X ...": the brain against the running sim (step 9 checklist).</summary>
+    private static int Live(string[] args)
+    {
+        if (LiveCommand.Parse(args) is not { } live)
+        {
+            Console.Error.WriteLine("Usage: OpenSkyAtc.Recorder " + LiveCommand.Usage);
+            return 2;
+        }
+        try
+        {
+            SimConnectLibrary.EnsureLoaded();
+        }
+        catch (FileNotFoundException e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return 1;
+        }
+        return LiveCommand.Run(live);
+    }
+
     // Kept separate from Main so no SimConnect type is touched before the DLLs are loaded.
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static int Record(string output)
@@ -97,12 +118,8 @@ internal static class Program
         using var cancel = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) => { e.Cancel = true; cancel.Cancel(); };
 
-        using var source = new SimStateSource(Interval);
+        var source = new SimBridge(new SimBridgeOptions { Interval = Interval, ClientName = "OpenSkyATC Recorder", UseAtcKey = false });
         Console.WriteLine("Waiting for MSFS 2024... (Ctrl+C to quit)");
-        while (!source.TryConnect("OpenSkyATC Recorder"))
-        {
-            if (cancel.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5))) return 0;
-        }
 
         using var writer = new StreamWriter(output, append: false);
         bool headerWritten = false;
