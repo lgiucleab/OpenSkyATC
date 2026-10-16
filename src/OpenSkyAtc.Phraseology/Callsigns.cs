@@ -4,8 +4,8 @@ using OpenSkyAtc.Core.Messages;
 namespace OpenSkyAtc.Phraseology;
 
 /// <summary>
-/// ICAO airline designator to radio telephony ("IBE" -> "Iberia"). Loaded from a data file whose source and
-/// licence are recorded in THIRD_PARTY_NOTICES.md; the shipped file is chosen with the project owner.
+/// ICAO airline designator to radio telephony ("IBE" -> "Iberia"). The shipped table is
+/// data/airline-callsigns.csv, generated from Wikidata (CC0) by tools/airline-callsigns/generate.py.
 /// </summary>
 public sealed class CallsignTable
 {
@@ -18,6 +18,8 @@ public sealed class CallsignTable
     public int Count => _telephony.Count;
 
     public string? Telephony(string icaoDesignator) => _telephony.GetValueOrDefault(icaoDesignator.ToUpperInvariant());
+
+    public static CallsignTable Load(string path) => Parse(File.ReadLines(path));
 
     /// <summary>Parses "ICAO,TELEPHONY" lines; blank lines and lines starting with # are skipped. Telephony is title-cased.</summary>
     public static CallsignTable Parse(IEnumerable<string> lines)
@@ -37,8 +39,10 @@ public sealed class CallsignTable
         return new CallsignTable(map);
     }
 
+    /// <summary>"WIZZ AIR" -> "Wizz Air". Words without a vowel are acronyms and stay upper case ("KLM").</summary>
     private static string TitleCase(string s) =>
-        string.Join(" ", s.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => w[0] + w[1..].ToLowerInvariant()));
+        string.Join(" ", s.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(w => w.ToUpperInvariant().IndexOfAny(['A', 'E', 'I', 'O', 'U', 'Y']) < 0 ? w.ToUpperInvariant() : w[0] + w[1..].ToLowerInvariant()));
 }
 
 /// <summary>How the aircraft's callsign is written and spoken.</summary>

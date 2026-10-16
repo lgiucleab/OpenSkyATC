@@ -23,6 +23,10 @@ internal static class Snapshot
         Assert.Fail($"Snapshot '{name}' {(File.Exists(approved) ? "changed" : "is new")}. Review {received} and rename it to {name}.approved.txt.");
     }
 
+    /// <summary>Path of a file relative to the repository root (the folder that holds tests/fixtures).</summary>
+    public static string RepoFile(params string[] parts) =>
+        Path.Combine([Path.GetDirectoryName(Path.GetDirectoryName(FindFixtures()))!, .. parts]);
+
     private static string FindFixtures()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

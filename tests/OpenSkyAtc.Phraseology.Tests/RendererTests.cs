@@ -202,6 +202,17 @@ public class MessageRenderingTests
     }
 
     [Fact]
+    public void ShippedCallsignTable_ParsesAndHasTheDesignDocExamples()
+    {
+        var table = CallsignTable.Load(Snapshot.RepoFile("data", "airline-callsigns.csv"));
+        Assert.True(table.Count > 1000, $"only {table.Count} entries");
+        Assert.Equal("Iberia", table.Telephony("IBE"));
+        Assert.Equal("Vueling", table.Telephony("VLG"));
+        Assert.Equal("Ryanair", table.Telephony("RYR"));
+        Assert.Equal("KLM", table.Telephony("KLM"));
+    }
+
+    [Fact]
     public void CallsignTable_RejectsBadLines()
     {
         Assert.Throws<FormatException>(() => CallsignTable.Parse(["IBERIA"]));
