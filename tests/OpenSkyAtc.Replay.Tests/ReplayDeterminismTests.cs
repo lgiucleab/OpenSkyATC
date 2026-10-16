@@ -1,45 +1,28 @@
 using OpenSkyAtc.Core.Brain;
-using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Recording;
 using OpenSkyAtc.Replay.Tests.Harness;
+using static OpenSkyAtc.Replay.Tests.DepartureScenarioTests;
 
 namespace OpenSkyAtc.Replay.Tests;
 
 public class ReplayDeterminismTests
 {
-    private static readonly FlightPlan Plan = new() { Callsign = "VLG1234", Origin = "LEBL", Destination = "LEMD" };
-
-    private const string Script = """
-        # Synthetic departure: pilot calls at fixed times
-        00:30 RequestClearance
-        00:45 Readback
-        01:10 RequestPushStart
-        01:28 RequestTaxi
-        04:35 ReadyForDeparture
-        """;
-
-    private static IReadOnlyList<string> Replay(int seed, IReadOnlyList<Core.Sim.SimState>? recording = null) =>
-        ReplayRunner.Run(new StubAtcBrain(), recording ?? SyntheticFlight.Departure(), IntentScript.Parse(Script), Plan, seed);
-
     [Fact]
     public void SameSeed_GivesIdenticalTranscript()
     {
-        Assert.Equal(Replay(seed: 42), Replay(seed: 42));
+        Assert.Equal(RunScenario(NormalRequests, seed: 42), RunScenario(NormalRequests, seed: 42));
     }
 
     [Fact]
-    public void DifferentSeed_ChangesWording()
+    public void DifferentSeed_ChangesTheSession()
     {
-        var a = Replay(seed: 1);
-        var b = Replay(seed: 2);
-        Assert.Equal(a.Count, b.Count);
-        Assert.NotEqual(a, b);
+        Assert.NotEqual(RunScenario(NormalRequests, seed: 1), RunScenario(NormalRequests, seed: 2));
     }
 
     [Fact]
     public void RecordingRoundTrip_ReplaysIdentically()
     {
-        var original = SyntheticFlight.Departure();
+        var original = SyntheticDeparture.Build();
         var lines = new[] { RecordingFormat.HeaderLine("Test aircraft", new DateTime(2026, 10, 16, 9, 0, 0, DateTimeKind.Utc)) }
             .Concat(original.Select(RecordingFormat.StateLine))
             .ToArray();
@@ -48,13 +31,11 @@ public class ReplayDeterminismTests
 
         Assert.Equal("Test aircraft", header.Aircraft);
         Assert.Equal(original.Select(RecordingFormat.StateLine), parsed.Select(RecordingFormat.StateLine));
-        Assert.Equal(Replay(42, original), Replay(42, parsed));
-    }
+        Assert.Equal(Run(original), Run(parsed));
 
-    [Fact]
-    public void SyntheticDeparture_MatchesApprovedTranscript()
-    {
-        Fixtures.VerifyTranscript("stub-synthetic-departure-seed42", Replay(seed: 42));
+        static IReadOnlyList<string> Run(IReadOnlyList<Core.Sim.SimState> rec) =>
+            ReplayRunner.Run(new AtcBrain(), rec, IntentScript.Parse(NormalRequests),
+                SyntheticDeparture.Plan, SyntheticDeparture.Origin, SyntheticDeparture.Destination, 7);
     }
 
     [Fact]
@@ -67,7 +48,10 @@ public class ReplayDeterminismTests
         {
             var (_, states) = RecordingFormat.Parse(File.ReadLines(file));
             Assert.True(states.Count > 0, $"{file} has no samples.");
-            Assert.Equal(Replay(7, states), Replay(7, states));
+            Assert.Equal(Run(states), Run(states));
         }
+
+        static IReadOnlyList<string> Run(IReadOnlyList<Core.Sim.SimState> rec) =>
+            ReplayRunner.Run(new AtcBrain(), rec, [], SyntheticDeparture.Plan, SyntheticDeparture.Origin, SyntheticDeparture.Destination, 7);
     }
 }

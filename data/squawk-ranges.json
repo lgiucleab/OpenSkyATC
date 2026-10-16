@@ -1,0 +1,4 @@
+{
+  "_comment": "Per-region squawk ranges for IFR departures. Each entry applies to airports whose ICAO code starts with icaoPrefix; the longest prefix wins. Codes are four octal digits, inclusive. With no matching entry, any valid code except 7500, 7600, 7700, 2000, 1000, 7000 and 0000 is used. Fill in from a source you trust; values here are never invented.",
+  "ranges": []
+}

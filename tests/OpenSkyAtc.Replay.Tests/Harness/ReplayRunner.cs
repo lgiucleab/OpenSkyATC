@@ -1,13 +1,23 @@
 using System.Globalization;
 using OpenSkyAtc.Core.Brain;
+using OpenSkyAtc.Core.Conversation;
 using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Sim;
+using OpenSkyAtc.Phraseology;
 
 namespace OpenSkyAtc.Replay.Tests.Harness;
 
+public sealed record ReplayOptions
+{
+    /// <summary>Simulated pilot: read back every instruction correctly after <see cref="AutoReadbackDelay"/>.</summary>
+    public bool AutoReadback { get; init; } = true;
+
+    public TimeSpan AutoReadbackDelay { get; init; } = TimeSpan.FromSeconds(4);
+}
+
 /// <summary>
 /// Feeds a recording into a brain as fast as possible (no wall-clock waits), applies scripted pilot
-/// intents when their time is reached, and returns the transcript.
+/// intents when their time is reached, and returns the transcript built from the session log.
 /// </summary>
 public static class ReplayRunner
 {
@@ -16,43 +26,58 @@ public static class ReplayRunner
         IReadOnlyList<SimState> recording,
         IReadOnlyList<ScriptedIntent> script,
         FlightPlan plan,
-        int seed)
+        AirportData origin,
+        AirportData destination,
+        int seed,
+        ReplayOptions? options = null)
     {
-        var transcript = new List<string>();
-        brain.Transmission += OnTransmission;
-        try
-        {
-            brain.Start(plan, new AirportData { Icao = plan.Origin }, new AirportData { Icao = plan.Destination }, seed);
+        options ??= new ReplayOptions();
+        brain.Start(plan, origin, destination, seed);
 
-            int nextIntent = 0;
-            foreach (var state in recording)
+        int next = 0;
+        TimeSpan? autoReadbackAt = null;
+        foreach (var state in recording)
+        {
+            // Tick first so the brain's clock is at this sample when the pilot speaks.
+            brain.Tick(state, state.Time);
+
+            while (next < script.Count && script[next].Time <= state.Time)
+                brain.HandlePilotIntent(IntentFactory.Create(script[next++], brain.AvailableIntents));
+
+            if (!options.AutoReadback) continue;
+            bool readbackPending = brain.AvailableIntents.OfType<Readback>().Any();
+            if (!readbackPending) autoReadbackAt = null;
+            else if (autoReadbackAt is null) autoReadbackAt = state.Time + options.AutoReadbackDelay;
+            else if (autoReadbackAt <= state.Time)
             {
-                // Tick first so the brain's clock is at this sample when the intent arrives.
-                brain.Tick(state, state.Time);
-                while (nextIntent < script.Count && script[nextIntent].Time <= state.Time)
-                {
-                    var intent = script[nextIntent++].Intent;
-                    transcript.Add($"[{Format(state.Time)}] PILOT {intent.Kind}");
-                    brain.HandlePilotIntent(intent);
-                }
+                brain.HandlePilotIntent(brain.AvailableIntents.OfType<Readback>().First());
+                autoReadbackAt = null;
             }
         }
-        finally
-        {
-            brain.Transmission -= OnTransmission;
-        }
-        return transcript;
-
-        void OnTransmission(AtcMessage m) =>
-            transcript.Add($"[{Format(m.Time)}] ATC {m.Unit}: {string.Join(" ", m.Parts.Select(Render))}");
+        return Transcript(brain.Session);
     }
 
-    // Step 4 replaces this with the phraseology renderer.
-    private static string Render(AtcMessagePart part) => part switch
+    /// <summary>Pilot calls, ATC transmissions, phase changes and readback verdicts, one line each.</summary>
+    public static IReadOnlyList<string> Transcript(FlightSession session)
     {
-        TextPart t => t.Text,
-        _ => part.ToString(),
-    };
-
-    private static string Format(TimeSpan t) => t.ToString(@"hh\:mm\:ss\.fff", CultureInfo.InvariantCulture);
+        var lines = new List<string>();
+        foreach (var entry in session.Log.Entries)
+        {
+            string t = entry.Time.ToString(@"hh\:mm\:ss\.fff", CultureInfo.InvariantCulture);
+            string? line = entry switch
+            {
+                PilotIntentLogged p => $"PILOT ({DisplayRenderer.Frequency(p.FrequencyKhz)}{(p.Unit is null ? ", no station" : "")}) {IntentFactory.Describe(p.Intent)}",
+                AtcTransmissionLogged a => $"ATC {a.Message.Unit.Callsign}: {DisplayRenderer.Render(a.Message)}",
+                PhaseChanged c => $"PHASE {c.From} -> {c.To} ({c.Reason})",
+                ReadbackChecked { Verdict.IsCorrect: true } r => $"READBACK #{r.ExchangeId} {r.Tag}: correct",
+                ReadbackChecked r => $"READBACK #{r.ExchangeId} {r.Tag}: wrong [{string.Join(",", r.Verdict.Wrong)}] missing [{string.Join(",", r.Verdict.Missing)}]",
+                ReadbackMissed m => $"READBACK #{m.ExchangeId} {m.Tag}: missed",
+                TransmissionDropped d => $"DROPPED {d.Unit.Callsign}: {string.Join(", ", d.Parts.Select(DisplayRenderer.Part))}",
+                RequestRejected r => $"REJECTED {IntentFactory.Describe(r.Intent)}: {r.Reason}",
+                _ => null,
+            };
+            if (line is not null) lines.Add($"[{t}] {line}");
+        }
+        return lines;
+    }
 }

@@ -1,0 +1,22 @@
+[00:00:10.000] PILOT (121.850) RequestClearance
+[00:00:13.500] ATC Testville Delivery: Vueling 1234, cleared to XDST via TEST1A departure, climb 5000 ft, squawk 0443
+[00:00:20.000] PILOT (121.850) Readback Destination=XDST Route=TEST1A InitialClimb=5000FT Squawk=0443
+[00:00:20.000] READBACK #1 ifr-clearance: correct
+[00:00:20.250] PHASE Preflight -> Cleared (clearance read back correctly)
+[00:00:22.250] ATC Testville Delivery: Vueling 1234, readback correct, when ready for push and start contact Testville Ground 121.700
+[00:00:26.000] PILOT (121.850) Readback Frequency=121700
+[00:00:26.000] READBACK #2 contact-ground: correct
+[00:00:45.000] PILOT (121.700) RequestPushStart
+[00:00:47.750] ATC Testville Ground: Vueling 1234, push and start approved
+[00:00:48.000] PHASE Cleared -> Pushback (push and start approved)
+[00:01:40.000] PILOT (121.700) RequestTaxi
+[00:01:40.000] PHASE Pushback -> TaxiOut (taxi requested)
+[00:01:42.750] ATC Testville Ground: Vueling 1234, taxi to holding point A1 runway 36
+[00:01:50.000] PILOT (121.700) Readback HoldingPoint=A1 Runway=36
+[00:01:50.000] READBACK #4 taxi: correct
+[00:05:00.000] ATC Testville Ground: Vueling 1234, contact Testville Tower 118.100
+[00:05:02.000] PILOT (121.700) Readback Frequency=118200
+[00:05:02.000] READBACK #5 contact-tower: wrong [Frequency] missing []
+[00:05:04.000] ATC Testville Ground: Vueling 1234, negative, contact Testville Tower 118.100
+[00:05:08.000] PILOT (121.700) Readback Frequency=118100
+[00:05:08.000] READBACK #5 contact-tower: correct

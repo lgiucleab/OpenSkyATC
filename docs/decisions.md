@@ -55,3 +55,35 @@ Log of decisions made while building. Newest last.
 - **Teleport and slew:** a jump over 2 nm in one tick, or the end of slew, raises `Teleported`; no other events fire until `PositionSettled` 10 s later, then every detector restarts from a fresh baseline. Slew counts as a teleport because slewed movement can be under 2 nm per tick.
 - **Naming:** the design doc's `EventBus` is `EventEngine` (it derives events rather than routing them). `DistanceTo(point) < d` is `DistanceCrossed` with an `Inbound` flag.
 - **Clearance and FlightSession** expose public getters and internal setters: only Core (the brain) writes them.
+
+## 2026-10-16 - Answers before step 3
+
+1. **Departure runway before step 7:** use the flight plan's runway hint if it exists at the airport, otherwise the runway end with the highest headwind (doc formula). Tailwind/SOP/crosswind rules come in step 7.
+2. **Taxi before step 8:** the doc's bad-data fallback ("taxi to holding point runway 24L", no route), behind an `ITaxiPlanner` interface. Holding points come from airport data (fixtures now, taxi graph in step 8).
+3. **Message parts in step 3:** typed parts with plain display text; step 4 adds speech text, number rules and variety.
+4. **ATIS deferred:** the broadcast and the "confirm information" check wait for the dewpoint/cloud decision. `RequestClearance` carries an optional ATIS letter that is not checked yet.
+5. **Missing units:** no DEL -> GND gives the clearance; no GND -> TWR. No TWR -> uncontrolled (doc).
+6. **DEL -> GND handoff:** after a correct clearance readback: "readback correct, when ready for push and start contact Ground 121.700"; the pilot reads back the frequency.
+7. **Line-up flow:** seeded choice: about 30 % "line up and wait" then the takeoff clearance 20-60 s after the line-up readback; otherwise a direct takeoff clearance. The split is a setting.
+8. **Push and start:** no "facing ..." until stand geometry exists (step 8).
+9. **No-push stands:** `RequestTaxi` is accepted straight from the Cleared phase.
+10. **Squawk fallback:** with no range for the region, any valid octal code except the doc's reserved codes; per-region ranges keyed by ICAO prefix in `data/squawk-ranges.json`.
+11. **Transmit radio:** `SimState` records COM1/COM2 transmit flags (`COM TRANSMIT`); ATC answers on the radio the pilot transmits on.
+
+## 2026-10-16 - Step 3
+
+- **Interfaces beyond the design doc:** `IPhase` also has `Unit(ctx)` and `AvailableIntents(ctx)`, and `OnPilotIntent` may return `PhaseResult.Unhandled` so the brain answers "unable, contact [unit]" (wrong unit) or "say again" (right unit, wrong request). `PhaseContext` adds the tick's new events, the conversation manager, plan, airports, options, the active-clock `Now` and the called unit. `PhaseResult` can redispatch the intent to the next phase (a check-in that starts it).
+- **Readback corrections:** all wrong items are corrected in one transmission ("negative, squawk 4521"); only when nothing is wrong are missing items requested ("read back the initial climb"). The exchange then expects only those items.
+- **No readback:** repeated once after 10 s, marked missed 10 s later (logged for the debrief) and never repeated again. A late readback is still accepted so the flight can continue. Further escalation is the conformance monitor (step 5).
+- **Wilco** on an instruction that needs a readback counts as a readback with every item missing.
+- **One open exchange per unit:** a request while that unit has an exchange queued or awaiting readback gets "stand by" and is handled when the exchange closes.
+- **Drop rule:** a queued transmission is dropped (and logged) when neither COM radio is tuned to the unit at send time.
+- **Taxi-out exit** reads the doc's numbers directly (within 150 m of the holding point and below 5 kt) instead of a distance event, because the crossing band would not arm when taxi starts close to the holding point.
+- **Holding point without data:** the runway end position is used as the taxi target until step 8.
+- **Reject takeoff:** added `RejectTakeoff` intent (it is in the phase table but not the intent catalog). Tower answers "roger", cancels the takeoff clearance and the flight returns to Holding.
+- **Wind in clearances:** magnetic, using the variation from the aircraft's true and magnetic heading; rounded to 10 degrees (north is 360); under 1 kt is "wind calm".
+- **Initial climb:** "FL070 above a high transition altitude" is read as: if the airport's transition altitude is known and is 5,000 ft or lower, clear FL070; otherwise 5,000 ft.
+- **Reserved squawks:** besides the doc's 7500, 7600, 7700, 2000 and 1000, the allocator never assigns 7000 (European VFR) or 0000.
+- **Departure phase (8)** is a placeholder that accepts the check-in; step 6 builds it.
+- **Sessions that start in the air or on the runway** always start in Preflight for now; phase inference is step 6.
+- **Simulated pilot (first part):** the replay runner can read back every instruction correctly after 4 s (`ReplayOptions.AutoReadback`); scripts override single items (`Readback squawk=1234 -initialclimb`).

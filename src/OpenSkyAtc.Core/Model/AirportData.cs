@@ -39,16 +39,27 @@ public sealed record Runway(RunwayEnd First, RunwayEnd Second, double WidthM)
 /// <summary>A runway hold-short point from the taxi graph. The line runs across the taxiway at this point.</summary>
 public sealed record HoldShortPoint(GeoPoint Position, string RunwayDesignator);
 
+/// <summary>A radio frequency published for the airport. <paramref name="Callsign"/> overrides the generated one ("Barcelona Ground").</summary>
+public sealed record AirportFrequency(ControllerRole Role, int FrequencyKhz, string? Callsign = null);
+
+/// <summary>A named runway holding point. <paramref name="Name"/> may be null when the data has no name.</summary>
+public sealed record HoldingPoint(string? Name, GeoPoint Position, string RunwayDesignator);
+
 /// <summary>
 /// Airport data from SimConnect facilities (live) or JSON fixtures (tests).
-/// Frequencies, parking and the taxi graph are added in the steps that need them.
+/// Parking and the taxi graph are added in the steps that need them.
 /// </summary>
 public sealed record AirportData
 {
     public required string Icao { get; init; }
+
+    /// <summary>Name used in controller callsigns, e.g. "Barcelona". Falls back to the ICAO code.</summary>
+    public string? Name { get; init; }
     public double? ElevationFt { get; init; }
     public IReadOnlyList<Runway> Runways { get; init; } = [];
     public IReadOnlyList<HoldShortPoint> HoldShorts { get; init; } = [];
+    public IReadOnlyList<HoldingPoint> HoldingPoints { get; init; } = [];
+    public IReadOnlyList<AirportFrequency> Frequencies { get; init; } = [];
 
     /// <summary>From the configurable transition data file; null when unknown. Never invented.</summary>
     public int? TransitionAltitudeFt { get; init; }

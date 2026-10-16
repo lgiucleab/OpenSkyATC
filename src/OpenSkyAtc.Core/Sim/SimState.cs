@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace OpenSkyAtc.Core.Sim;
 
 /// <summary>Transponder mode, numbered as the SimConnect TRANSPONDER STATE enum.</summary>
@@ -64,6 +66,10 @@ public sealed record SimState
     public int Com2ActiveKhz { get; init; }
     public int Com2StandbyKhz { get; init; }
 
+    /// <summary>Audio panel transmit selection. When neither is set, COM1 is assumed.</summary>
+    public bool Com1Transmit { get; init; }
+    public bool Com2Transmit { get; init; }
+
     public int TransponderCode { get; init; }
     public TransponderMode TransponderMode { get; init; }
 
@@ -78,6 +84,15 @@ public sealed record SimState
     public double TemperatureC { get; init; }
     public double SeaLevelPressureHpa { get; init; }
 
+    [JsonIgnore]
     public bool IsPaused => Pause != PauseFlags.None;
+    [JsonIgnore]
     public bool AnyEngineRunning => EnginesRunning.Any(r => r);
+
+    /// <summary>The active frequency of the radio the pilot transmits on.</summary>
+    [JsonIgnore]
+    public int TransmitFrequencyKhz => Com2Transmit && !Com1Transmit ? Com2ActiveKhz : Com1ActiveKhz;
+
+    /// <summary>True when either COM radio's active frequency is <paramref name="khz"/>.</summary>
+    public bool IsTunedTo(int khz) => Com1ActiveKhz == khz || Com2ActiveKhz == khz;
 }

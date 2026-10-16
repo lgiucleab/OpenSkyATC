@@ -1,3 +1,5 @@
+using OpenSkyAtc.Core.Conversation;
+using OpenSkyAtc.Core.Messages;
 using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Sim;
 

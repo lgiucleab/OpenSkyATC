@@ -26,7 +26,7 @@ Record a flight (the sim must be running or the recorder waits for it):
 dotnet run --project src/OpenSkyAtc.Recorder -- --out flight.jsonl
 ```
 
-Replay transcripts are approval-tested: `tests/fixtures/transcripts/<name>.approved.txt`. On a change the test writes `<name>.received.txt` (git-ignored); review it and rename to `.approved.txt` to accept. Real recordings go in `tests/fixtures/recordings/*.jsonl` and are replayed automatically.
+Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run the synthetic departure with an intent script; the runner can auto-read back every instruction. Replay transcripts are approval-tested: `tests/fixtures/transcripts/<name>.approved.txt`. On a change the test writes `<name>.received.txt` (git-ignored); review it and rename to `.approved.txt` to accept. Real recordings go in `tests/fixtures/recordings/*.jsonl` and are replayed automatically.
 
 ## Layout
 
@@ -47,6 +47,8 @@ Replay transcripts are approval-tested: `tests/fixtures/transcripts/<name>.appro
 - SimConnect DLLs are never committed or shipped (GPL linking exception, `LICENSE-EXCEPTION.md`). They are referenced with `Private=false` and loaded at runtime by `SimConnectLibrary.EnsureLoaded`, which must run before any SimConnect type is touched.
 - Projects that touch SimConnect target `net10.0-windows` with `PlatformTarget` x64.
 - The brain's randomness goes through `IRandom` / `SeededRandom` (SplitMix64), never `System.Random`.
+- Brain flow: `AtcBrain` ticks the `EventEngine`, the current `IPhase` and the `ConversationManager`, then releases due transmissions from the `TransmissionQueue`. Phases return transitions; the brain applies and logs them. Phases send ATC messages only through `ctx.Conversation`, with a `ReadbackExpectation` when a readback is required, and update the `Clearance` in the `onSent` callback.
+- Display text comes from `OpenSkyAtc.Phraseology.DisplayRenderer`; Core never builds message strings.
 - Phases never read raw `SimState` numbers; they react to `EventEngine` events. Thresholds live in `EventEngineOptions`.
 - Recordings: JSON-lines, header line then one `SimState` per line (`RecordingFormat`). Core converts lines only; callers do file I/O.
 - Shared build settings live in `Directory.Build.props`: nullable on, implicit usings, warnings are errors.

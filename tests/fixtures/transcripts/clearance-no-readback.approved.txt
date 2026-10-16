@@ -1,0 +1,8 @@
+[00:00:10.000] PILOT (121.850) RequestClearance
+[00:00:13.500] ATC Testville Delivery: Vueling 1234, cleared to XDST via TEST1A departure, climb 5000 ft, squawk 0443
+[00:00:23.500] ATC Testville Delivery: Vueling 1234, cleared to XDST via TEST1A departure, climb 5000 ft, squawk 0443
+[00:00:33.500] READBACK #1 ifr-clearance: missed
+[00:00:38.000] PILOT (121.850) Readback Destination=XDST Route=TEST1A InitialClimb=5000FT Squawk=0443
+[00:00:38.000] READBACK #1 ifr-clearance: correct
+[00:00:38.250] PHASE Preflight -> Cleared (clearance read back correctly)
+[00:00:40.250] DROPPED Testville Delivery: readback correct, when ready for push and start contact Testville Ground 121.700

@@ -1,5 +1,6 @@
-using OpenSkyAtc.Core.Brain;
+using OpenSkyAtc.Core.Conversation;
 using OpenSkyAtc.Core.Events;
+using OpenSkyAtc.Core.Messages;
 
 namespace OpenSkyAtc.Core.Model;
 
@@ -24,7 +25,7 @@ public enum FlightPhase
 }
 
 /// <summary>Everything the brain tracks about the flight. Read-only outside Core.</summary>
-/// <remarks>Step 3 adds the exchange in progress and pending ATC actions; step 5 adds warnings issued.</remarks>
+/// <remarks>Exchanges and pending transmissions live in the conversation manager and queue; step 5 adds warnings issued.</remarks>
 public sealed class FlightSession(int seed)
 {
     public int Seed { get; } = seed;
@@ -41,7 +42,19 @@ public abstract record LogEntry(TimeSpan Time);
 
 public sealed record SimEventLogged(SimEvent Event) : LogEntry(Event.Time);
 public sealed record AtcTransmissionLogged(AtcMessage Message) : LogEntry(Message.Time);
-public sealed record PilotIntentLogged(TimeSpan Time, PilotIntent Intent) : LogEntry(Time);
+/// <param name="FrequencyKhz">Frequency the pilot transmitted on.</param>
+/// <param name="Unit">Unit on that frequency; null when nobody is there (the call goes unanswered).</param>
+public sealed record PilotIntentLogged(TimeSpan Time, PilotIntent Intent, int FrequencyKhz, ControllerUnit? Unit) : LogEntry(Time);
+
+public sealed record PhaseChanged(TimeSpan Time, FlightPhase From, FlightPhase To, string Reason) : LogEntry(Time);
+public sealed record ReadbackChecked(TimeSpan Time, int ExchangeId, string? Tag, ReadbackVerdict Verdict) : LogEntry(Time);
+public sealed record ReadbackMissed(TimeSpan Time, int ExchangeId, string? Tag) : LogEntry(Time);
+
+/// <summary>A queued transmission was dropped because the aircraft left the frequency first.</summary>
+public sealed record TransmissionDropped(TimeSpan Time, ControllerUnit Unit, IReadOnlyList<AtcMessagePart> Parts) : LogEntry(Time);
+
+/// <summary>A pilot request the current phase does not handle, with how ATC answered.</summary>
+public sealed record RequestRejected(TimeSpan Time, PilotIntent Intent, string Reason) : LogEntry(Time);
 
 /// <summary>Append-only log of the session. It is the debugging tool and the replay record.</summary>
 public sealed class EventLog

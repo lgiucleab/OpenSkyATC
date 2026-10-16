@@ -14,7 +14,7 @@ public struct RawSimData
     public double Latitude, Longitude, AltitudeMsl, AltitudeAgl, IndicatedAltitude;
     public double IndicatedAirspeed, GroundSpeed, HeadingMagnetic, HeadingTrue, VerticalSpeed;
     public double OnGround, ParkingBrake, NumberOfEngines, Engine1, Engine2, Engine3, Engine4;
-    public double Com1Active, Com1Standby, Com2Active, Com2Standby, TransponderCode, TransponderState;
+    public double Com1Active, Com1Standby, Com2Active, Com2Standby, Com1Transmit, Com2Transmit, TransponderCode, TransponderState;
     public double GearHandle, FlapsHandleIndex;
     public double WindDirection, WindVelocity, Visibility, Temperature, SeaLevelPressure;
     public double SlewActive, ZuluTimeSeconds, ZuluDayOfYear, ZuluYear;
@@ -43,6 +43,8 @@ public struct RawSimData
         ("COM STANDBY FREQUENCY:1", "KHz"),
         ("COM ACTIVE FREQUENCY:2", "KHz"),
         ("COM STANDBY FREQUENCY:2", "KHz"),
+        ("COM TRANSMIT:1", "bool"),
+        ("COM TRANSMIT:2", "bool"),
         ("TRANSPONDER CODE:1", "Bco16"),
         ("TRANSPONDER STATE:1", "Enum"),
         ("GEAR HANDLE POSITION", "percent over 100"),
@@ -87,6 +89,8 @@ public struct RawSimData
             Com1StandbyKhz = (int)Math.Round(Com1Standby),
             Com2ActiveKhz = (int)Math.Round(Com2Active),
             Com2StandbyKhz = (int)Math.Round(Com2Standby),
+            Com1Transmit = Com1Transmit != 0,
+            Com2Transmit = Com2Transmit != 0,
             TransponderCode = DecodeBco16(TransponderCode),
             TransponderMode = Enum.IsDefined((TransponderMode)(int)TransponderState) ? (TransponderMode)(int)TransponderState : TransponderMode.Off,
             GearHandle = GearHandle,
