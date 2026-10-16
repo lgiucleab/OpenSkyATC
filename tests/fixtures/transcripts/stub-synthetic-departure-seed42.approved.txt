@@ -8,5 +8,5 @@
 [00:01:28.000] ATC STUB: RequestTaxi, roger
 [00:04:35.000] PILOT ReadyForDeparture
 [00:04:35.000] ATC STUB: ReadyForDeparture, copied
-[00:04:54.750] ATC STUB: airborne, roger
-[00:05:24.500] ATC STUB: COM1 now 124.700, copied
+[00:04:57.750] ATC STUB: airborne, roger
+[00:05:25.500] ATC STUB: COM1 now 124.700, copied

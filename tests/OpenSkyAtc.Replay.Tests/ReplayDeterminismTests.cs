@@ -1,4 +1,5 @@
 using OpenSkyAtc.Core.Brain;
+using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Recording;
 using OpenSkyAtc.Replay.Tests.Harness;
 
@@ -6,7 +7,7 @@ namespace OpenSkyAtc.Replay.Tests;
 
 public class ReplayDeterminismTests
 {
-    private static readonly FlightPlan Plan = new("VLG1234", "LEBL", "LEMD");
+    private static readonly FlightPlan Plan = new() { Callsign = "VLG1234", Origin = "LEBL", Destination = "LEMD" };
 
     private const string Script = """
         # Synthetic departure: pilot calls at fixed times

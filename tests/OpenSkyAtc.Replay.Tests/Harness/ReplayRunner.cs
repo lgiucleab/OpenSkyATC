@@ -1,5 +1,6 @@
 using System.Globalization;
 using OpenSkyAtc.Core.Brain;
+using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Sim;
 
 namespace OpenSkyAtc.Replay.Tests.Harness;
@@ -21,7 +22,7 @@ public static class ReplayRunner
         brain.Transmission += OnTransmission;
         try
         {
-            brain.Start(plan, new AirportData(plan.Origin), new AirportData(plan.Destination), seed);
+            brain.Start(plan, new AirportData { Icao = plan.Origin }, new AirportData { Icao = plan.Destination }, seed);
 
             int nextIntent = 0;
             foreach (var state in recording)

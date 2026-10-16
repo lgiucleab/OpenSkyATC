@@ -47,6 +47,7 @@ Replay transcripts are approval-tested: `tests/fixtures/transcripts/<name>.appro
 - SimConnect DLLs are never committed or shipped (GPL linking exception, `LICENSE-EXCEPTION.md`). They are referenced with `Private=false` and loaded at runtime by `SimConnectLibrary.EnsureLoaded`, which must run before any SimConnect type is touched.
 - Projects that touch SimConnect target `net10.0-windows` with `PlatformTarget` x64.
 - The brain's randomness goes through `IRandom` / `SeededRandom` (SplitMix64), never `System.Random`.
+- Phases never read raw `SimState` numbers; they react to `EventEngine` events. Thresholds live in `EventEngineOptions`.
 - Recordings: JSON-lines, header line then one `SimState` per line (`RecordingFormat`). Core converts lines only; callers do file I/O.
 - Shared build settings live in `Directory.Build.props`: nullable on, implicit usings, warnings are errors.
 - Every dependency, model, voice or dataset must be GPL-3.0-compatible and listed in `THIRD_PARTY_NOTICES.md` before it is added.

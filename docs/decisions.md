@@ -37,3 +37,21 @@ Log of decisions made while building. Newest last.
 - **Replay speed:** the harness feeds samples as fast as possible with no wall-clock waits; simulated time comes only from the recording.
 - **Stub brain:** `StubAtcBrain` and the minimal `FlightPlan`/`AirportData`/`PilotIntent`/`AtcMessage`/`FlightSession` in `Brain/Placeholders.cs` exist only so the harness has something to drive. Steps 2-4 replace them.
 - **Approval files:** a small built-in helper (`Fixtures.VerifyTranscript`) instead of a library such as Verify, to avoid a dependency.
+
+## 2026-10-16 - Step 2
+
+- **Hold times and hysteresis not given by the design doc** were picked as starting values. All of them live in `EventEngineOptions` (doc values are marked) and are meant to be tuned with real recordings:
+  - Taxi started re-arms after ground speed < 1 kt for 5 s. Touchdown re-arms after 5 s airborne (mirrors Airborne).
+  - Runway polygon: 5 m exit margin. Hold-short line: +/-2 m either side, 30 m half-width.
+  - Takeoff roll fires at once above 40 kt on a runway and re-arms after < 30 kt for 5 s, so a landing roll never fires it.
+  - Altitude crossings use a 50 ft band, distances 0.1 nm. Level-off re-arms after |VS| > 500 fpm for 5 s.
+  - Frequency changes need 1 s stable (so spinning the knob reports only the final value).
+  - Established: +/-1 degree, closing, held 2 s; re-arms after > 2 degrees for 5 s.
+- **Baseline rule:** the first value any detector sees is its baseline and never fires (engines already running, starting in the air, starting on a runway).
+- **Crossing vs state registrations:** altitude and distance registrations fire only on a crossing; an Established registration is a state and fires if the aircraft is already established when registered.
+- **Runway and hold-short events are ground-only.** Overflights do not fire them; `EventEngine.CurrentRunway` tells which runway the aircraft is on.
+- **Engine events fire per engine** ("any engine running flag changes") and carry the running count, so phases can tell first start from last stop.
+- **Pause:** hold timers run on an active clock that stops while paused; changes during a pause are not events. `SimPaused`/`SimResumed` are raised for the queue.
+- **Teleport and slew:** a jump over 2 nm in one tick, or the end of slew, raises `Teleported`; no other events fire until `PositionSettled` 10 s later, then every detector restarts from a fresh baseline. Slew counts as a teleport because slewed movement can be under 2 nm per tick.
+- **Naming:** the design doc's `EventBus` is `EventEngine` (it derives events rather than routing them). `DistanceTo(point) < d` is `DistanceCrossed` with an `Inbound` flag.
+- **Clearance and FlightSession** expose public getters and internal setters: only Core (the brain) writes them.

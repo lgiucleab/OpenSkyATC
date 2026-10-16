@@ -1,3 +1,4 @@
+using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Sim;
 
 namespace OpenSkyAtc.Core.Brain;

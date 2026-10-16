@@ -1,12 +1,14 @@
+using OpenSkyAtc.Core.Events;
+using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Random;
 using OpenSkyAtc.Core.Sim;
 
 namespace OpenSkyAtc.Core.Brain;
 
 /// <summary>
-/// Throwaway brain for the step 1 replay harness. It reacts to a few raw state changes and to
-/// pilot intents, picking wordings with the seeded RNG, so determinism can be tested before the
-/// real brain exists. Replaced by the real brain in step 3.
+/// Throwaway brain for the replay harness until the real brain exists (step 3). It runs the event
+/// engine, logs everything, and answers a few events and every pilot intent with a wording picked by
+/// the seeded RNG, so determinism can be tested end to end.
 /// </summary>
 public sealed class StubAtcBrain : IAtcBrain
 {
@@ -14,7 +16,7 @@ public sealed class StubAtcBrain : IAtcBrain
 
     private FlightPlan? _plan;
     private IRandom _rng = new SeededRandom(0);
-    private SimState? _last;
+    private EventEngine _events = new();
 
     public FlightSession Session { get; private set; } = new(0);
 
@@ -27,26 +29,39 @@ public sealed class StubAtcBrain : IAtcBrain
     {
         _plan = plan;
         _rng = new SeededRandom(seed);
-        _last = null;
+        _events = new EventEngine();
+        _events.SetAirports(origin, destination);
         Session = new FlightSession(seed);
     }
 
     public void Tick(SimState state, TimeSpan simTime)
     {
         Session.SimTime = simTime;
-        if (_last is not null)
+        foreach (var e in _events.Process(state))
         {
-            if (_last.OnGround && !state.OnGround) Say($"airborne, {Pick()}");
-            if (!_last.OnGround && state.OnGround) Say($"touchdown, {Pick()}");
-            if (_last.Com1ActiveKhz != state.Com1ActiveKhz) Say($"COM1 now {state.Com1ActiveKhz / 1000.0:0.000}, {Pick()}");
+            Session.Log.Add(new SimEventLogged(e));
+            switch (e)
+            {
+                case Airborne: Say($"airborne, {Pick()}"); break;
+                case Touchdown: Say($"touchdown, {Pick()}"); break;
+                case FrequencyChanged { Com: 1 } f: Say($"COM1 now {f.FrequencyKhz / 1000.0:0.000}, {Pick()}"); break;
+            }
         }
-        _last = state;
     }
 
-    public void HandlePilotIntent(PilotIntent intent) => Say($"{intent.Kind}, {Pick()}");
+    public void HandlePilotIntent(PilotIntent intent)
+    {
+        Session.LastPilotTransmission = Session.SimTime;
+        Session.Log.Add(new PilotIntentLogged(Session.SimTime, intent));
+        Say($"{intent.Kind}, {Pick()}");
+    }
 
     private string Pick() => Acknowledgements[_rng.Next(0, Acknowledgements.Length)];
 
-    private void Say(string text) =>
-        Transmission?.Invoke(new AtcMessage(Session.SimTime, "STUB", _plan?.Callsign ?? "", [new TextPart(text)]));
+    private void Say(string text)
+    {
+        var message = new AtcMessage(Session.SimTime, "STUB", _plan?.Callsign ?? "", [new TextPart(text)]);
+        Session.Log.Add(new AtcTransmissionLogged(message));
+        Transmission?.Invoke(message);
+    }
 }
