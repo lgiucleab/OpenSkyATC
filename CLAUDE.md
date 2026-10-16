@@ -18,7 +18,7 @@ dotnet test             # all test projects
 
 SDK is pinned in `global.json` (10.0.301, rollForward latestFeature).
 
-`OpenSkyAtc.SimConnect`, the recorder and the app need the MSFS 2024 SDK: the build reads the managed SimConnect DLL from `$(MSFS2024_SDK)SimConnect SDK\lib\managed` and fails with a clear error if it is missing. A shell opened before the SDK was installed will not have the variable yet.
+`OpenSkyAtc.SimConnect`, the recorder and the app need the MSFS 2024 SDK. The build and `SimConnectLibrary` look for it in the shell's `MSFS2024_SDK`, then the machine/user value the SDK installer wrote (so a shell opened before the install still works), then `C:\MSFS 2024 SDK\`; the build fails with a clear error if the managed SimConnect DLL is not there.
 
 Record a flight (the sim must be running or the recorder waits for it):
 

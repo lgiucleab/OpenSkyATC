@@ -20,11 +20,16 @@ public static class SimConnectLibrary
 
     /// <summary>
     /// Locates both DLLs. <paramref name="directory"/> may be the SDK root, its "SimConnect SDK\lib"
-    /// folder, or any folder holding both files. When null, the MSFS2024_SDK environment variable is used.
+    /// folder, or any folder holding both files. When null, the SDK folders from <see cref="SdkCandidates"/> are tried.
     /// </summary>
     public static (string Managed, string Native)? Locate(string? directory = null)
     {
-        directory ??= Environment.GetEnvironmentVariable(SdkEnvironmentVariable);
+        if (directory is null)
+        {
+            foreach (var candidate in SdkCandidates())
+                if (Locate(candidate) is { } hit) return hit;
+            return null;
+        }
         if (string.IsNullOrWhiteSpace(directory)) return null;
 
         string[] roots =
@@ -43,6 +48,22 @@ public static class SimConnectLibrary
         }
         return null;
     }
+
+    /// <summary>
+    /// The MSFS2024_SDK variable of this process, then the machine and user values the SDK installer wrote (a process
+    /// started before the install does not see them), then the installer's default folder.
+    /// </summary>
+    public static IEnumerable<string> SdkCandidates() =>
+        new[]
+        {
+            Environment.GetEnvironmentVariable(SdkEnvironmentVariable),
+            Environment.GetEnvironmentVariable(SdkEnvironmentVariable, EnvironmentVariableTarget.Machine),
+            Environment.GetEnvironmentVariable(SdkEnvironmentVariable, EnvironmentVariableTarget.User),
+            @"C:\MSFS 2024 SDK",
+        }
+        .Where(d => !string.IsNullOrWhiteSpace(d))
+        .Select(d => d!)
+        .Distinct(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Loads the DLLs. Throws <see cref="FileNotFoundException"/> with instructions when they cannot be found.</summary>
     public static void EnsureLoaded(string? directory = null)

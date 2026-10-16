@@ -1,6 +1,6 @@
 # Step 9 integration checklist (live SimConnect bridge)
 
-Run from the repository root in a terminal where `MSFS2024_SDK` is set. Start a flight in MSFS 2024, cold and dark or ready at a gate, at the origin you pass with `--from`.
+Run from the repository root. Start a flight in MSFS 2024, cold and dark or ready at a gate, at the origin you pass with `--from`.
 
 ```
 dotnet run --project src/OpenSkyAtc.Recorder -- live --from LEMD --to LEBL --callsign IBE1234 --type A320 --cruise 330 --ptt "VK_LCONTROL+T"
