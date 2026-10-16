@@ -483,3 +483,7 @@ $RECYCLE.BIN/
 
 # Unapproved replay transcripts
 *.received.txt
+
+# Facility dumps exported from the sim (not ours to redistribute)
+*.facility.json
+center-survey-*.csv

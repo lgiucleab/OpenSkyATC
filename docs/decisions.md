@@ -176,3 +176,15 @@ Owner's choices: ICAO wording plus European variants, destination spoken by name
 - **Localiser capture:** the established event clears the assigned heading silently (the intercept heading is no longer held).
 - **STAR hook:** when the plan's STAR is in the destination's STAR list (from sim data, step 9), Approach clears "cleared ILS approach runway 24R via NAPSI1A arrival" with the descent, and no vectors. The "via ... arrival" wording is not from a checked source.
 - **SID hook:** the initial climb is the SID's top altitude when the origin's SID data has it (flight level at or above the transition altitude).
+
+## 2026-10-16 - Live sim findings (facility exporter)
+
+Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `survey-center PREFIX`):
+- **CENTER frequencies are almost US-only in the sim's data:** 1 of 354 Spanish airports, 0/150 French, 0/150 German, 2/150 UK, but 52/150 US airports list one. With decision A (step 6), European flights would almost never get CTR sectors. Needs an owner decision.
+- **Transition altitude is in the facility data** (LEMD: 3,962 m = 13,000 ft); the 10,000 ft placeholder can be replaced from it.
+- **Frequency names** are place names ("MADRID", "BARAJAS"); several frequencies per role (LEMD: 10 approach, 7 tower, 9 ground).
+- **Taxi network:** taxiways are path type 4 (PATH), not 1 (TAXI); type 7 (road) and 6 (vehicle) are service roads. 12 % of LEMD taxiway paths are unnamed. Hold-shorts are types 5/6 (not drawn variants).
+- **Procedures:** SIDs, STARs and approaches with FAF altitude and missed-approach altitude are available.
+- **City** comes back as a localisation key ("TT:AIRPORTLR.LEMD.city"), not a name.
+- **Pause flag:** the sim reported "sim only" pause while parked with the app out of focus; to be checked with the sim focused.
+- **Data licence:** facility data comes from the sim's navigation and scenery data, which the project does not own. Exported dumps are not committed until the owner decides how fixtures are handled.

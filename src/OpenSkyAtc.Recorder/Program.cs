@@ -14,6 +14,8 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        if (args.Length > 0 && args[0] is "export" or "survey-center") return Facilities(args);
+
         string? output = null;
         string? simConnectDir = null;
         for (int i = 0; i < args.Length; i++)
@@ -43,6 +45,44 @@ internal static class Program
         }
 
         return Record(output);
+    }
+
+    /// <summary>
+    /// "export ICAO [--out file]" writes the airport's facility data as JSON;
+    /// "survey-center PREFIX [--max N] [--out file]" counts CENTER frequencies at airports whose ICAO starts with PREFIX.
+    /// </summary>
+    private static int Facilities(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: OpenSkyAtc.Recorder export ICAO [--out file] | survey-center PREFIX [--max N] [--out file]");
+            return 2;
+        }
+        string? output = null;
+        int max = 500;
+        for (int i = 2; i < args.Length; i++)
+        {
+            if (args[i] == "--out" && i + 1 < args.Length) output = args[++i];
+            else if (args[i] == "--max" && i + 1 < args.Length) max = int.Parse(args[++i]);
+        }
+        try
+        {
+            SimConnectLibrary.EnsureLoaded();
+        }
+        catch (FileNotFoundException e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return 1;
+        }
+        try
+        {
+            return args[0] == "export" ? FacilityCommands.Export(args[1], output) : FacilityCommands.SurveyCenter(args[1], max, output);
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            Console.Error.WriteLine("Could not connect to MSFS 2024. Is the sim running?");
+            return 1;
+        }
     }
 
     // Kept separate from Main so no SimConnect type is touched before the DLLs are loaded.

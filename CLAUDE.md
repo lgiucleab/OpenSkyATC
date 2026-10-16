@@ -26,6 +26,15 @@ Record a flight (the sim must be running or the recorder waits for it):
 dotnet run --project src/OpenSkyAtc.Recorder -- --out flight.jsonl
 ```
 
+Export an airport's facility data from the running sim, or survey CENTER frequencies in a region:
+
+```
+dotnet run --project src/OpenSkyAtc.Recorder -- export LEMD --out LEMD.facility.json
+dotnet run --project src/OpenSkyAtc.Recorder -- survey-center LE --max 400
+```
+
+Facility dumps (`*.facility.json`) are git-ignored: they are the sim's data, not ours to publish.
+
 Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run the synthetic departure with an intent script; the runner can auto-read back every instruction. Replay transcripts are approval-tested: `tests/fixtures/transcripts/<name>.approved.txt`. On a change the test writes `<name>.received.txt` (git-ignored); review it and rename to `.approved.txt` to accept. Real recordings go in `tests/fixtures/recordings/*.jsonl` and are replayed automatically.
 
 ## Layout
