@@ -44,6 +44,9 @@ public sealed record ConformanceOptions
     public double AssignedSpeedToleranceKt { get; init; } = 15;
     public TimeSpan SpeedGrace { get; init; } = TimeSpan.FromSeconds(20);
 
+    /// <summary>An assigned speed is not checked for this long after it is given (time to slow down).</summary>
+    public TimeSpan AssignedSpeedSuppression { get; init; } = TimeSpan.FromSeconds(60);
+
     public TimeSpan SquawkGrace { get; init; } = TimeSpan.FromSeconds(30);
 
     public TimeSpan HandoffGrace { get; init; } = TimeSpan.FromSeconds(45);

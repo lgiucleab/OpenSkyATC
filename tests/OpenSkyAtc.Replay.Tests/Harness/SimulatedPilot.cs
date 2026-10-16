@@ -19,6 +19,12 @@ public sealed record SimulatedPilotOptions
     public TimeSpan TuneDelay { get; init; } = TimeSpan.FromSeconds(3);
     public TimeSpan CallDelay { get; init; } = TimeSpan.FromSeconds(3);
     public TimeSpan MaxDuration { get; init; } = TimeSpan.FromHours(3);
+
+    /// <summary>The plan to fly; defaults to <see cref="SyntheticRoute.Plan"/> (straight in).</summary>
+    public FlightPlan? Plan { get; init; }
+
+    /// <summary>The destination; defaults to <see cref="SyntheticRoute.Destination"/>.</summary>
+    public AirportData? Destination { get; init; }
     public PhraseologyOptions? Phraseology { get; init; }
 }
 
@@ -59,7 +65,7 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
     public IReadOnlyList<string> Fly(int seed, AtcBrainOptions? brainOptions = null)
     {
         _brain = new AtcBrain((brainOptions ?? new AtcBrainOptions()) with { CenterFrequencies = SyntheticRoute.Centers });
-        _brain.Start(SyntheticRoute.Plan, SyntheticRoute.Origin, SyntheticRoute.Destination, seed);
+        _brain.Start(PlanToFly, SyntheticRoute.Origin, DestinationToFly, seed);
 
         while (!_brain.Session.Ended && _t < _o.MaxDuration)
         {
@@ -72,6 +78,8 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
     }
 
     private Clearance C => _brain.Session.Clearance;
+    private FlightPlan PlanToFly => _o.Plan ?? SyntheticRoute.Plan;
+    private AirportData DestinationToFly => _o.Destination ?? SyntheticRoute.Destination;
     private FlightPhase Phase => _brain.Session.Phase;
 
     private SimState State() => new()
@@ -251,15 +259,28 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
 
     private void FlyAirborne(double dt)
     {
-        var runway = C.Runway is { } r && Phase >= FlightPhase.Descent ? SyntheticRoute.Destination.FindRunway(r)?.End(r) : null;
+        var runway = C.Runway is { } r && Phase >= FlightPhase.Descent ? DestinationToFly.FindRunway(r)?.End(r) : null;
         double toThresholdNm = runway is null ? double.MaxValue : GeoMath.DistanceNm(_pos, runway.Position);
         // Distance to the threshold along the final course: negative once past it.
         double alongFinalNm = runway is null ? double.MaxValue
             : toThresholdNm * Math.Cos(GeoMath.AngleDiffDeg(GeoMath.BearingDeg(runway.Position, _pos), runway.HeadingTrueDeg + 180) * Math.PI / 180);
 
+        // Localiser capture: cleared for the approach, near the centreline, roughly on course.
+        if (!_onFinal && !_goAroundClimbing && C.Approach is not null && runway is not null && alongFinalNm > 0)
+        {
+            var far = GeoMath.Destination(runway.Position, runway.HeadingTrueDeg + 180, 30 * GeoMath.MetresPerNm);
+            if (Math.Abs(GeoMath.TrackOffsets(far, runway.Position, _pos).CrossNm) < 0.3
+                && Math.Abs(GeoMath.AngleDiffDeg(_hdg, runway.HeadingTrueDeg)) < 45) _onFinal = true;
+        }
+
         // Lateral.
         double target;
         if (_goAroundClimbing) target = 90;
+        else if (_onFinal && runway is not null)
+        {
+            var far = GeoMath.Destination(runway.Position, runway.HeadingTrueDeg + 180, 30 * GeoMath.MetresPerNm);
+            target = runway.HeadingTrueDeg - Math.Clamp(GeoMath.TrackOffsets(far, runway.Position, _pos).CrossNm * 60, -30, 30);
+        }
         else if (C.AssignedHeadingDeg is { } hdg) target = hdg;
         else if (C.Approach is not null && runway is not null && !_waitingNewApproach)
         {
@@ -287,7 +308,8 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
         _vs = step / dt * 60;
 
         // Speed.
-        double ias = _onFinal && toThresholdNm < 8 ? 140 : toThresholdNm < 25 ? 200 : _altFt < 10_000 ? 250 : 290;
+        double ias = C.SpeedRestrictionKt is { } restricted ? restricted
+            : _onFinal && toThresholdNm < 8 ? 140 : toThresholdNm < 25 ? 200 : _altFt < 10_000 ? 250 : 290;
         _ias += Math.Clamp(ias - _ias, -2 * dt, 2 * dt);
         Advance(_hdg, dt);
 
@@ -318,7 +340,7 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
     /// <summary>Bearing along the planned route: the next waypoint, then the destination threshold.</summary>
     private double RouteBearing()
     {
-        var points = SyntheticRoute.Plan.Route.Select(w => w.Position).Append(SyntheticRoute.DestinationThreshold).ToList();
+        var points = PlanToFly.Route.Select(w => w.Position).Append(SyntheticRoute.DestinationThreshold).ToList();
         while (_waypoint < points.Count - 1 && GeoMath.DistanceNm(_pos, points[_waypoint]) < 3) _waypoint++;
         return GeoMath.BearingDeg(_pos, points[_waypoint]);
     }

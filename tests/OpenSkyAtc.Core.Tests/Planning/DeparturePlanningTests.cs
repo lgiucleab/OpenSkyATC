@@ -28,11 +28,47 @@ public class RunwaySelectorTests
         Assert.Equal(expected, RunwaySelector.Select(Airport, windFrom, kt, hint: null)!.Designator);
     }
 
+    [Theory]
+    [InlineData(240, 15, "06", "24")]   // 15 kt tailwind on the hinted runway: not kept
+    [InlineData(330, 15, "06", "06")]   // pure crosswind: no tailwind, hint kept
+    [InlineData(100, 4, "24", "24")]    // 3.5 kt tailwind: within 5 kt, hint kept
+    [InlineData(240, 15, "99", "24")]   // unknown runway: ignored
+    public void PlanHint_IsKeptWithUpTo5ktTailwind(double windFrom, double kt, string hint, string expected) =>
+        Assert.Equal(expected, RunwaySelector.Select(Airport, windFrom, kt, hint)!.Designator);
+
     [Fact]
-    public void UsesThePlanHint_WhenTheRunwayExists()
+    public void PreferredRunways_FromTheSop_AreKeptWithUpTo5ktTailwind()
     {
-        Assert.Equal("06", RunwaySelector.Select(Airport, 240, 15, hint: "06")!.Designator);
-        Assert.Equal("24", RunwaySelector.Select(Airport, 240, 15, hint: "99")!.Designator);
+        // Wind 250/5: runway 24 has the headwind, but 06 is preferred and has under 5 kt tailwind.
+        Assert.Equal("06", RunwaySelector.Select(Airport, 250, 5, null, ["06"])!.Designator);
+        Assert.Equal("24", RunwaySelector.Select(Airport, 250, 12, null, ["06"])!.Designator);
+    }
+
+    [Fact]
+    public void CrosswindOver25kt_IsAvoided_WhenAnotherRunwayIsAvailable()
+    {
+        // Wind 330/30: 33 has a pure headwind; 24 would have 30 kt crosswind and is never chosen even if preferred.
+        Assert.Equal("33", RunwaySelector.Select(Airport, 330, 30, null, ["24"])!.Designator);
+        Assert.Equal(30, RunwaySelector.CrosswindKt(Airport.Runways[0].Second, 330, 30), 6);
+    }
+
+    [Fact]
+    public void Lock_KeepsTheRunway_UntilTheWindShiftsMoreThan60DegOr10kt()
+    {
+        var rwyLock = new RunwayLock();
+        Assert.Equal("24", rwyLock.Choose(Airport, 240, 10, null, [])!.Designator);
+        Assert.Equal("24", rwyLock.Choose(Airport, 180, 10, null, [])!.Designator);  // 60 deg: still locked
+        Assert.Equal("15", rwyLock.Choose(Airport, 170, 10, null, [])!.Designator);  // 70 deg: re-selected
+        Assert.Equal("06", rwyLock.Choose(Airport, 100, 15, null, [])!.Designator);  // 70 deg from 170: re-selected again
+    }
+
+    [Fact]
+    public void Lock_ReselectsOnASpeedChangeOver10kt()
+    {
+        var rwyLock = new RunwayLock();
+        Assert.Equal("24", rwyLock.Choose(Airport, 200, 5, null, [])!.Designator);
+        Assert.Equal("24", rwyLock.Choose(Airport, 180, 14, null, [])!.Designator);  // +9 kt, 20 deg: locked
+        Assert.Equal("15", rwyLock.Choose(Airport, 170, 16, null, [])!.Designator);  // +11 kt: re-selected
     }
 
     [Fact]
@@ -104,6 +140,17 @@ public class InitialClimbAndWindTests
     public void InitialClimb_DependsOnTransitionAltitude(int? ta, string expected)
     {
         Assert.Equal(expected, InitialClimbRule.For(new AirportData { Icao = "X", TransitionAltitudeFt = ta }).ToString());
+    }
+
+    [Theory]
+    [InlineData("NAPSI1C", null, "6000 ft")]     // SID top altitude from the sim's data
+    [InlineData("NAPSI1C", 5000, "FL060")]       // above the transition altitude
+    [InlineData("OTHER1A", null, "5000 ft")]     // SID unknown to the sim: the default
+    [InlineData(null, null, "5000 ft")]
+    public void InitialClimb_UsesTheSidTopAltitude_WhenTheSimHasIt(string? sid, int? ta, string expected)
+    {
+        var origin = new AirportData { Icao = "X", TransitionAltitudeFt = ta, Sids = [new SidInfo("NAPSI1C", 6000)] };
+        Assert.Equal(expected, InitialClimbRule.For(origin, sid).ToString());
     }
 
     [Theory]

@@ -44,6 +44,9 @@ public sealed record HoldShortPoint(GeoPoint Position, string RunwayDesignator);
 /// <summary>A radio frequency published for the airport. <paramref name="Callsign"/> overrides the generated one ("Barcelona Ground").</summary>
 public sealed record AirportFrequency(ControllerRole Role, int FrequencyKhz, string? Callsign = null);
 
+/// <summary>A SID from the sim's procedure data; <paramref name="TopAltitudeFt"/> is its final altitude constraint when known.</summary>
+public sealed record SidInfo(string Name, int? TopAltitudeFt = null);
+
 /// <summary>A named runway holding point. <paramref name="Name"/> may be null when the data has no name.</summary>
 public sealed record HoldingPoint(string? Name, GeoPoint Position, string RunwayDesignator);
 
@@ -65,6 +68,12 @@ public sealed record AirportData
     public IReadOnlyList<HoldShortPoint> HoldShorts { get; init; } = [];
     public IReadOnlyList<HoldingPoint> HoldingPoints { get; init; } = [];
     public IReadOnlyList<AirportFrequency> Frequencies { get; init; } = [];
+
+    /// <summary>SIDs the sim has for this airport, with their top altitude when known (step 9 fills these).</summary>
+    public IReadOnlyList<SidInfo> Sids { get; init; } = [];
+
+    /// <summary>STAR names the sim has for this airport (step 9 fills these).</summary>
+    public IReadOnlyList<string> Stars { get; init; } = [];
 
     /// <summary>From the configurable transition data file; null when unknown. Never invented.</summary>
     public int? TransitionAltitudeFt { get; init; }

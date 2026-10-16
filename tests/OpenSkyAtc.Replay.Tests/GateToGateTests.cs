@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using OpenSkyAtc.Core.Conformance;
 using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Replay.Tests.Harness;
@@ -66,6 +67,40 @@ public class GateToGateTests
         Assert.Equal(2, phases.Count(p => p == FlightPhase.Final));
         Assert.Single(pilot.Brain.Session.Log.Entries.OfType<GoAroundLogged>());
         Fixtures.VerifyTranscript(reported ? "go-around-reported-seed3" : "go-around-detected-seed3", transcript);
+    }
+
+    /// <summary>Step 7 done-criteria: vectoring checked on an arrival that is not straight in (synthetic until recordings exist).</summary>
+    [Fact]
+    public void ArrivalFromTheNorth_IsVectoredDownwindBaseAndFinal_WithSpeedControl()
+    {
+        var pilot = new SimulatedPilot(new SimulatedPilotOptions { Plan = SyntheticRoute.NorthArrivalPlan });
+        var transcript = pilot.Fly(seed: 3);
+
+        EndedOrDump("stuck-vectored-arrival", pilot, transcript);
+        Fixtures.VerifyTranscript("vectored-arrival-seed3", transcript);
+        Assert.Contains(transcript, l => l.Contains("vectoring for ILS approach runway 09"));
+        // Either wording variant (design doc or CAP 413).
+        Assert.Contains(transcript, l => Regex.IsMatch(l, "reduce speed (to )?220 knots"));
+        Assert.Contains(transcript, l => Regex.IsMatch(l, "reduce speed (to )?180 knots"));
+        Assert.Contains(transcript, l => l.Contains("closing localiser from the left") && Regex.IsMatch(l, "cleared ILS (approach )?runway 09"));
+        Assert.Contains(transcript, l => l.Contains("maintain 160 knots until 4 miles final"));
+        Assert.Empty(pilot.Brain.Session.Log.Entries.OfType<ConformanceWarning>());
+    }
+
+    [Fact]
+    public void WithStarData_TheStarAndApproachAreClearedTogether_WithoutVectors()
+    {
+        var pilot = new SimulatedPilot(new SimulatedPilotOptions
+        {
+            Plan = SyntheticRoute.Plan with { PlannedStar = "CHRLY1A" },
+            Destination = SyntheticRoute.Destination with { Stars = ["CHRLY1A"] },
+        });
+        var transcript = pilot.Fly(seed: 3);
+
+        EndedOrDump("stuck-star-arrival", pilot, transcript);
+        Assert.Contains(transcript, l => l.Contains("cleared ILS approach runway 09 via CHRLY1A arrival"));
+        Assert.DoesNotContain(transcript, l => l.Contains("vectoring for") || l.Contains("closing localiser"));
+        Assert.Empty(pilot.Brain.Session.Log.Entries.OfType<ConformanceWarning>());
     }
 
     [Theory]

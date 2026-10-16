@@ -108,7 +108,17 @@ public sealed record ConfirmAltitude : AtcMessagePart;
 /// <param name="Type">Approach type, e.g. "ILS".</param>
 public sealed record ExpectApproach(string Type, string Runway) : AtcMessagePart;
 
-public sealed record ClearedApproach(string Type, string Runway) : AtcMessagePart;
+/// <param name="Via">STAR flown to the approach, when cleared together (design doc); null otherwise.</param>
+public sealed record ClearedApproach(string Type, string Runway, string? Via = null) : AtcMessagePart;
+
+/// <summary>"vectoring for ILS approach runway 24R" (CAP 413).</summary>
+public sealed record VectoringFor(string Type, string Runway) : AtcMessagePart;
+
+/// <summary>"closing localiser from the right" (CAP 413), with the final vector.</summary>
+public sealed record ClosingLocaliser(bool FromRight) : AtcMessagePart;
+
+/// <summary>"maintain 160 knots until 4 miles final" (CAP 413).</summary>
+public sealed record SpeedUntil(int Knots, double MilesFinal) : AtcMessagePart;
 public sealed record ReportEstablishedRequest : AtcMessagePart;
 public sealed record VacateWhenAble : AtcMessagePart;
 

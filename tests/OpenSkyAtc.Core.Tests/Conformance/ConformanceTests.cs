@@ -233,6 +233,8 @@ public class SpeedTests
 
         var rig = new MonitorRig(FlightPhase.EnRoute);
         rig.Clearance.SpeedRestrictionKt = 220;
+        rig.Hold(59, Flying(12_000, 300));   // just assigned: time to slow down
+        Assert.Empty(rig.Warnings);
         rig.Hold(30, Flying(12_000, 230));
         Assert.Empty(rig.Warnings);
         rig.Hold(25, Flying(12_000, 240));

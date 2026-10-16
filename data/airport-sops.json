@@ -1,0 +1,4 @@
+{
+  "_comment": "Preferred runways per airport (design doc: a preferred runway is kept with up to 5 kt of tailwind). Example entry: { \"icao\": \"LEBL\", \"preferredRunways\": [\"24L\", \"24R\"] }. Fill in from a source you trust; values here are never invented.",
+  "airports": []
+}

@@ -6,23 +6,86 @@ using OpenSkyAtc.Core.Sim;
 
 namespace OpenSkyAtc.Core.Planning;
 
+/// <summary>Preferred runways for an airport, from data/airport-sops.json (filled in by the project owner).</summary>
+public sealed record AirportSop(string Icao, IReadOnlyList<string> PreferredRunways);
+
+public sealed record SopConfig(IReadOnlyList<AirportSop> Airports)
+{
+    public static readonly SopConfig Empty = new([]);
+
+    public IReadOnlyList<string> PreferredFor(string icao) =>
+        Airports.FirstOrDefault(a => string.Equals(a.Icao, icao, StringComparison.OrdinalIgnoreCase))?.PreferredRunways ?? [];
+}
+
+public sealed record RunwayRules
+{
+    /// <summary>A preferred runway is kept with up to this much tailwind (design doc).</summary>
+    public double MaxPreferredTailwindKt { get; init; } = 5;
+
+    /// <summary>Never pick a runway with more crosswind than this if another is available (design doc).</summary>
+    public double MaxCrosswindKt { get; init; } = 25;
+
+    /// <summary>The chosen runway stays locked unless the wind shifts by more than these (design doc).</summary>
+    public double LockShiftDeg { get; init; } = 60;
+    public double LockShiftKt { get; init; } = 10;
+}
+
 /// <summary>
-/// Runway choice for step 3: the plan's runway hint when it exists, otherwise the highest headwind.
-/// Step 7 adds the tailwind, preferred-runway, crosswind and runway-lock rules.
+/// Runway selection by wind (design doc "Runway selection"): highest headwind; a preferred runway (SOP file, or
+/// the flight plan's runway) is kept with up to 5 kt of tailwind; never more than 25 kt of crosswind if another
+/// runway is available.
 /// </summary>
 public static class RunwaySelector
 {
     public static double HeadwindKt(RunwayEnd end, double windFromTrueDeg, double windKt) =>
         windKt * Math.Cos((windFromTrueDeg - end.HeadingTrueDeg) * Math.PI / 180);
 
-    public static RunwayEnd? Select(AirportData airport, double windFromTrueDeg, double windKt, string? hint)
-    {
-        if (hint is not null && airport.FindRunway(hint)?.End(hint) is { } hinted) return hinted;
+    public static double CrosswindKt(RunwayEnd end, double windFromTrueDeg, double windKt) =>
+        Math.Abs(windKt * Math.Sin((windFromTrueDeg - end.HeadingTrueDeg) * Math.PI / 180));
 
-        return airport.Runways
-            .SelectMany(r => new[] { r.First, r.Second })
-            .OrderByDescending(e => HeadwindKt(e, windFromTrueDeg, windKt))
-            .FirstOrDefault();
+    public static RunwayEnd? Select(AirportData airport, double windFromTrueDeg, double windKt, string? hint,
+        IReadOnlyList<string>? preferred = null, RunwayRules? rules = null)
+    {
+        rules ??= new RunwayRules();
+        var ends = airport.Runways.SelectMany(r => new[] { r.First, r.Second }).ToList();
+        if (ends.Count == 0) return null;
+
+        var withinCrosswind = ends.Where(e => CrosswindKt(e, windFromTrueDeg, windKt) <= rules.MaxCrosswindKt).ToList();
+        var pool = withinCrosswind.Count > 0 ? withinCrosswind : ends;
+
+        var wanted = new HashSet<string>(preferred ?? [], StringComparer.OrdinalIgnoreCase);
+        if (hint is not null) wanted.Add(hint);
+
+        IEnumerable<RunwayEnd> Best(IEnumerable<RunwayEnd> xs) => xs
+            .OrderByDescending(e => Math.Round(HeadwindKt(e, windFromTrueDeg, windKt), 6))
+            .ThenBy(e => e.Designator, StringComparer.Ordinal);
+
+        var preferredOk = pool.Where(e => wanted.Contains(e.Designator) && HeadwindKt(e, windFromTrueDeg, windKt) >= -rules.MaxPreferredTailwindKt);
+        return Best(preferredOk).FirstOrDefault() ?? Best(pool).First();
+    }
+}
+
+/// <summary>Keeps a runway choice for the session unless the wind shifts by more than 60 degrees or 10 kt.</summary>
+public sealed class RunwayLock(RunwayRules? rules = null)
+{
+    private readonly RunwayRules _rules = rules ?? new RunwayRules();
+    private (double Dir, double Kt)? _wind;
+
+    public RunwayEnd? Runway { get; private set; }
+
+    public RunwayEnd? Choose(AirportData airport, double windFromTrueDeg, double windKt, string? hint, IReadOnlyList<string> preferred)
+    {
+        if (Runway is not null && _wind is { } w && !Shifted(w, windFromTrueDeg, windKt)) return Runway;
+        Runway = RunwaySelector.Select(airport, windFromTrueDeg, windKt, hint, preferred, _rules);
+        _wind = (windFromTrueDeg, windKt);
+        return Runway;
+    }
+
+    private bool Shifted((double Dir, double Kt) was, double dir, double kt)
+    {
+        if (Math.Abs(kt - was.Kt) > _rules.LockShiftKt) return true;
+        if (kt < 3 && was.Kt < 3) return false; // direction means nothing in calm wind
+        return Math.Abs(GeoMath.AngleDiffDeg(dir, was.Dir)) > _rules.LockShiftDeg;
     }
 }
 
@@ -72,14 +135,17 @@ public static class InitialClimbRule
     public const int HighTransitionLevel = 70;
 
     /// <summary>
-    /// Design doc: 5,000 ft, or FL070 above a high transition altitude. Read as: when the airport's
-    /// transition altitude is known and 5,000 ft would be at or above it, clear FL070 instead.
-    /// The SID top altitude takes precedence once SID data exists.
+    /// Design doc: the SID's top altitude when the sim has it; otherwise 5,000 ft, or FL070 above a high
+    /// transition altitude (read as: when the airport's TA is known and 5,000 ft would be at or above it).
     /// </summary>
-    public static AltitudeTarget For(AirportData origin) =>
-        origin.TransitionAltitudeFt is { } ta && ta <= DefaultFeet
+    public static AltitudeTarget For(AirportData origin, string? sid = null)
+    {
+        if (sid is not null && origin.Sids.FirstOrDefault(s => string.Equals(s.Name, sid, StringComparison.OrdinalIgnoreCase))?.TopAltitudeFt is { } top)
+            return origin.TransitionAltitudeFt is { } t && top >= t ? AltitudeTarget.FlightLevel(top / 100) : AltitudeTarget.Feet(top);
+        return origin.TransitionAltitudeFt is { } ta && ta <= DefaultFeet
             ? AltitudeTarget.FlightLevel(HighTransitionLevel)
             : AltitudeTarget.Feet(DefaultFeet);
+    }
 }
 
 public static class WindReport

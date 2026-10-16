@@ -18,6 +18,7 @@ public sealed record AtcBrainOptions
     public ConversationTiming Timing { get; init; } = new();
     public ITaxiPlanner TaxiPlanner { get; init; } = new FallbackTaxiPlanner();
     public SquawkConfig Squawks { get; init; } = SquawkConfig.Empty;
+    public SopConfig Sops { get; init; } = SopConfig.Empty;
     public ConformanceOptions Conformance { get; init; } = new();
     public AirspaceOptions Airspace { get; init; } = new();
     public PlanningOptions Planning { get; init; } = new();
@@ -78,7 +79,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         _conversation = new ConversationManager(_queue, _rng, Session.Log, _options.Timing);
         // Airspace and planning draw from their own streams so they never shift the conversation's choices.
         _airspace = AirspaceModel.Build(origin, destination, plan, _options.CenterFrequencies, new SeededRandom(unchecked(seed ^ 0x0A1125AC)), _options.Airspace);
-        _planning = new FlightPlanning(plan, origin, destination, new SeededRandom(unchecked(seed ^ 0x51A221)), _options.Planning);
+        _planning = new FlightPlanning(plan, origin, destination, new SeededRandom(unchecked(seed ^ 0x51A221)), _options.Planning, _options.Sops);
         _monitor = new ConformanceMonitor(_options.Conformance);
         _deferred.Clear();
         _state = null;

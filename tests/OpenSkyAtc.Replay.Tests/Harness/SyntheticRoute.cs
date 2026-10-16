@@ -56,6 +56,17 @@ public static class SyntheticRoute
         ],
     };
 
+    /// <summary>The same flight, but arriving from the north: the arrival needs downwind, base and a final vector.</summary>
+    public static readonly FlightPlan NorthArrivalPlan = Plan with
+    {
+        Route =
+        [
+            new RouteWaypoint("ALFAA", new GeoPoint(40.0, 2.0)),
+            new RouteWaypoint("BRAVO", new GeoPoint(40.0, 4.5)),
+            new RouteWaypoint("NORTH", new GeoPoint(40.9, 8.9)),
+        ],
+    };
+
     public static readonly IReadOnlyList<CenterFrequency> Centers =
     [
         new CenterFrequency(132_350, new GeoPoint(40.3, 3.0), "XAAA", "ALPHA CENTER"),

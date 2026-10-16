@@ -80,6 +80,11 @@ internal static class Samples
         ("TaxiToStand", new TaxiToStand("27")),
         ("TaxiToStand parking", new TaxiToStand(null)),
         ("ClosingCall", new ClosingCall()),
+        ("ClearedApproach via STAR", new ClearedApproach("ILS", "24R", "NAPSI1A")),
+        ("VectoringFor", new VectoringFor("ILS", "24R")),
+        ("ClosingLocaliser right", new ClosingLocaliser(true)),
+        ("ClosingLocaliser left", new ClosingLocaliser(false)),
+        ("SpeedUntil", new SpeedUntil(160, 4)),
         ("Mayday", new EmergencyAcknowledged(EmergencyKind.Mayday)),
         ("PanPan", new EmergencyAcknowledged(EmergencyKind.PanPan)),
     ];

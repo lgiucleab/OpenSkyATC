@@ -13,7 +13,7 @@ public struct RawSimData
 {
     public double Latitude, Longitude, AltitudeMsl, AltitudeAgl, IndicatedAltitude;
     public double IndicatedAirspeed, GroundSpeed, HeadingMagnetic, HeadingTrue, VerticalSpeed;
-    public double OnGround, ParkingBrake, NumberOfEngines, Engine1, Engine2, Engine3, Engine4;
+    public double OnGround, ParkingBrake, EngineTypeCode, NumberOfEngines, Engine1, Engine2, Engine3, Engine4;
     public double Com1Active, Com1Standby, Com2Active, Com2Standby, Com1Transmit, Com2Transmit, TransponderCode, TransponderState;
     public double GearHandle, FlapsHandleIndex;
     public double WindDirection, WindVelocity, Visibility, Temperature, SeaLevelPressure;
@@ -34,6 +34,7 @@ public struct RawSimData
         ("VERTICAL SPEED", "feet per minute"),
         ("SIM ON GROUND", "bool"),
         ("BRAKE PARKING POSITION", "bool"),
+        ("ENGINE TYPE", "Enum"),
         ("NUMBER OF ENGINES", "number"),
         ("ENG COMBUSTION:1", "bool"),
         ("ENG COMBUSTION:2", "bool"),
@@ -84,6 +85,7 @@ public struct RawSimData
             VerticalSpeedFpm = VerticalSpeed,
             OnGround = OnGround != 0,
             ParkingBrakeSet = ParkingBrake != 0,
+            EngineType = Enum.IsDefined((EngineType)(int)EngineTypeCode) ? (EngineType)(int)EngineTypeCode : EngineType.Unsupported,
             EnginesRunning = running,
             Com1ActiveKhz = (int)Math.Round(Com1Active),
             Com1StandbyKhz = (int)Math.Round(Com1Standby),

@@ -13,6 +13,18 @@ public enum TransponderMode
     Ground = 5,
 }
 
+/// <summary>Engine type, numbered as the SimConnect ENGINE TYPE enum.</summary>
+public enum EngineType
+{
+    Piston = 0,
+    Jet = 1,
+    None = 2,
+    HeloTurbine = 3,
+    Unsupported = 4,
+    Turboprop = 5,
+    Electric = 6,
+}
+
 /// <summary>Pause state, bit flags as reported by the SimConnect Pause_EX1 system event.</summary>
 [Flags]
 public enum PauseFlags
@@ -57,6 +69,8 @@ public sealed record SimState
 
     public bool OnGround { get; init; }
     public bool ParkingBrakeSet { get; init; }
+
+    public EngineType EngineType { get; init; } = EngineType.Jet;
 
     /// <summary>One entry per engine (at most four), true when that engine is running.</summary>
     public IReadOnlyList<bool> EnginesRunning { get; init; } = [];

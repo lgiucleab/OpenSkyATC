@@ -23,8 +23,8 @@ public sealed class PreflightPhase : Phase
         var unit = Unit(ctx)!;
         var c = ctx.Clearance;
         _plan ??= (
-            RunwaySelector.Select(ctx.Origin, ctx.State.WindDirectionTrueDeg, ctx.State.WindSpeedKt, ctx.Plan.DepartureRunway),
-            InitialClimbRule.For(ctx.Origin),
+            ctx.Planning.ChooseDepartureRunway(ctx.State),
+            InitialClimbRule.For(ctx.Origin, ctx.Plan.PlannedSid),
             SquawkAllocator.Allocate(ctx.Options.Squawks, ctx.Origin.Icao, ctx.Rng));
         var (runway, climb, squawk) = _plan.Value;
         string? sid = ctx.Plan.PlannedSid;

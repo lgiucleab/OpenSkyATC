@@ -5,6 +5,7 @@ using OpenSkyAtc.Core.Messages;
 using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Planning;
 using OpenSkyAtc.Core.Radio;
+using OpenSkyAtc.Core.Sim;
 
 namespace OpenSkyAtc.Core.Phases;
 
@@ -58,11 +59,20 @@ internal static class MissedApproach
 
     public static AltitudeTarget Altitude(PhaseContext ctx) => ctx.Planning.ToTarget(AltitudeFt, ctx.Destination);
 
+    /// <summary>"Maintain 160 knots until 4 miles final" lapses at 4 nm without a call, whichever unit has the aircraft.</summary>
+    public static void LapseFinalSpeed(PhaseContext ctx)
+    {
+        var c = ctx.Clearance;
+        if (c.Approach is null || c.SpeedRestrictionKt is null || ctx.Planning.ArrivalRunway is not { } runway) return;
+        if (GeoMath.DistanceNm(ctx.Position, runway.Position) <= ctx.Planning.Options.FinalSpeedUntilNm) c.SpeedRestrictionKt = null;
+    }
+
     /// <summary>Clears the landing clearance and sets runway heading (magnetic) and the missed-approach altitude when sent.</summary>
     public static Action OnSent(PhaseContext ctx, RunwayEnd? runway, AltitudeTarget altitude) => () =>
     {
         ctx.Clearance.LandingCleared = null;
         ctx.Clearance.Approach = null;
+        ctx.Clearance.SpeedRestrictionKt = null;
         ctx.Clearance.ClearedAltitude = altitude;
         if (runway is not null)
         {
@@ -74,16 +84,20 @@ internal static class MissedApproach
 }
 
 /// <summary>
-/// Phase 11: Approach. On check-in: "identified", descend to the approach altitude with QNH, expect the approach.
-/// Within 20 nm of the threshold: cleared for the approach, report established. Established within 10 nm:
-/// hand off to Tower. A go-around while with Approach gets the missed-approach instruction and a new approach.
+/// Phase 11: Approach. On check-in: "identified", descend to the approach altitude with QNH, and either the STAR
+/// and approach together (when the sim has the STAR) or "vectoring for ILS approach". Vectors: downwind, base and a
+/// final vector given with the approach clearance; speed control for jets. Established within 10 nm: hand off to
+/// Tower. A go-around while with Approach gets the missed-approach instruction; vectors start again once level.
 /// </summary>
 public sealed class ApproachPhase : Phase
 {
-    private const double ClearApproachWithinNm = 20, HandoffWithinNm = 10;
+    private const double HandoffWithinNm = 10;
 
     private readonly GoAroundDetector _goAround = new();
     private bool _checkedIn;
+    private Vectoring? _vectoring;
+    private VectorLeg? _lastLeg;
+    private int? _lastHeading;
     private Exchange? _approachClearance;
     private bool _established;
     private Exchange? _handoff;
@@ -106,21 +120,20 @@ public sealed class ApproachPhase : Phase
         switch (intent)
         {
             case CheckIn when !_checkedIn && _missedApproach:
-                // After a go-around: keep the missed approach; the new approach comes once level (see Tick).
+                // After a go-around: keep the missed approach; vectors start once level (see Tick).
                 _checkedIn = true;
                 ctx.Planning.ChooseArrivalRunway(ctx.State);
                 ctx.Conversation.Say(Unit(ctx)!, CheckInParts(ctx, intent, firstRadarUnit: false), TransmissionPriority.Reply, ctx.Now + ctx.Conversation.CheckInDelay());
                 return PhaseResult.Stay;
             case CheckIn when !_checkedIn:
                 _checkedIn = true;
-                var runway = ctx.Planning.ChooseArrivalRunway(ctx.State);
-                var parts = CheckInParts(ctx, intent, firstRadarUnit: false);
-                var target = ctx.Planning.ApproachAltitude();
-                AtcMessagePart[] after = runway is null
-                    ? [new Qnh(FlightPlanning.Qnh(ctx.State))]
-                    : [new Qnh(FlightPlanning.Qnh(ctx.State)), new ExpectApproach(ApproachType(runway), runway.Designator)];
-                ClearAltitude(ctx, Unit(ctx)!, target, TransmissionPriority.Reply, ctx.Now + ctx.Conversation.CheckInDelay(), parts, after, "approach-descent");
-                if (runway is not null) ctx.Clearance.Runway = runway.Designator;
+                if (ctx.Planning.ChooseArrivalRunway(ctx.State) is not { } runway)
+                {
+                    ctx.Conversation.Say(Unit(ctx)!, CheckInParts(ctx, intent, firstRadarUnit: false), TransmissionPriority.Reply, ctx.Now + ctx.Conversation.CheckInDelay());
+                    return PhaseResult.Stay;
+                }
+                ctx.Clearance.Runway = runway.Designator;
+                StartArrival(ctx, runway, CheckInParts(ctx, intent, firstRadarUnit: false), TransmissionPriority.Reply, ctx.Now + ctx.Conversation.CheckInDelay());
                 return PhaseResult.Stay;
             case ReportEstablished when _approachClearance is not null:
                 _established = true;
@@ -133,59 +146,135 @@ public sealed class ApproachPhase : Phase
         }
     }
 
+    /// <summary>Descent to the approach altitude with QNH, then the STAR and approach together, or "vectoring for".</summary>
+    private void StartArrival(PhaseContext ctx, RunwayEnd runway, IEnumerable<AtcMessagePart> before, TransmissionPriority priority, TimeSpan due)
+    {
+        string type = ApproachType(runway);
+        var qnh = new Qnh(FlightPlanning.Qnh(ctx.State));
+        var target = ctx.Planning.ApproachAltitude();
+
+        if (StarFor(ctx) is { } star)
+        {
+            // Design doc: with STAR data, clear the STAR and the approach together; the pilot flies it.
+            AtcMessagePart clearance = new ClearedApproach(type, runway.Designator, star);
+            _approachClearance = ClearAltitude(ctx, Unit(ctx)!, target, priority, due, before, [qnh, clearance], "approach-star");
+            ctx.Clearance.Star = star;
+            ctx.Clearance.Approach = $"{type} {runway.Designator}";
+            RegisterEstablished(ctx, runway);
+            return;
+        }
+
+        _vectoring = new Vectoring(runway, ctx.Planning, ctx.State);
+        _lastLeg = null;
+        _lastHeading = null;
+        // Straight in: no vectors to come, so "expect" rather than "vectoring for".
+        AtcMessagePart plan = _vectoring.Leg == VectorLeg.StraightIn ? new ExpectApproach(type, runway.Designator) : new VectoringFor(type, runway.Designator);
+        ClearAltitude(ctx, Unit(ctx)!, target, priority, due, before, [qnh, plan], "approach-descent");
+    }
+
+    private static string? StarFor(PhaseContext ctx) =>
+        ctx.Plan.PlannedStar is { } star && ctx.Destination.Stars.Contains(star, StringComparer.OrdinalIgnoreCase) ? star : null;
+
     public override PhaseResult Tick(PhaseContext ctx)
     {
         if (!_checkedIn || ctx.Planning.ArrivalRunway is not { } runway) return PhaseResult.Stay;
         var unit = Unit(ctx)!;
+        var c = ctx.Clearance;
 
         if (_goAround.Update(ctx)) IssueMissedApproach(ctx);
 
-        double toThreshold = GeoMath.DistanceNm(ctx.Position, runway.Position);
-
-        // After a missed approach: once level at the missed-approach altitude, one transmission with the descent to
-        // the approach altitude and the new approach clearance (own navigation until the step 7 vectors).
-        bool missedComplete = _missedApproach && Math.Abs(ctx.State.IndicatedAltitudeFt - MissedApproach.Altitude(ctx).NominalFeet) <= 300;
-        bool firstClearance = !_missedApproach && toThreshold <= ClearApproachWithinNm;
-        if (_approachClearance is null && (missedComplete || firstClearance) && !ctx.Conversation.IsBusy(unit))
+        // After a missed approach: once level at the missed-approach altitude, descend and vector again.
+        if (_missedApproach && Math.Abs(ctx.State.IndicatedAltitudeFt - MissedApproach.Altitude(ctx).NominalFeet) <= 300 && !ctx.Conversation.IsBusy(unit))
         {
-            string type = ApproachType(runway);
-            var parts = new List<AtcMessagePart>();
-            var b = ReadbackExpectation.Builder();
-            AltitudeTarget? descent = null;
-            if (missedComplete)
-            {
-                descent = ctx.Planning.ApproachAltitude();
-                var qnh = new Qnh(FlightPlanning.Qnh(ctx.State));
-                parts.Add(new DescendTo(descent.Value));
-                parts.Add(qnh);
-                b.Add(ReadbackItem.Altitude, ReadbackValues.Altitude(descent.Value), new DescendTo(descent.Value))
-                 .Add(ReadbackItem.Qnh, qnh.Hpa.ToString(System.Globalization.CultureInfo.InvariantCulture), qnh);
-                _missedApproach = false;
-                _established = false;
-                ctx.Planning.MissedApproachInProgress = false;
-            }
-            parts.Add(new ClearedApproach(type, runway.Designator));
-            parts.Add(new ReportEstablishedRequest());
-            b.Add(ReadbackItem.Runway, ReadbackValues.Runway(runway.Designator), new RunwayIs(runway.Designator))
-             .Add(ReadbackItem.Clearance, ReadbackValues.Approach, new ClearedApproach(type, runway.Designator));
-            _approachClearance = ctx.Conversation.Transmit(unit, parts, TransmissionPriority.Instruction, ctx.Now, b.Build(),
-                onSent: () =>
-                {
-                    if (descent is { } d) ctx.Clearance.ClearedAltitude = d;
-                    ctx.Clearance.Approach = $"{type} {runway.Designator}";
-                    ctx.Clearance.AssignedHeadingDeg = null;
-                },
-                tag: "approach");
-            if (_registration is not null) ctx.Events.Unregister(_registration);
-            _registration = ctx.Events.RegisterEstablished(this, runway, maxDistanceNm: 25, tag: "established");
+            _missedApproach = false;
+            ctx.Planning.MissedApproachInProgress = false;
+            StartArrival(ctx, runway, [], TransmissionPriority.Instruction, ctx.Now);
+            return PhaseResult.Stay;
         }
 
-        if (ctx.NewEvents.OfType<Established>().Any(e => e.Registration == _registration)) _established = true;
+        if (_vectoring is not null && _approachClearance is null && !_missedApproach && !ctx.Conversation.IsBusy(unit))
+            Vector(ctx, unit, runway);
+
+        if (ctx.NewEvents.OfType<Established>().Any(e => e.Registration == _registration))
+        {
+            _established = true;
+            c.AssignedHeadingDeg = null; // localiser captured: no more heading to hold
+        }
+
+        double toThreshold = GeoMath.DistanceNm(ctx.Position, runway.Position);
+        MissedApproach.LapseFinalSpeed(ctx);
 
         if (_established && _handoff is null && toThreshold <= HandoffWithinNm && ctx.Airspace.ArrivalTowerUnit is { } tower)
             _handoff = Handoff(ctx, unit, tower, ctx.Now, TransmissionPriority.Instruction, "contact-tower");
         return PhaseResult.Stay;
     }
+
+    /// <summary>Sends the next vector when the leg changes or the heading moves by 10 degrees; the final one with the clearance.</summary>
+    private void Vector(PhaseContext ctx, ControllerUnit unit, RunwayEnd runway)
+    {
+        var step = _vectoring!.Update(ctx.State);
+        var c = ctx.Clearance;
+        bool newLeg = step.Leg != _lastLeg;
+        bool headingMoved = step.HeadingMag is { } h && (_lastHeading is not { } last || Math.Abs(GeoMath.AngleDiffDeg(h, last)) >= ctx.Planning.Options.MinHeadingChangeDeg);
+        if (!step.IsFinal && !(step.HeadingMag is not null && (newLeg || headingMoved))) return;
+
+        var parts = new List<AtcMessagePart>();
+        var b = ReadbackExpectation.Builder();
+        if (step.HeadingMag is { } hdg)
+        {
+            var turn = new TurnHeading(TurnTowards(ctx.State, hdg), hdg);
+            parts.Add(turn);
+            b.Add(ReadbackItem.Heading, ReadbackValues.Heading(hdg), new TurnHeading(TurnDirection.None, hdg));
+            if (step.IsFinal) parts.Add(new ClosingLocaliser(step.AircraftSideRight));
+        }
+
+        // Speed: only on a new leg, and only when it is a reduction.
+        int? speed = newLeg && step.SpeedKt is { } kt && ctx.State.IndicatedAirspeedKt > kt + 5 ? kt : null;
+        string type = ApproachType(runway);
+        if (step.IsFinal)
+        {
+            parts.Add(new ClearedApproach(type, runway.Designator));
+            parts.Add(new ReportEstablishedRequest());
+            b.Add(ReadbackItem.Runway, ReadbackValues.Runway(runway.Designator), new RunwayIs(runway.Designator))
+             .Add(ReadbackItem.Clearance, ReadbackValues.Approach, new ClearedApproach(type, runway.Designator));
+            speed = step.SpeedKt is { } fs && ctx.State.IndicatedAirspeedKt > fs - 5 ? fs : null;
+            if (speed is { } s) parts.Add(new SpeedUntil(s, ctx.Planning.Options.FinalSpeedUntilNm));
+        }
+        else if (speed is { } s)
+        {
+            parts.Add(new Speed(s, SpeedAction.Reduce));
+        }
+        if (speed is { } sp) b.Add(ReadbackItem.Speed, ReadbackValues.Speed(sp), new Speed(sp, SpeedAction.Reduce));
+
+        int? heading = step.HeadingMag;
+        var exchange = ctx.Conversation.Transmit(unit, parts, TransmissionPriority.Instruction, ctx.Now, b.Build(), onSent: () =>
+        {
+            c.AssignedHeadingDeg = heading ?? (step.IsFinal ? null : c.AssignedHeadingDeg);
+            if (speed is { } kt2) c.SpeedRestrictionKt = kt2;
+            if (step.IsFinal)
+            {
+                c.Approach = $"{type} {runway.Designator}";
+                c.DirectTo = null;
+            }
+        }, tag: step.IsFinal ? "approach" : "vector");
+
+        _lastLeg = step.Leg;
+        _lastHeading = heading ?? _lastHeading;
+        if (step.IsFinal)
+        {
+            _approachClearance = exchange;
+            RegisterEstablished(ctx, runway);
+        }
+    }
+
+    private void RegisterEstablished(PhaseContext ctx, RunwayEnd runway)
+    {
+        if (_registration is not null) ctx.Events.Unregister(_registration);
+        _registration = ctx.Events.RegisterEstablished(this, runway, maxDistanceNm: 25, tag: "established");
+    }
+
+    private static TurnDirection TurnTowards(SimState s, int headingMag) =>
+        GeoMath.AngleDiffDeg(headingMag, s.HeadingMagneticDeg) >= 0 ? TurnDirection.Right : TurnDirection.Left;
 
     private void IssueMissedApproach(PhaseContext ctx)
     {
@@ -193,6 +282,7 @@ public sealed class ApproachPhase : Phase
         _missedApproach = true;
         _handoff = null;
         _approachClearance = null;
+        _vectoring = null;
         _established = false;
         ctx.Planning.MissedApproachInProgress = true;
         var altitude = MissedApproach.Altitude(ctx);
@@ -253,6 +343,7 @@ public sealed class FinalPhase : Phase
 
     public override PhaseResult Tick(PhaseContext ctx)
     {
+        MissedApproach.LapseFinalSpeed(ctx);
         if (ctx.NewEvents.OfType<Touchdown>().Any()) return PhaseResult.To(FlightPhase.LandingRoll, "touchdown");
         if (_goAround.Update(ctx)) return GoAround(ctx, "go-around detected");
         return PhaseResult.Stay;

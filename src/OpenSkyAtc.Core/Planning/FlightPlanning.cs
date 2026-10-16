@@ -34,6 +34,31 @@ public sealed record PlanningOptions
     /// Not from a source: a placeholder until the transition-altitude data file is filled in.
     /// </summary>
     public int DefaultTransitionAltitudeFt { get; init; } = 10_000;
+
+    public RunwayRules Runways { get; init; } = new();
+
+    // Vectoring (step 7 decision 2).
+    public (double Min, double Max) FinalApproachFixNm { get; init; } = (8, 12);
+    public (double Min, double Max) InterceptAngleDeg { get; init; } = (20, 30);
+    public double DownwindOffsetNm { get; init; } = 5;
+
+    /// <summary>Lateral distance from the centreline at which base turns into the final vector.</summary>
+    public double FinalVectorLateralNm { get; init; } = 2.5;
+
+    /// <summary>The final intercept is at least this far before the FAF (design doc).</summary>
+    public double InterceptBeforeFafNm { get; init; } = 2;
+
+    /// <summary>Straight-in arrivals get the final vector within this distance beyond the FAF.</summary>
+    public double StraightInClearanceBeyondFafNm { get; init; } = 8;
+
+    /// <summary>Only re-send a vector when the heading changes by at least this much (design doc).</summary>
+    public double MinHeadingChangeDeg { get; init; } = 10;
+
+    // Speed control for jets (design doc / CAP 413).
+    public int DownwindSpeedKt { get; init; } = 220;
+    public int BaseSpeedKt { get; init; } = 180;
+    public int FinalSpeedKt { get; init; } = 160;
+    public double FinalSpeedUntilNm { get; init; } = 4;
 }
 
 /// <summary>
@@ -47,21 +72,33 @@ public sealed class FlightPlanning
     private readonly AirportData _origin;
     private readonly AirportData _destination;
     private readonly double _todExtraNm;
+    private readonly SopConfig _sops;
+    private readonly RunwayLock _departureRunway;
+    private readonly RunwayLock _arrivalRunway;
+    private readonly string? _departureHint;
     private TimeSpan? _stepDue;
 
-    public FlightPlanning(FlightPlan plan, AirportData origin, AirportData destination, IRandom rng, PlanningOptions? options = null)
+    public FlightPlanning(FlightPlan plan, AirportData origin, AirportData destination, IRandom rng, PlanningOptions? options = null, SopConfig? sops = null)
     {
         _o = options ?? new PlanningOptions();
+        _sops = sops ?? SopConfig.Empty;
+        _departureRunway = new RunwayLock(_o.Runways);
+        _arrivalRunway = new RunwayLock(_o.Runways);
+        _departureHint = plan.DepartureRunway;
         _rng = rng;
         _origin = origin;
         _destination = destination;
 
-        var initial = InitialClimbRule.For(origin);
+        var initial = InitialClimbRule.For(origin, plan.PlannedSid);
         Cruise = plan.CruiseLevel is { } c && c.NominalFeet > initial.NominalFeet ? c : initial;
         ClimbSteps = PlanSteps(initial.NominalFeet, Cruise, rng.Next(_o.StepClimbCount.Min, _o.StepClimbCount.Max + 1));
         _todExtraNm = Math.Round(_o.TodExtraNm.Min + rng.NextDouble() * (_o.TodExtraNm.Max - _o.TodExtraNm.Min), 1);
         ArrivalRunwayHint = plan.ArrivalRunway;
+        FinalApproachFixNm = Math.Round(_o.FinalApproachFixNm.Min + rng.NextDouble() * (_o.FinalApproachFixNm.Max - _o.FinalApproachFixNm.Min), 1);
+        InterceptAngleDeg = Math.Round(_o.InterceptAngleDeg.Min + rng.NextDouble() * (_o.InterceptAngleDeg.Max - _o.InterceptAngleDeg.Min));
     }
+
+    public PlanningOptions Options => _o;
 
     public AltitudeTarget Cruise { get; }
 
@@ -75,7 +112,13 @@ public sealed class FlightPlanning
 
     /// <summary>A go-around happened and the missed approach is being flown; Approach gives the new approach once level.</summary>
     public bool MissedApproachInProgress { get; set; }
-    public RunwayEnd? ArrivalRunway { get; private set; }
+    public RunwayEnd? ArrivalRunway => _arrivalRunway.Runway;
+
+    /// <summary>Final approach fix distance for vectoring (8-12 nm, seeded once).</summary>
+    public double FinalApproachFixNm { get; }
+
+    /// <summary>Final intercept angle for vectoring (20-30 degrees, seeded once).</summary>
+    public double InterceptAngleDeg { get; }
 
     /// <summary>The next climb step above the current cleared level, or null at cruise.</summary>
     public AltitudeTarget? NextClimbStep(AltitudeTarget? cleared) =>
@@ -114,9 +157,13 @@ public sealed class FlightPlanning
     public AltitudeTarget DescentLevel =>
         Cruise.NominalFeet > _o.DescentFlightLevel * 100 ? AltitudeTarget.FlightLevel(_o.DescentFlightLevel) : ApproachAltitude();
 
-    /// <summary>The arrival runway end, chosen once from the wind at the aircraft.</summary>
+    /// <summary>The arrival runway end by wind and SOP, locked unless the wind shifts (design doc).</summary>
     public RunwayEnd? ChooseArrivalRunway(SimState s) =>
-        ArrivalRunway ??= RunwaySelector.Select(_destination, s.WindDirectionTrueDeg, s.WindSpeedKt, ArrivalRunwayHint);
+        _arrivalRunway.Choose(_destination, s.WindDirectionTrueDeg, s.WindSpeedKt, ArrivalRunwayHint, _sops.PreferredFor(_destination.Icao));
+
+    /// <summary>The departure runway end by wind and SOP, locked unless the wind shifts.</summary>
+    public RunwayEnd? ChooseDepartureRunway(SimState s) =>
+        _departureRunway.Choose(_origin, s.WindDirectionTrueDeg, s.WindSpeedKt, _departureHint, _sops.PreferredFor(_origin.Icao));
 
     /// <summary>Procedure altitude when known, else field elevation + 3,000 ft rounded up to 500 ft (decision B2).</summary>
     public int ApproachAltitudeFt()

@@ -127,9 +127,15 @@ public sealed class IcaoRenderer
         ExpectApproach e => Pick(
             Text.Same($"expect {e.Type} approach ") + RunwayText(e.Runway),
             Text.Same($"expect {e.Type} ", european: true) + RunwayText(e.Runway)),
+        ClearedApproach { Via: { } star } c => Text.Same($"cleared {c.Type} approach ") + RunwayText(c.Runway)
+            + new Text($" via {star} arrival", $" via {_say.Designator(star)} arrival"),
         ClearedApproach c => Pick(
             Text.Same($"cleared {c.Type} approach ") + RunwayText(c.Runway),
             Text.Same($"cleared {c.Type} ", european: true) + RunwayText(c.Runway)),
+        VectoringFor v => Text.Same($"vectoring for {v.Type} approach ") + RunwayText(v.Runway),
+        ClosingLocaliser l => Text.Same(l.FromRight ? "closing localiser from the right" : "closing localiser from the left"),
+        SpeedUntil u => new Text($"maintain {u.Knots} knots until {u.MilesFinal:0} miles final",
+            $"maintain {_say.Digits(u.Knots)} knots until {_say.Digits((int)Math.Round(u.MilesFinal))} miles final"),
         ReportEstablishedRequest => Text.Same("report established"),
         VacateWhenAble => Text.Same("vacate when able"),
         TaxiToStand { Stand: { } stand } => new Text($"taxi to stand {stand}", $"taxi to stand {_say.Designator(stand)}"),

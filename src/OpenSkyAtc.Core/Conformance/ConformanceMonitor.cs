@@ -50,6 +50,8 @@ public sealed class ConformanceMonitor
     private double _altitudeAtClearance;
     private int _verticalDirection;
     private bool _complying;
+    private int? _assignedSpeed;
+    private TimeSpan _speedAssignedAt;
     private int? _assignedHeading;
     private TimeSpan _headingAssignedAt;
     private bool _headingArmed;
@@ -143,6 +145,12 @@ public sealed class ConformanceMonitor
             double delta = (_cleared?.NominalFeet ?? s.IndicatedAltitudeFt) - s.IndicatedAltitudeFt;
             _verticalDirection = Math.Abs(delta) <= _o.AltitudeBustFt ? 0 : Math.Sign(delta);
             _complying = false;
+        }
+
+        if (c.SpeedRestrictionKt != _assignedSpeed)
+        {
+            _assignedSpeed = c.SpeedRestrictionKt;
+            _speedAssignedAt = ctx.Now;
         }
 
         if (c.AssignedHeadingDeg != _assignedHeading)
@@ -310,7 +318,8 @@ public sealed class ConformanceMonitor
     {
         var s = ctx.State;
         if (s.IndicatedAltitudeFt < _o.SpeedLimitBelowFt && s.IndicatedAirspeedKt > _o.SpeedLimitKt) return (int)_o.SpeedLimitKt;
-        if (ctx.Clearance.SpeedRestrictionKt is { } assigned && s.IndicatedAirspeedKt > assigned + _o.AssignedSpeedToleranceKt) return assigned;
+        if (ctx.Clearance.SpeedRestrictionKt is { } assigned && ctx.Now - _speedAssignedAt >= _o.AssignedSpeedSuppression
+            && s.IndicatedAirspeedKt > assigned + _o.AssignedSpeedToleranceKt) return assigned;
         return null;
     }
 

@@ -160,6 +160,16 @@ doc     | taxi to stand 27 | taxi to stand two seven
 doc     | taxi to parking | taxi to parking
 ## ClosingCall
 doc     | good day | good day
+## ClearedApproach via STAR
+doc     | cleared ILS approach runway 24R via NAPSI1A arrival | cleared ILS approach runway two four right via Napsi one Alpha arrival
+## VectoringFor
+doc     | vectoring for ILS approach runway 24R | vectoring for ILS approach runway two four right
+## ClosingLocaliser right
+doc     | closing localiser from the right | closing localiser from the right
+## ClosingLocaliser left
+doc     | closing localiser from the left | closing localiser from the left
+## SpeedUntil
+doc     | maintain 160 knots until 4 miles final | maintain one six zero knots until four miles final
 ## Mayday
 doc     | roger mayday | roger mayday
 ## PanPan

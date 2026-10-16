@@ -156,3 +156,23 @@ Owner's choices: ICAO wording plus European variants, destination spoken by name
 - **Session.CurrentUnit** is refreshed every tick, because the unit in control changes within the area-control phases.
 - **Randomness:** airspace and planning use their own seeded streams so they never shift the conversation's choices.
 - **Simulated pilot:** `SimulatedPilot` (Replay.Tests) flies the clearance closed-loop on `SyntheticRoute`; gate-to-gate, two go-around variants and five extra seeds run without getting stuck. A stuck flight dumps its transcript to a `.received.txt` file.
+
+## 2026-10-16 - Answers before step 7
+
+1. **Jets:** speed control (220/180/160 kt) only when the sim's `ENGINE TYPE` is 1 (jet), recorded in `SimState`.
+2. **Vectoring geometry (settings):** FAF 8-12 nm out (doc, seeded); downwind parallel to final, 5 nm off the centreline, on the side the aircraft is on; final intercept 20-30 degrees (doc) at least 2 nm before the FAF; headings rounded to 5 degrees and re-sent only on a 10 degree change (doc); descent to the intercept altitude by base (doc). Straight-in: within 30 degrees of the final course and outside the base point skips downwind/base.
+3. **Wording:** on check-in "vectoring for ILS approach runway 24R" (CAP 413); final vector in one transmission: "turn right heading 240, closing localiser from the right, cleared ILS approach runway 24R, report established".
+4. **Speed control:** "reduce speed 220 knots" on downwind, "reduce speed 180 knots" on base, "maintain 160 knots until 4 miles final" (CAP 413) with the final vector; the restriction lapses at 4 nm without a call.
+- Also: `data/airport-sops.json` (preferred runways, empty for the owner to fill); STAR and SID-top-altitude hooks that activate once the sim provides procedure data (step 9); synthetic arrivals (including a non-straight-in one) until recordings exist.
+
+## 2026-10-16 - Step 7
+
+- **Plan runway hint** is treated like a preferred runway: kept only with up to 5 kt of tailwind and within the crosswind limit (it used to win outright).
+- **Runway lock:** one lock each for departure and arrival, re-evaluated at each decision point (clearance, approach check-in, landing clearance); re-selected only after a 60 degree or 10 kt wind shift. Calm wind (under 3 kt both times) never counts as a direction shift.
+- **Base turn distance** is computed rather than fixed: FAF + 2 nm + the lateral offset / tan(intercept angle), so the final vector always intercepts at least 2 nm before the FAF (the "4 nm beyond the FAF" proposal was too short for that geometry).
+- **Downwind join:** the aircraft is vectored to join the downwind abeam its current position (between the threshold and the base turn), not to a fixed entry point.
+- **Straight in** also needs the aircraft within 5 nm of the extended centreline (a heading within 30 degrees alone matched aircraft far to the side). Straight-in arrivals hear "expect ILS approach" instead of "vectoring for", and get the approach clearance (with a heading only if more than 1 nm off the centreline) within 8 nm beyond the FAF.
+- **Speed control** is only ever a reduction: a leg's speed is skipped when the aircraft is already at or below it. An assigned speed is not checked for 60 s after it is given (time to slow down). The 160 kt "until 4 miles final" lapses at 4 nm in both Approach and Final, and a missed approach clears any speed restriction.
+- **Localiser capture:** the established event clears the assigned heading silently (the intercept heading is no longer held).
+- **STAR hook:** when the plan's STAR is in the destination's STAR list (from sim data, step 9), Approach clears "cleared ILS approach runway 24R via NAPSI1A arrival" with the descent, and no vectors. The "via ... arrival" wording is not from a checked source.
+- **SID hook:** the initial climb is the SID's top altitude when the origin's SID data has it (flight level at or above the transition altitude).
