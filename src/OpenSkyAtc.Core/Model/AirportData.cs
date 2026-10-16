@@ -3,7 +3,9 @@ using OpenSkyAtc.Core.Geo;
 namespace OpenSkyAtc.Core.Model;
 
 /// <summary>One end of a runway: its designator ("24L"), position and true heading when departing from it.</summary>
-public sealed record RunwayEnd(string Designator, GeoPoint Position, double HeadingTrueDeg);
+/// <param name="ApproachType">Instrument approach to this end, e.g. "ILS". Null when the data has none; "ILS" is then assumed (step 6).</param>
+/// <param name="ApproachAltitudeFt">Initial approach altitude from procedure data, when the sim has it.</param>
+public sealed record RunwayEnd(string Designator, GeoPoint Position, double HeadingTrueDeg, string? ApproachType = null, int? ApproachAltitudeFt = null);
 
 /// <summary>A physical runway between two ends. Its polygon is the rectangle between the ends, <see cref="WidthM"/> wide.</summary>
 public sealed record Runway(RunwayEnd First, RunwayEnd Second, double WidthM)
@@ -56,6 +58,9 @@ public sealed record AirportData
     /// <summary>Name used in controller callsigns, e.g. "Barcelona". Falls back to the ICAO code.</summary>
     public string? Name { get; init; }
     public double? ElevationFt { get; init; }
+
+    /// <summary>Airport reference point. When unknown, <see cref="ReferencePoint"/> falls back to the runway ends.</summary>
+    public GeoPoint? Location { get; init; }
     public IReadOnlyList<Runway> Runways { get; init; } = [];
     public IReadOnlyList<HoldShortPoint> HoldShorts { get; init; } = [];
     public IReadOnlyList<HoldingPoint> HoldingPoints { get; init; } = [];
@@ -68,4 +73,10 @@ public sealed record AirportData
     public int? TransitionLevel { get; init; }
 
     public Runway? FindRunway(string designator) => Runways.FirstOrDefault(r => r.Has(designator));
+
+    /// <summary>The reference point, or the mean of the runway ends; null when the airport has neither.</summary>
+    public GeoPoint? ReferencePoint =>
+        Location ?? (Runways.Count == 0 ? null : new GeoPoint(
+            Runways.Average(r => (r.First.Position.Latitude + r.Second.Position.Latitude) / 2),
+            Runways.Average(r => (r.First.Position.Longitude + r.Second.Position.Longitude) / 2)));
 }

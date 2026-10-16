@@ -177,6 +177,7 @@ public sealed class ConformanceMonitor
     private Reading ReadAltitudeBust(PhaseContext ctx)
     {
         if (!_airborne || _cleared is not { } cleared || ctx.Now - _clearedAt < _o.AltitudeSuppression) return Reading.Inside;
+        if (ctx.Clearance.Approach is not null) return Reading.Inside; // cleared for an approach: the procedure sets the descent
         double past = ctx.State.IndicatedAltitudeFt - cleared.NominalFeet;
         double excess = _verticalDirection switch
         {
@@ -203,7 +204,7 @@ public sealed class ConformanceMonitor
 
     private Reading ReadNotComplying(PhaseContext ctx)
     {
-        if (!_airborne || _cleared is null || _verticalDirection == 0 || _complying) return Reading.Inside;
+        if (!_airborne || _cleared is null || _verticalDirection == 0 || _complying || ctx.Clearance.Approach is not null) return Reading.Inside;
         double moved = _verticalDirection * (ctx.State.IndicatedAltitudeFt - _altitudeAtClearance);
         if (moved >= _o.ComplyingMovedFt || _verticalDirection * ctx.State.VerticalSpeedFpm >= _o.ComplyingVerticalSpeedFpm)
         {
@@ -287,17 +288,17 @@ public sealed class ConformanceMonitor
         return best;
     }
 
-    /// <summary>The cleared route: from the point of a direct-to through the rest of the plan, or the planned waypoints.</summary>
+    /// <summary>
+    /// The cleared route from origin to destination (the airspace route line), or after a direct-to: from where
+    /// the direct was given, through the rest of the plan, to the destination.
+    /// </summary>
     private List<GeoPoint> RoutePoints(PhaseContext ctx)
     {
+        if (_directTo is not { } fix) return ctx.Airspace.Route.Points.ToList();
         var route = ctx.Plan.Route;
-        if (_directTo is { } fix)
-        {
-            int i = route.ToList().FindIndex(w => string.Equals(w.Ident, fix, StringComparison.OrdinalIgnoreCase));
-            if (i < 0) return [];
-            return [_directFrom, .. route.Skip(i).Select(w => w.Position)];
-        }
-        return route.Select(w => w.Position).ToList();
+        int i = route.ToList().FindIndex(w => string.Equals(w.Ident, fix, StringComparison.OrdinalIgnoreCase));
+        if (i < 0) return [];
+        return [_directFrom, .. route.Skip(i).Select(w => w.Position), ctx.Airspace.Route.Destination];
     }
 
     // ---- Speed: above 250 kt IAS below FL100, or more than 15 kt above an assigned speed.
@@ -399,6 +400,7 @@ public sealed class ConformanceMonitor
     {
         if (!_airborne || ctx.State.AltitudeAglFt >= _o.FinalMaxAglFt) return Reading.Inside;
         if (ctx.Session.Phase is <= FlightPhase.InitialClimb) return Reading.Inside; // departure climb-out is not a final
+        if (ctx.Planning.MissedApproachInProgress) return Reading.Inside;          // going around, not landing
         foreach (var runway in ctx.Destination.Runways)
         {
             foreach (var end in new[] { runway.First, runway.Second })
@@ -424,7 +426,7 @@ public sealed class ConformanceMonitor
         return along >= 0 && along <= runway.LengthM && Math.Abs(cross) <= runway.WidthM / 2;
     }
 
-    private bool WarnUnclearedLanding(PhaseContext ctx, int level) => level > 2 || Urgent(ctx, [new GoAround()]);
+    private bool WarnUnclearedLanding(PhaseContext ctx, int level) => level > 2 || Urgent(ctx, [new GoAround(Repeated: level == 2)]);
 
     // ---- Taxi off route: more than 50 m from the cleared taxi route (only when a route is known).
 
@@ -504,16 +506,11 @@ public sealed class ConformanceMonitor
     /// <summary>Signed cross-track distance (positive right of the leg), measured to the nearest point of the segment.</summary>
     private static double CrossTrackNm(GeoPoint a, GeoPoint b, GeoPoint p)
     {
-        double r = GeoMath.EarthRadiusM;
-        double d13 = GeoMath.DistanceM(a, p) / r;
-        double t13 = GeoMath.BearingDeg(a, p) * Math.PI / 180, t12 = GeoMath.BearingDeg(a, b) * Math.PI / 180;
-        double xt = Math.Asin(Math.Sin(d13) * Math.Sin(t13 - t12));
-        double along = Math.Acos(Math.Clamp(Math.Cos(d13) / Math.Cos(xt), -1, 1)) * Math.Sign(Math.Cos(t13 - t12));
-        double length = GeoMath.DistanceM(a, b) / r;
-        double nm = xt * r / GeoMath.MetresPerNm;
-        if (along < 0) return Math.Sign(nm == 0 ? 1 : nm) * GeoMath.DistanceNm(a, p);
-        if (along > length) return Math.Sign(nm == 0 ? 1 : nm) * GeoMath.DistanceNm(b, p);
-        return nm;
+        var (xt, along) = GeoMath.TrackOffsets(a, b, p);
+        double sign = xt == 0 ? 1 : Math.Sign(xt);
+        if (along < 0) return sign * GeoMath.DistanceNm(a, p);
+        if (along > GeoMath.DistanceNm(a, b)) return sign * GeoMath.DistanceNm(b, p);
+        return xt;
     }
 
     private static double DistanceToPathM(IReadOnlyList<GeoPoint> path, GeoPoint p)

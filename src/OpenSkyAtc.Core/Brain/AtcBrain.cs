@@ -19,6 +19,11 @@ public sealed record AtcBrainOptions
     public ITaxiPlanner TaxiPlanner { get; init; } = new FallbackTaxiPlanner();
     public SquawkConfig Squawks { get; init; } = SquawkConfig.Empty;
     public ConformanceOptions Conformance { get; init; } = new();
+    public AirspaceOptions Airspace { get; init; } = new();
+    public PlanningOptions Planning { get; init; } = new();
+
+    /// <summary>CENTER frequencies from the sim's facility data along the route (step 6, decision A). Empty: no CTR sectors.</summary>
+    public IReadOnlyList<CenterFrequency> CenterFrequencies { get; init; } = [];
 
     /// <summary>Chance that Tower says "line up and wait" before the takeoff clearance (decision 7, step 3).</summary>
     public double LineUpAndWaitProbability { get; init; } = 0.3;
@@ -48,6 +53,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
     private IRandom _rng = null!;
     private IPhase _phase = null!;
     private ConformanceMonitor _monitor = null!;
+    private FlightPlanning _planning = null!;
     private bool _phaseEntered;
     private SimState? _state;
 
@@ -70,12 +76,13 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         _events.SetAirports(origin, destination);
         _queue = new TransmissionQueue();
         _conversation = new ConversationManager(_queue, _rng, Session.Log, _options.Timing);
-        _airspace = AirspaceModel.Build(origin, destination);
+        // Airspace and planning draw from their own streams so they never shift the conversation's choices.
+        _airspace = AirspaceModel.Build(origin, destination, plan, _options.CenterFrequencies, new SeededRandom(unchecked(seed ^ 0x0A1125AC)), _options.Airspace);
+        _planning = new FlightPlanning(plan, origin, destination, new SeededRandom(unchecked(seed ^ 0x51A221)), _options.Planning);
         _monitor = new ConformanceMonitor(_options.Conformance);
         _deferred.Clear();
         _state = null;
-        // Step 6 infers the phase for sessions that start in the air or on the runway.
-        _phase = Create(FlightPhase.Preflight);
+        _phase = Create(FlightPhase.Preflight); // replaced by the inferred phase on the first tick
         _phaseEntered = false;
     }
 
@@ -101,12 +108,16 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         var newEvents = _events.Process(state);
         foreach (var e in newEvents) Session.Log.Add(new SimEventLogged(e));
 
+        if (Session.Ended) return;
+
         if (!_phaseEntered)
         {
             _phaseEntered = true;
-            Session.Phase = _phase.Id;
-            _phase.OnEnter(Context([]));
-            Session.CurrentUnit = _phase.Unit(Context([]));
+            EnterInferred("session start");
+        }
+        else if (newEvents.OfType<PositionSettled>().Any())
+        {
+            EnterInferred("repositioned");
         }
 
         // Paused or settling after a teleport: every timer and the queue are frozen.
@@ -123,6 +134,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         _monitor.Tick(Context(newEvents));
         _conversation.Tick(_events.ActiveTime, simTime);
         DispatchDeferred();
+        Session.CurrentUnit = _phase.Unit(Context([])); // the unit in control can change within a phase (CTR sectors)
         Release(state, simTime);
     }
 
@@ -138,6 +150,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
 
         TrackHandoff(unit);
         Dispatch(intent, unit, allowDefer: true);
+        Session.CurrentUnit = _phase.Unit(Context([]));
         Release(state, Session.SimTime);
     }
 
@@ -263,6 +276,21 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         }
     }
 
+    /// <summary>Starts the phase that fits the aircraft's situation (design doc edge cases: start away from the gate, teleport).</summary>
+    private void EnterInferred(string why)
+    {
+        var ctx = Context([]);
+        var (phase, reason) = PhaseInference.Infer(ctx);
+        if (why != "session start" || phase != FlightPhase.Preflight)
+            Session.Log.Add(new PhaseInferred(Session.SimTime, phase, $"{why}: {reason}"));
+        PhaseInference.Prepare(ctx, phase);
+        if (_phaseEntered && why != "session start") _phase.OnExit(ctx);
+        _phase = Create(phase);
+        Session.Phase = phase;
+        _phase.OnEnter(Context([]));
+        Session.CurrentUnit = _phase.Unit(Context([]));
+    }
+
     private PhaseContext Context(IReadOnlyList<SimEvent> newEvents, ControllerUnit? calledUnit = null) =>
         new(_state!, Session, Session.Clearance, _events, _queue, _airspace, _rng)
         {
@@ -272,6 +300,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
             Origin = _origin,
             Destination = _destination,
             Options = _options,
+            Planning = _planning,
             Now = _events.ActiveTime,
             CalledUnit = calledUnit,
         };
@@ -286,6 +315,13 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         FlightPhase.TakeoffRoll => new TakeoffRollPhase(),
         FlightPhase.InitialClimb => new InitialClimbPhase(),
         FlightPhase.Departure => new DeparturePhase(),
-        _ => throw new NotSupportedException($"Phase {phase} is built in step 6."),
+        FlightPhase.EnRoute => new EnRoutePhase(),
+        FlightPhase.Descent => new DescentPhase(),
+        FlightPhase.Approach => new ApproachPhase(),
+        FlightPhase.Final => new FinalPhase(),
+        FlightPhase.LandingRoll => new LandingRollPhase(),
+        FlightPhase.TaxiIn => new TaxiInPhase(),
+        FlightPhase.Parked => new ParkedPhase(),
+        _ => throw new NotSupportedException($"Unknown phase {phase}."),
     };
 }

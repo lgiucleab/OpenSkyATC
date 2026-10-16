@@ -134,6 +134,32 @@ doc     | stop immediately | stop immediately
 doc     | stop immediately, I say again, stop | stop immediately, I say again, stop
 ## GoAround
 doc     | go around | go around
+## GoAround repeated
+doc     | go around, I say again, go around | go around, I say again, go around
+## FlyRunwayHeading
+doc     | fly runway heading | fly runway heading
+## RadarContact
+doc     | radar contact | radar contact
+## Identified
+doc     | identified | identified
+## ConfirmAltitude
+doc     | confirm altitude | confirm altitude
+## ExpectApproach
+doc     | expect ILS approach runway 24R | expect ILS approach runway two four right
+variant | expect ILS runway 24R | expect ILS runway two four right
+## ClearedApproach
+doc     | cleared ILS approach runway 24R | cleared ILS approach runway two four right
+variant | cleared ILS runway 24R | cleared ILS runway two four right
+## ReportEstablishedRequest
+doc     | report established | report established
+## VacateWhenAble
+doc     | vacate when able | vacate when able
+## TaxiToStand
+doc     | taxi to stand 27 | taxi to stand two seven
+## TaxiToStand parking
+doc     | taxi to parking | taxi to parking
+## ClosingCall
+doc     | good day | good day
 ## Mayday
 doc     | roger mayday | roger mayday
 ## PanPan

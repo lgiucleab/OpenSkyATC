@@ -128,3 +128,31 @@ Owner's choices: ICAO wording plus European variants, destination spoken by name
 - **Episodes fixed within the grace time** (level 0) are not logged unless serious.
 - **Vector back to route** sets the assigned heading when sent, so the heading check takes over from the route check.
 - **Simulated pilot:** the replay runner sets the transponder to the assigned squawk (`ReplayOptions.SetsSquawk`), since a recording cannot know the code in advance.
+
+## 2026-10-16 - Answers before step 6
+
+- **CTR frequencies (option 1):** CENTER-type frequencies from the sim's airport facility data (SimConnect frequency type 10), collected by the host along the route and passed to the brain. Each generated sector uses the nearest one within 300 nm; sectors without one merge into a neighbour; with none on the whole route, Departure hands straight to Approach. Frequencies are never invented. Sector name from the channel name when present, else "<city or airport> Control". openAIP (CC BY-NC) rejected for licence reasons; VATSpy (CC BY-SA 4.0, FIR names/boundaries only) kept for the later real-sector upgrade.
+- **B1 planning split:** step 6 builds the doc-specified step climbs, top of descent and descent-request rule; step 7 adds vectoring, speed control, STAR/approach planning and the runway SOP rules.
+- **B2 descent targets:** CTR descends to FL100 (or the cruise level if lower); Approach clears to the approach procedure altitude when the sim has it, otherwise field elevation + 3,000 ft rounded up to 500 ft, with QNH. The fallback is a setting.
+- **B3 QNH:** sea-level pressure at the aircraft once within 40 nm of the destination.
+- **B4 approach clearance until step 7:** "expect ILS runway X", then "cleared ILS approach runway X, report established"; the pilot flies the approach on own navigation.
+- **B5 arrival wording:** "vacate when able, contact Ground" (doc); "taxi to stand 27" (CAP 413) or "taxi to parking" when no stand is known (owner's choice); "go around, I say again, go around" (CAP 413); missed approach "fly runway heading, climb 5000 ft" (doc) with handoff to Approach.
+- **B6:** phase inference for sessions starting in the air or after a teleport is built in step 6. Diversions stay out (no intent for them).
+- **B7:** synthetic gate-to-gate and go-around flights stand in for recordings until real ones exist.
+
+## 2026-10-16 - Step 6
+
+- **Step climbs:** "clear it higher in 2-6 blocks until cruise" is read as: the climb from the initial level to cruise is split into 2-6 steps (seeded), evenly spaced and rounded to whole thousands of feet. A traffic hold-down silently adds 60-120 s; a pilot request for higher during a hold-down gets "stand by" and the step when it ends.
+- **Descent request** outside the 30 nm window gets "stand by" and the descent once inside it (no invented "unable" wording).
+- **Approach timing (no doc value):** the approach clearance is given within 20 nm of the threshold; the handoff to Tower when established and within 10 nm (doc). An approach clearance is read back as runway + clearance (the doc table has no row for it).
+- **Go-around branch:** Tower (or Approach, if the pilot is still with it) gives "fly runway heading, climb 5000 ft" (+ contact Approach). Back with Approach, the new approach comes once level at the missed-approach altitude, as one transmission: descend to the approach altitude, QNH, cleared approach, report established. The missed approach is tracked in `FlightPlanning.MissedApproachInProgress` so it survives the phase change.
+- **Conformance during approaches:** altitude bust and not-complying checks pause while cleared for an approach (the glide path goes below the approach altitude), and the landing-without-clearance check pauses while a missed approach is being flown.
+- **Check-in replies:** Departure says "radar contact" (first radar unit); CTR and Approach say "identified". "Confirm altitude" when the reported altitude differs from Mode C by more than 200 ft; this wording is not from a checked source.
+- **CTR names:** channel names are title-cased and a trailing CENTER/CENTRE/CTR/ACC becomes "Control" (ICAO term).
+- **Approach type:** "ILS" unless the runway end's data says otherwise; procedure altitude used when present.
+- **Taxi in / parked:** the stand is read back only when named; without parking data, parked means stopped with the brake set off the runway. Closing call: "good day".
+- **Missed-approach altitude:** the doc's 5,000 ft, as a flight level when at or above the transition altitude.
+- **Transition altitude placeholder:** when an airport's TA is unknown, 10,000 ft decides feet vs flight levels (`PlanningOptions.DefaultTransitionAltitudeFt`). Not from a source; to be replaced by the transition-altitude data file.
+- **Session.CurrentUnit** is refreshed every tick, because the unit in control changes within the area-control phases.
+- **Randomness:** airspace and planning use their own seeded streams so they never shift the conversation's choices.
+- **Simulated pilot:** `SimulatedPilot` (Replay.Tests) flies the clearance closed-loop on `SyntheticRoute`; gate-to-gate, two go-around variants and five extra seeds run without getting stuck. A stuck flight dumps its transcript to a `.received.txt` file.

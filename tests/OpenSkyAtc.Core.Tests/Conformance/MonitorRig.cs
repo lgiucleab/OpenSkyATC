@@ -7,6 +7,7 @@ using OpenSkyAtc.Core.Geo;
 using OpenSkyAtc.Core.Messages;
 using OpenSkyAtc.Core.Model;
 using OpenSkyAtc.Core.Phases;
+using OpenSkyAtc.Core.Planning;
 using OpenSkyAtc.Core.Radio;
 using OpenSkyAtc.Core.Random;
 using OpenSkyAtc.Core.Sim;
@@ -41,9 +42,10 @@ internal sealed class MonitorRig
     {
         _options = new AtcBrainOptions { Conformance = options ?? new ConformanceOptions() };
         Monitor = new ConformanceMonitor(_options.Conformance);
-        Airspace = AirspaceModel.Build(Airport, destination ?? Airport);
-        Conversation = new ConversationManager(Queue, _rng, Session.Log);
         Plan = plan ?? new FlightPlan { Callsign = "VLG1234", Origin = Airport.Icao, Destination = (destination ?? Airport).Icao };
+        Airspace = AirspaceModel.Build(Airport, destination ?? Airport, Plan, [], _rng);
+        Planning = new FlightPlanning(Plan, Airport, destination ?? Airport, _rng);
+        Conversation = new ConversationManager(Queue, _rng, Session.Log);
         Destination = destination ?? Airport;
         Session.Phase = phase;
         Session.CurrentUnit = Airspace.Units.First(u => u.Role == controller);
@@ -56,6 +58,7 @@ internal sealed class MonitorRig
     public AirspaceModel Airspace { get; }
     public ConformanceMonitor Monitor { get; }
     public FlightPlan Plan { get; }
+    public FlightPlanning Planning { get; }
     public AirportData Destination { get; }
     public TimeSpan Now { get; private set; }
 
@@ -81,6 +84,7 @@ internal sealed class MonitorRig
             Origin = Airport,
             Destination = Destination,
             Options = _options,
+            Planning = Planning,
             Now = Now,
         };
         Monitor.Tick(ctx);

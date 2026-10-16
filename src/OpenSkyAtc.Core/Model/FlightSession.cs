@@ -33,6 +33,9 @@ public sealed class FlightSession(int seed)
     public FlightPhase Phase { get; internal set; } = FlightPhase.Preflight;
     public ControllerUnit? CurrentUnit { get; internal set; }
     public TimeSpan? LastPilotTransmission { get; internal set; }
+
+    /// <summary>True once the flight is over (parked, engines off). The brain does nothing more.</summary>
+    public bool Ended { get; internal set; }
     public Clearance Clearance { get; } = new();
     public EventLog Log { get; } = new();
 }
@@ -55,6 +58,14 @@ public sealed record TransmissionDropped(TimeSpan Time, ControllerUnit Unit, IRe
 
 /// <summary>The pilot called <paramref name="Called"/> instead of the unit the handoff was to (design doc edge case).</summary>
 public sealed record HandoffSkipped(TimeSpan Time, ControllerUnit Expected, ControllerUnit Called) : LogEntry(Time);
+
+/// <summary>A go-around (reported or detected) and the phase it happened in.</summary>
+public sealed record GoAroundLogged(TimeSpan Time, FlightPhase Phase) : LogEntry(Time);
+
+public sealed record SessionEnded(TimeSpan Time, string Reason) : LogEntry(Time);
+
+/// <summary>The phase was worked out from the aircraft's situation (session start or after a teleport).</summary>
+public sealed record PhaseInferred(TimeSpan Time, FlightPhase Phase, string Reason) : LogEntry(Time);
 
 /// <summary>A pilot request the current phase does not handle, with how ATC answered.</summary>
 public sealed record RequestRejected(TimeSpan Time, PilotIntent Intent, string Reason) : LogEntry(Time);

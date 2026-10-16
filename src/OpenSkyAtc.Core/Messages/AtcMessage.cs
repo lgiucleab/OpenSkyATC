@@ -91,7 +91,32 @@ public sealed record HoldPosition : AtcMessagePart;
 /// <param name="Emphasis">"stop immediately, I say again, stop" (takeoff without clearance).</param>
 public sealed record StopImmediately(bool Emphasis = false) : AtcMessagePart;
 
-public sealed record GoAround : AtcMessagePart;
+/// <param name="Repeated">"go around, I say again, go around" (CAP 413).</param>
+public sealed record GoAround(bool Repeated = false) : AtcMessagePart;
+
+public sealed record FlyRunwayHeading : AtcMessagePart;
+
+/// <summary>First radar unit on check-in.</summary>
+public sealed record RadarContact : AtcMessagePart;
+
+/// <summary>Later radar units on check-in.</summary>
+public sealed record Identified : AtcMessagePart;
+
+/// <summary>Reported altitude differs from Mode C by more than 200 ft.</summary>
+public sealed record ConfirmAltitude : AtcMessagePart;
+
+/// <param name="Type">Approach type, e.g. "ILS".</param>
+public sealed record ExpectApproach(string Type, string Runway) : AtcMessagePart;
+
+public sealed record ClearedApproach(string Type, string Runway) : AtcMessagePart;
+public sealed record ReportEstablishedRequest : AtcMessagePart;
+public sealed record VacateWhenAble : AtcMessagePart;
+
+/// <summary>"taxi to stand 27"; a null stand is "taxi to parking".</summary>
+public sealed record TaxiToStand(string? Stand) : AtcMessagePart;
+
+/// <summary>The closing call when parked.</summary>
+public sealed record ClosingCall : AtcMessagePart;
 
 /// <summary>Surface wind in degrees magnetic, rounded to 10 degrees. Speed 0 means calm.</summary>
 public sealed record Wind(int DirectionMagDeg, int SpeedKt) : AtcMessagePart;

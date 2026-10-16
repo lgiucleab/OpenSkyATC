@@ -36,6 +36,20 @@ public static class GeoMath
         return new GeoPoint(Deg(lat2), AngleDiffDeg(Deg(lon2), 0));
     }
 
+    /// <summary>
+    /// Position of <paramref name="p"/> relative to the great circle from <paramref name="a"/> to <paramref name="b"/>:
+    /// signed cross-track distance (positive to the right) and along-track distance from <paramref name="a"/>, in nm.
+    /// Along-track is negative behind <paramref name="a"/>.
+    /// </summary>
+    public static (double CrossNm, double AlongNm) TrackOffsets(GeoPoint a, GeoPoint b, GeoPoint p)
+    {
+        double d13 = DistanceM(a, p) / EarthRadiusM;
+        double dt = Rad(BearingDeg(a, p) - BearingDeg(a, b));
+        double xt = Math.Asin(Math.Sin(d13) * Math.Sin(dt));
+        double along = Math.Acos(Math.Clamp(Math.Cos(d13) / Math.Cos(xt), -1, 1)) * Math.Sign(Math.Cos(dt));
+        return (xt * EarthRadiusM / MetresPerNm, along * EarthRadiusM / MetresPerNm);
+    }
+
     /// <summary>Angle in [0, 360).</summary>
     public static double NormalizeDeg(double deg)
     {

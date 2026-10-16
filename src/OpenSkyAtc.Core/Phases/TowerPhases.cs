@@ -138,17 +138,3 @@ public sealed class InitialClimbPhase : Phase
             ? [new CheckIn((int)(Math.Round(ctx.State.IndicatedAltitudeFt / 100) * 100), ctx.Clearance.ClearedAltitude)]
             : [];
 }
-
-/// <summary>Phase 8 placeholder until step 6: accepts the check-in so the handoff can be verified.</summary>
-public sealed class DeparturePhase : Phase
-{
-    public override FlightPhase Id => FlightPhase.Departure;
-    public override ControllerUnit? Unit(PhaseContext ctx) => ctx.Airspace.DepartureUnit;
-
-    public override PhaseResult OnPilotIntent(PhaseContext ctx, PilotIntent intent)
-    {
-        if (intent is not CheckIn || !CallsMe(ctx)) return PhaseResult.Unhandled;
-        ctx.Clearance.CurrentFrequencyKhz = Unit(ctx)!.FrequencyKhz;
-        return PhaseResult.Stay;
-    }
-}

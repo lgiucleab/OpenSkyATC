@@ -29,3 +29,6 @@
 [00:07:58.500] READBACK #7 contact-departure: correct
 [00:08:15.000] PILOT (124.700) CheckIn passing=1700 cleared=5000 ft
 [00:08:15.000] PHASE InitialClimb -> Departure (checked in with departure)
+[00:08:18.750] ATC Testville Departure: Vueling 1234, Testville Departure, radar contact, climb FL110
+[00:08:22.750] PILOT (124.700) Readback Altitude=FL110
+[00:08:22.750] READBACK #8 climb: correct

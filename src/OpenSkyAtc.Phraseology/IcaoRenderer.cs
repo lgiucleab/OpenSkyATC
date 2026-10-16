@@ -118,7 +118,23 @@ public sealed class IcaoRenderer
         HoldPosition => Text.Same("hold position"),
         StopImmediately { Emphasis: true } => Text.Same("stop immediately, I say again, stop"),
         StopImmediately => Text.Same("stop immediately"),
+        GoAround { Repeated: true } => Text.Same("go around, I say again, go around"),
         GoAround => Text.Same("go around"),
+        FlyRunwayHeading => Text.Same("fly runway heading"),
+        RadarContact => Text.Same("radar contact"),
+        Identified => Text.Same("identified"),
+        ConfirmAltitude => Text.Same("confirm altitude"),
+        ExpectApproach e => Pick(
+            Text.Same($"expect {e.Type} approach ") + RunwayText(e.Runway),
+            Text.Same($"expect {e.Type} ", european: true) + RunwayText(e.Runway)),
+        ClearedApproach c => Pick(
+            Text.Same($"cleared {c.Type} approach ") + RunwayText(c.Runway),
+            Text.Same($"cleared {c.Type} ", european: true) + RunwayText(c.Runway)),
+        ReportEstablishedRequest => Text.Same("report established"),
+        VacateWhenAble => Text.Same("vacate when able"),
+        TaxiToStand { Stand: { } stand } => new Text($"taxi to stand {stand}", $"taxi to stand {_say.Designator(stand)}"),
+        TaxiToStand => Text.Same("taxi to parking"),
+        ClosingCall => Text.Same("good day"),
         Wind w => Text.Same("wind ") + WindValue(w),
         ClearedTakeoff t => RunwayText(t.Runway) + Text.Same(", cleared for takeoff"),
         ClearedLand l => RunwayText(l.Runway) + Text.Same(", cleared to land"),
@@ -249,6 +265,7 @@ public sealed class IcaoRenderer
         ReadbackItem.HoldShorts => "hold short",
         ReadbackItem.DirectTo => "direct",
         ReadbackItem.Qnh => "QNH",
+        ReadbackItem.Stand => "stand",
         _ => item.ToString().ToLowerInvariant(),
     };
 

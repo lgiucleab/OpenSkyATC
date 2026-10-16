@@ -370,7 +370,8 @@ public class RunwaySafetyTests
         rig.Hold(12, Final(1));
 
         Assert.Equal(2, rig.Messages.Count);
-        Assert.All(rig.Messages, m => Assert.Equal<AtcMessagePart>([new GoAround()], m));
+        Assert.Equal<AtcMessagePart>([new GoAround()], rig.Messages[0]);
+        Assert.Equal<AtcMessagePart>([new GoAround(Repeated: true)], rig.Messages[1]);
         Assert.Equal(10, (rig.Sent[1].Time - rig.Sent[0].Time).TotalSeconds, 0.3);
     }
 

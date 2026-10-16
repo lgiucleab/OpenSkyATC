@@ -2,8 +2,10 @@ using OpenSkyAtc.Core.Airspace;
 using OpenSkyAtc.Core.Brain;
 using OpenSkyAtc.Core.Conversation;
 using OpenSkyAtc.Core.Events;
+using OpenSkyAtc.Core.Geo;
 using OpenSkyAtc.Core.Messages;
 using OpenSkyAtc.Core.Model;
+using OpenSkyAtc.Core.Planning;
 using OpenSkyAtc.Core.Radio;
 using OpenSkyAtc.Core.Random;
 using OpenSkyAtc.Core.Sim;
@@ -55,12 +57,15 @@ public sealed record PhaseContext(
     public required AirportData Origin { get; init; }
     public required AirportData Destination { get; init; }
     public required AtcBrainOptions Options { get; init; }
+    public required FlightPlanning Planning { get; init; }
 
     /// <summary>Active-clock time (stops while paused). Use it for every delay and timer.</summary>
     public required TimeSpan Now { get; init; }
 
     /// <summary>The unit the pilot is talking to, for <see cref="IPhase.OnPilotIntent"/> calls.</summary>
     public ControllerUnit? CalledUnit { get; init; }
+
+    public GeoPoint Position => new(State.Latitude, State.Longitude);
 
     /// <summary>The cleared departure runway end, once the clearance has been sent.</summary>
     public RunwayEnd? DepartureRunway =>
@@ -80,6 +85,36 @@ public abstract class Phase : IPhase
 
     /// <summary>True when the pilot is calling this phase's unit.</summary>
     protected bool CallsMe(PhaseContext ctx) => ctx.CalledUnit is { } u && u == Unit(ctx);
+
+    /// <summary>
+    /// Check-in reply: "radar contact" (first radar unit) or "identified", plus "confirm altitude" when the
+    /// reported altitude differs from Mode C by more than 200 ft (design doc "Check-in").
+    /// </summary>
+    protected static List<AtcMessagePart> CheckInParts(PhaseContext ctx, PilotIntent intent, bool firstRadarUnit)
+    {
+        var parts = new List<AtcMessagePart> { firstRadarUnit ? new RadarContact() : new Identified() };
+        if (intent is CheckIn { AltitudeFt: { } reported } && Math.Abs(reported - ctx.State.IndicatedAltitudeFt) > 200)
+            parts.Add(new ConfirmAltitude());
+        return parts;
+    }
+
+    /// <summary>A climb clearance to <paramref name="target"/>, parts in <paramref name="before"/> first (e.g. "radar contact").</summary>
+    internal static Exchange Climb(PhaseContext ctx, ControllerUnit unit, AltitudeTarget target, TransmissionPriority priority, TimeSpan due,
+        IEnumerable<AtcMessagePart>? before = null) =>
+        ClearAltitude(ctx, unit, target, priority, due, before, tag: "climb");
+
+    /// <summary>Climb or descent instruction to <paramref name="target"/> (with any extra parts), read back as altitude (and QNH).</summary>
+    internal static Exchange ClearAltitude(PhaseContext ctx, ControllerUnit unit, AltitudeTarget target, TransmissionPriority priority, TimeSpan due,
+        IEnumerable<AtcMessagePart>? before = null, IEnumerable<AtcMessagePart>? after = null, string tag = "altitude")
+    {
+        bool climb = target.NominalFeet > ctx.State.IndicatedAltitudeFt;
+        AtcMessagePart instruction = climb ? new ClimbTo(target) : new DescendTo(target);
+        var parts = (before ?? []).Append(instruction).Concat(after ?? []).ToList();
+
+        var b = ReadbackExpectation.Builder().Add(ReadbackItem.Altitude, ReadbackValues.Altitude(target), instruction);
+        if (parts.OfType<Qnh>().FirstOrDefault() is { } qnh) b.Add(ReadbackItem.Qnh, qnh.Hpa.ToString(System.Globalization.CultureInfo.InvariantCulture), qnh);
+        return ctx.Conversation.Transmit(unit, parts, priority, due, b.Build(), onSent: () => ctx.Clearance.ClearedAltitude = target, tag: tag);
+    }
 
     /// <summary>Hands off to <paramref name="next"/>: "contact Tower 118.100", expecting the frequency read back.</summary>
     protected static Exchange Handoff(PhaseContext ctx, ControllerUnit from, ControllerUnit next, TimeSpan due, TransmissionPriority priority, string tag)
