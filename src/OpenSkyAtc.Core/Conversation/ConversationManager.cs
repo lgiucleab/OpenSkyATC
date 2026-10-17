@@ -118,6 +118,15 @@ public sealed class ConversationManager(TransmissionQueue queue, IRandom rng, Ev
         if (t.Exchange is { State: ExchangeState.Queued } ex) ex.State = ExchangeState.Dropped;
     }
 
+    /// <summary>Time left before the latest instruction awaiting a readback is repeated (or marked missed); null when none waits.</summary>
+    public TimeSpan? ReadbackTimeLeft(TimeSpan now)
+    {
+        var ex = _exchanges.LastOrDefault(e => e.State == ExchangeState.AwaitingReadback && e.SentAt is not null);
+        if (ex?.SentAt is not { } sent) return null;
+        var left = _timing.ReadbackTimeout - (now - sent);
+        return left > TimeSpan.Zero ? left : TimeSpan.Zero;
+    }
+
     /// <summary>Repeats an unanswered instruction once, then marks it missed.</summary>
     internal void Tick(TimeSpan now, TimeSpan simTime)
     {

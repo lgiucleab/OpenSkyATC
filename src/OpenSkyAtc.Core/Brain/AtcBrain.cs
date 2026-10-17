@@ -60,6 +60,9 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
 
     public FlightSession Session { get; private set; } = new(0);
 
+    /// <summary>Time left to read back the pending instruction before ATC repeats it (for a countdown in the UI); null when none waits.</summary>
+    public TimeSpan? ReadbackTimeLeft => _state is null ? null : _conversation.ReadbackTimeLeft(_events.ActiveTime);
+
     /// <summary>The unit the pilot should be talking to now (for hints in the UI); null before the first tick.</summary>
     public ControllerUnit? ExpectedUnit => _state is null ? null : Session.Clearance.HandoffTo ?? _phase.Unit(Context([]));
 

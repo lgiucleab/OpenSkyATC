@@ -43,6 +43,12 @@ public sealed record AppSettings
     /// <summary>"en" or "es" (app UI only; the radio is always English).</summary>
     public string Language { get; init; } = "en";
     public bool HardMode { get; init; }
+
+    /// <summary>
+    /// Time to read back an instruction before ATC repeats it, counted from the end of the spoken call. The design
+    /// doc's 10 s is short for clicking a button after a long clearance (owner's choice: 20 s).
+    /// </summary>
+    public double ReadbackSeconds { get; init; } = 20;
     public bool CompactMode { get; init; }
 
     /// <summary>Main window position and size, restored on start; null for the default.</summary>

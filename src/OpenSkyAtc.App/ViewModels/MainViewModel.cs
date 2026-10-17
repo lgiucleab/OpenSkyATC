@@ -21,11 +21,14 @@ public interface IMainView
 
 public sealed record TranscriptLine(string Time, string Who, string Text, TranscriptKind Kind);
 
-public sealed class IntentButton(PilotIntent intent, string label, bool primary, IRelayCommand<IntentButton> command)
+public sealed partial class IntentButton(PilotIntent intent, string label, bool primary, IRelayCommand<IntentButton> command) : ObservableObject
 {
     public bool Danger => Intent is Mayday or PanPan;
     public PilotIntent Intent { get; } = intent;
-    public string Label { get; } = label;
+    public string BaseLabel { get; } = label;
+
+    /// <summary>The label, with the readback countdown ("Read back: 118.080 · 14 s") when one runs.</summary>
+    [ObservableProperty] private string _label = label;
     public bool Primary { get; } = primary;
     public IRelayCommand<IntentButton> Command { get; } = command;
 }
@@ -272,6 +275,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ArrowsText = s is { Arrows: > 0 } ? Loc.Format("Main.Arrows", s.Arrows, Settings.ArrowLookAheadM.ToString("0", CultureInfo.InvariantCulture)) : null;
 
         var intents = s?.Intents ?? [];
+        string? countdown = s?.ReadbackTimeLeft is { } left ? $" · {Math.Ceiling(left.TotalSeconds):0} s" : null;
         string key = string.Join("|", intents.Select(i => i.ToString())) + HardMode + Loc.Instance.Language;
         if (force || key != _intentKey)
         {
@@ -279,6 +283,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Intents.Clear();
             foreach (var i in intents) Intents.Add(new IntentButton(i, Label(i), i is Readback, SendCommand));
         }
+        foreach (var b in Intents)
+            b.Label = b.Intent is Readback { Items.Count: > 0 } ? b.BaseLabel + countdown : b.BaseLabel;
     }
 
     private string Label(PilotIntent intent) => intent switch

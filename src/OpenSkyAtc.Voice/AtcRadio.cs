@@ -89,6 +89,17 @@ public sealed class AtcRadio : IDisposable
 
     public float Volume { get => _player.Volume; set => _player.Volume = value; }
 
+    /// <summary>A call is being synthesised, waiting for the channel or playing.</summary>
+    public bool IsBusy
+    {
+        get
+        {
+            lock (_lock) return _toSpeak.Count > 0 || !_ready.IsEmpty || _channel.Playing is not null || _channel.Waiting > 0 || _synthesising;
+        }
+    }
+
+    private volatile bool _synthesising;
+
     /// <summary>Radio effect on (band-pass, hiss, squelch) or clean voices.</summary>
     public bool Filter { get; init; } = true;
 
@@ -143,6 +154,7 @@ public sealed class AtcRadio : IDisposable
     {
         foreach (var (message, speech) in _toSpeak.GetConsumingEnumerable())
         {
+            _synthesising = true;
             try
             {
                 var voice = _voices.VoiceFor(message.Unit.Callsign);
@@ -153,6 +165,10 @@ public sealed class AtcRadio : IDisposable
             catch (Exception e)
             {
                 Error?.Invoke($"Could not speak '{speech}': {e.Message}");
+            }
+            finally
+            {
+                _synthesising = false;
             }
         }
     }

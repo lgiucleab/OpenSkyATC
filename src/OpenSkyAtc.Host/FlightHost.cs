@@ -68,6 +68,9 @@ public sealed record HostSnapshot
     public int Arrows { get; init; }
     public bool Paused { get; init; }
     public TimeSpan SimTime { get; init; }
+
+    /// <summary>Time left to read back before ATC repeats the call; null when nothing waits or ATC is still speaking.</summary>
+    public TimeSpan? ReadbackTimeLeft { get; init; }
 }
 
 /// <summary>
@@ -139,6 +142,8 @@ public sealed class FlightHost : IDisposable
                 Arrows = _arrowCount,
                 Paused = _state?.IsPaused ?? false,
                 SimTime = _brain?.Session.SimTime ?? TimeSpan.Zero,
+                // While ATC is still speaking the readback time has not started yet (it restarts when the call is heard).
+                ReadbackTimeLeft = _radio?.IsBusy == true ? null : _brain?.ReadbackTimeLeft,
             };
         }
     }
@@ -177,7 +182,13 @@ public sealed class FlightHost : IDisposable
             var centers = CenterSearch.Merge(simCenters, Data.CtrSectors);
 
             int seed = request.Seed ?? Environment.TickCount;
-            var brain = new AtcBrain(new AtcBrainOptions { Squawks = Data.Squawks, Sops = Data.Sops, CenterFrequencies = centers });
+            var brain = new AtcBrain(new AtcBrainOptions
+            {
+                Squawks = Data.Squawks,
+                Sops = Data.Sops,
+                CenterFrequencies = centers,
+                Timing = new Core.Conversation.ConversationTiming { ReadbackTimeout = TimeSpan.FromSeconds(Math.Clamp(_settings.ReadbackSeconds, 5, 120)) },
+            });
             brain.Start(plan, origin, destination, seed);
             lock (_gate)
             {

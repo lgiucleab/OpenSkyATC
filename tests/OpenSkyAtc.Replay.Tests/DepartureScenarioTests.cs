@@ -212,6 +212,25 @@ public class TransmissionHeardTests
     private static double Seconds(string line) => TimeSpan.ParseExact(line[1..13], @"hh\:mm\:ss\.fff", null).TotalSeconds;
 
     [Fact]
+    public void TheReadbackTimeLeft_CountsDownFromTheConfiguredWait_AndClearsOnReadback()
+    {
+        var brain = new AtcBrain(new AtcBrainOptions { Timing = new Core.Conversation.ConversationTiming { ReadbackTimeout = TimeSpan.FromSeconds(20) } });
+        var left = new List<(TimeSpan At, TimeSpan? Left)>();
+        var t = ReplayRunner.Run(brain, Build(), IntentScript.Parse("""
+            00:10 RequestClearance
+            00:25 Readback
+            """), Plan, Origin, Destination, seed: 1, new ReplayOptions { AutoReadback = false }, afterTick: (b, s) => left.Add((s.Time, ((AtcBrain)b).ReadbackTimeLeft)));
+
+        Assert.All(left.Where(x => x.At < TimeSpan.FromSeconds(13)), x => Assert.Null(x.Left)); // nothing sent yet
+        var first = left.First(x => x.Left is not null);
+        Assert.InRange(first.Left!.Value.TotalSeconds, 19.5, 20);
+        var later = left.First(x => x.At >= first.At + TimeSpan.FromSeconds(5));
+        Assert.InRange(later.Left!.Value.TotalSeconds, 14.5, 15.1);
+        Assert.Contains(t, l => l.Contains("ifr-clearance: correct"));
+        Assert.Single(t, l => l.Contains("cleared to XDST")); // read back within 20 s: no repeat
+    }
+
+    [Fact]
     public void TheReadbackTimer_StartsWhenTheClearanceHasBeenHeard()
     {
         var textOnly = Run(heardAfterSeconds: 0);
