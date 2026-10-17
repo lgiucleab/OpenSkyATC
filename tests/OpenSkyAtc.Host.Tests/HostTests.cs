@@ -59,15 +59,15 @@ public class TranscriptTests
     {
         var brain = new AtcBrain();
         ReplayRunner.Run(brain, Build(), IntentScript.Parse(DepartureScenarioTests.NormalRequests), Plan, Origin, Destination, seed: 1);
-        var lines = new TranscriptWriter(brain.Session, new IcaoRenderer(1)).TakeNew();
+        var lines = new TranscriptWriter(brain.Session, new IcaoRenderer(1), "Vueling 1234").TakeNew();
 
         var first = lines.First(l => l.Kind == TranscriptKind.Pilot);
-        Assert.Equal("Request IFR clearance", first.Text);
+        Assert.Equal("Request IFR clearance, Vueling 1234", first.Text);
         Assert.Equal(DeliveryKhz, first.FrequencyKhz);
         var clearance = lines.First(l => l.Kind == TranscriptKind.Atc);
         Assert.Equal("Testville Delivery", clearance.Station);
         Assert.Contains("cleared to XDST", clearance.Text);
-        Assert.Contains(lines, l => l.Kind == TranscriptKind.Pilot && l.Text.StartsWith("cleared to XDST, ") && l.Text.Contains("squawk "));
+        Assert.Contains(lines, l => l.Kind == TranscriptKind.Pilot && l.Text.StartsWith("Cleared to XDST, ") && l.Text.Contains("squawk ") && l.Text.EndsWith(", Vueling 1234"));
         Assert.Contains(lines, l => l is { Kind: TranscriptKind.Event, Text: "Phase: cleared" });
         Assert.True(lines.Zip(lines.Skip(1)).All(p => p.First.Time <= p.Second.Time));
     }

@@ -241,9 +241,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Phase = Loc.Get($"Phase.{s.Phase}");
             Cleared = string.Join(" · ", new[]
             {
-                s.ClearedAltitude is { } a ? PilotPhrase.Altitude(a) : null,
+                s.ClearedAltitude is { } a ? (a.Kind == Core.Model.AltitudeKind.FlightLevel ? $"FL{a.Value:000}" : $"{a.Value} ft") : null,
                 s.Squawk is { } sq ? Loc.Format("Main.Squawk", sq.ToString("0000", CultureInfo.InvariantCulture)) : null,
-                s.Runway is { } rwy ? $"RWY {rwy}" : null,
             }.Where(x => x is not null));
             if (Cleared.Length == 0) Cleared = "—";
         }
@@ -270,7 +269,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Hint = null;
             HintIsWarning = false;
         }
-        ArrowsText = s is { Arrows: > 0 } ? Loc.Format("Main.Arrows", s.Arrows) : null;
+        ArrowsText = s is { Arrows: > 0 } ? Loc.Format("Main.Arrows", s.Arrows, Settings.ArrowLookAheadM.ToString("0", CultureInfo.InvariantCulture)) : null;
 
         var intents = s?.Intents ?? [];
         string key = string.Join("|", intents.Select(i => i.ToString())) + HardMode + Loc.Instance.Language;
@@ -297,25 +296,26 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         StatusText = Loc.Get("Status.Running");
         StatusDetail = "IBE1234 LEMD to LEBL";
+        ShowStatusDetail = false;
         Connected = true;
         FlightActive = true;
         Callsign = "Iberia 1234";
         Route = "LEMD 36L → LEBL";
-        Phase = "taxi out";
-        Cleared = "5,000 ft · sq 4774 · RWY 36L";
+        Phase = Loc.Get("Phase.TaxiOut");
+        Cleared = "5000 ft · sq 4774";
         Frequency = "121.630";
         TalkingTo = "Barajas Ground";
         Hint = Loc.Format("Main.Next", "Barajas Tower", "118.080");
         HintIsWarning = true;
-        ArrowsText = Loc.Format("Main.Arrows", 30);
+        ArrowsText = Loc.Format("Main.Arrows", 30, 300);
         LastAtc = "Barajas Ground: Iberia 1234, contact Tower 118.080, bye bye";
         AddTranscript(
         [
-            new(TimeSpan.FromSeconds(25), TranscriptKind.Pilot, "Barajas Delivery", 130_080, "Request IFR clearance"),
+            new(TimeSpan.FromSeconds(25), TranscriptKind.Pilot, "Barajas Delivery", 130_080, "Barajas Delivery, Iberia 1234, request IFR clearance"),
             new(TimeSpan.FromSeconds(27), TranscriptKind.Atc, "Barajas Delivery", 130_080, "Iberia 1234, Barajas Delivery, cleared to LEBL via flight planned route, climb to altitude 5000 ft, squawk 4774"),
             new(TimeSpan.FromSeconds(30), TranscriptKind.Event, null, null, "Phase: cleared"),
             new(TimeSpan.FromSeconds(68), TranscriptKind.Atc, "Barajas Ground", 121_630, "Iberia 1234, taxi to holding point runway 36L via EB, A, L"),
-            new(TimeSpan.FromSeconds(72), TranscriptKind.Pilot, "Barajas Ground", 121_630, "runway 36L"),
+            new(TimeSpan.FromSeconds(72), TranscriptKind.Pilot, "Barajas Ground", 121_630, "Runway 36L via EB, A, L, Iberia 1234"),
             new(TimeSpan.FromSeconds(190), TranscriptKind.Warning, null, null, "Off the cleared taxi route"),
             new(TimeSpan.FromSeconds(220), TranscriptKind.Atc, "Barajas Ground", 121_630, "Iberia 1234, contact Tower 118.080, bye bye"),
         ]);

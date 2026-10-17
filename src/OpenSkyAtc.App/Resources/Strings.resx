@@ -63,7 +63,7 @@
     <value>No flight yet. Set your plan source in Settings, then start a flight.</value>
   </data>
   <data name="Main.Arrows" xml:space="preserve">
-    <value>Taxi arrows: {0} shown</value>
+    <value>Taxi arrows: {0} shown · {1} m ahead</value>
   </data>
   <data name="Main.Squawk" xml:space="preserve">
     <value>sq {0}</value>
@@ -78,49 +78,49 @@
     <value>MSFS flight plans (*.pln)|*.pln</value>
   </data>
   <data name="Phase.Preflight" xml:space="preserve">
-    <value>preflight</value>
+    <value>Preflight</value>
   </data>
   <data name="Phase.Cleared" xml:space="preserve">
-    <value>cleared</value>
+    <value>Cleared</value>
   </data>
   <data name="Phase.Pushback" xml:space="preserve">
-    <value>pushback</value>
+    <value>Pushback</value>
   </data>
   <data name="Phase.TaxiOut" xml:space="preserve">
-    <value>taxi out</value>
+    <value>Taxi out</value>
   </data>
   <data name="Phase.Holding" xml:space="preserve">
-    <value>holding point</value>
+    <value>Holding point</value>
   </data>
   <data name="Phase.TakeoffRoll" xml:space="preserve">
-    <value>takeoff roll</value>
+    <value>Takeoff roll</value>
   </data>
   <data name="Phase.InitialClimb" xml:space="preserve">
-    <value>initial climb</value>
+    <value>Initial climb</value>
   </data>
   <data name="Phase.Departure" xml:space="preserve">
-    <value>departure</value>
+    <value>Departure</value>
   </data>
   <data name="Phase.EnRoute" xml:space="preserve">
-    <value>en route</value>
+    <value>En route</value>
   </data>
   <data name="Phase.Descent" xml:space="preserve">
-    <value>descent</value>
+    <value>Descent</value>
   </data>
   <data name="Phase.Approach" xml:space="preserve">
-    <value>approach</value>
+    <value>Approach</value>
   </data>
   <data name="Phase.Final" xml:space="preserve">
-    <value>final</value>
+    <value>Final</value>
   </data>
   <data name="Phase.LandingRoll" xml:space="preserve">
-    <value>landing roll</value>
+    <value>Landing roll</value>
   </data>
   <data name="Phase.TaxiIn" xml:space="preserve">
-    <value>taxi in</value>
+    <value>Taxi in</value>
   </data>
   <data name="Phase.Parked" xml:space="preserve">
-    <value>parked</value>
+    <value>Parked</value>
   </data>
   <data name="Status.Idle" xml:space="preserve">
     <value>Not started</value>

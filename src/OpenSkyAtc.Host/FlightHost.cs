@@ -184,7 +184,7 @@ public sealed class FlightHost : IDisposable
                 _brain = brain;
                 _plan = plan;
                 _spokenCallsign = SpokenCallsign(plan);
-                _transcript = new TranscriptWriter(brain.Session, new IcaoRenderer(seed, callsigns: Data.Callsigns));
+                _transcript = new TranscriptWriter(brain.Session, new IcaoRenderer(seed, callsigns: Data.Callsigns), _spokenCallsign);
             }
 
             if (_settings.VoiceEnabled) _radio = await StartRadioAsync(seed, brain);

@@ -28,12 +28,21 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Grid Margin="0,0,4,4">
-                            <Button Content="{Binding Label}" Command="{Binding Command}" CommandParameter="{Binding}" Padding="8,4" MaxWidth="380"
-                                    Style="{DynamicResource AccentButtonStyle}" Visibility="{Binding Primary, Converter={StaticResource Visible}}" />
-                            <Button Content="{Binding Label}" Command="{Binding Command}" CommandParameter="{Binding}" Padding="8,4" MaxWidth="380"
-                                    Visibility="{Binding Primary, Converter={StaticResource Collapsed}}" />
-                        </Grid>
+                        <Button Content="{Binding Label}" Command="{Binding Command}" CommandParameter="{Binding}" Padding="10,5" MaxWidth="380" Margin="0,0,6,6">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Primary}" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                            <Setter Property="BorderThickness" Value="2" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Danger}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

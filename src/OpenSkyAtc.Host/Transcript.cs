@@ -26,9 +26,10 @@ public sealed record TranscriptEntry(TimeSpan Time, TranscriptKind Kind, string?
 
 /// <summary>
 /// Turns new session log entries into transcript lines, rendering ATC messages in order (as the renderer needs).
-/// Pilot calls are written as short radio-style phrases in English, like the radio itself.
+/// Pilot calls are written as short radio-style phrases in English, like the radio itself, ending with
+/// <paramref name="pilotCallsign"/> when given ("Runway 36L, Iberia 1234").
 /// </summary>
-public sealed class TranscriptWriter(FlightSession session, IcaoRenderer renderer)
+public sealed class TranscriptWriter(FlightSession session, IcaoRenderer renderer, string? pilotCallsign = null)
 {
     private int _next;
 
@@ -43,7 +44,7 @@ public sealed class TranscriptWriter(FlightSession session, IcaoRenderer rendere
             {
                 AtcTransmissionLogged a => new(e.Time, TranscriptKind.Atc, a.Message.Unit.Callsign, a.Message.Unit.FrequencyKhz, renderer.Render(a.Message).Display),
                 PilotIntentLogged p => new(e.Time, p.Unit is null ? TranscriptKind.Warning : TranscriptKind.Pilot, p.Unit?.Callsign, p.FrequencyKhz,
-                    PilotPhrase.Of(p.Intent) + (p.Unit is null ? " (nobody on this frequency)" : "")),
+                    PilotCall(p.Intent) + (p.Unit is null ? " (nobody on this frequency)" : "")),
                 PhaseChanged c => new(e.Time, TranscriptKind.Event, null, null, $"Phase: {PilotPhrase.Phase(c.To)}"),
                 PhaseInferred i => new(e.Time, TranscriptKind.Event, null, null, $"Phase: {PilotPhrase.Phase(i.Phase)} ({i.Reason})"),
                 ReadbackChecked { Verdict.IsCorrect: true } => null,
@@ -60,6 +61,13 @@ public sealed class TranscriptWriter(FlightSession session, IcaoRenderer rendere
             if (line is not null) lines.Add(line);
         }
         return lines;
+    }
+
+    private string PilotCall(PilotIntent intent)
+    {
+        string phrase = PilotPhrase.Of(intent);
+        if (phrase.Length > 0) phrase = char.ToUpperInvariant(phrase[0]) + phrase[1..];
+        return pilotCallsign is null || intent is Mayday or PanPan ? phrase : $"{phrase}, {pilotCallsign}";
     }
 }
 

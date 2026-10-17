@@ -63,7 +63,7 @@
     <value>Aún no hay vuelo. Elige la fuente del plan en Ajustes y empieza un vuelo.</value>
   </data>
   <data name="Main.Arrows" xml:space="preserve">
-    <value>Flechas de rodaje: {0} visibles</value>
+    <value>Flechas de rodaje: {0} visibles · {1} m por delante</value>
   </data>
   <data name="Main.Squawk" xml:space="preserve">
     <value>sq {0}</value>
@@ -78,49 +78,49 @@
     <value>Planes de vuelo de MSFS (*.pln)|*.pln</value>
   </data>
   <data name="Phase.Preflight" xml:space="preserve">
-    <value>prevuelo</value>
+    <value>Prevuelo</value>
   </data>
   <data name="Phase.Cleared" xml:space="preserve">
-    <value>autorizado</value>
+    <value>Autorizado</value>
   </data>
   <data name="Phase.Pushback" xml:space="preserve">
-    <value>remolque</value>
+    <value>Remolque</value>
   </data>
   <data name="Phase.TaxiOut" xml:space="preserve">
-    <value>rodaje de salida</value>
+    <value>Rodaje de salida</value>
   </data>
   <data name="Phase.Holding" xml:space="preserve">
-    <value>punto de espera</value>
+    <value>Punto de espera</value>
   </data>
   <data name="Phase.TakeoffRoll" xml:space="preserve">
-    <value>carrera de despegue</value>
+    <value>Carrera de despegue</value>
   </data>
   <data name="Phase.InitialClimb" xml:space="preserve">
-    <value>ascenso inicial</value>
+    <value>Ascenso inicial</value>
   </data>
   <data name="Phase.Departure" xml:space="preserve">
-    <value>salida</value>
+    <value>Salida</value>
   </data>
   <data name="Phase.EnRoute" xml:space="preserve">
-    <value>en ruta</value>
+    <value>En ruta</value>
   </data>
   <data name="Phase.Descent" xml:space="preserve">
-    <value>descenso</value>
+    <value>Descenso</value>
   </data>
   <data name="Phase.Approach" xml:space="preserve">
-    <value>aproximación</value>
+    <value>Aproximación</value>
   </data>
   <data name="Phase.Final" xml:space="preserve">
-    <value>final</value>
+    <value>Final</value>
   </data>
   <data name="Phase.LandingRoll" xml:space="preserve">
-    <value>carrera de aterrizaje</value>
+    <value>Carrera de aterrizaje</value>
   </data>
   <data name="Phase.TaxiIn" xml:space="preserve">
-    <value>rodaje de llegada</value>
+    <value>Rodaje de llegada</value>
   </data>
   <data name="Phase.Parked" xml:space="preserve">
-    <value>estacionado</value>
+    <value>Estacionado</value>
   </data>
   <data name="Status.Idle" xml:space="preserve">
     <value>Sin iniciar</value>
