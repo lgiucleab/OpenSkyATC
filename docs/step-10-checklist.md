@@ -5,7 +5,7 @@
 The arrow has no textures, so the package needs no compiling. Assemble it and copy it into the Community folder (Microsoft Store version shown), then start the sim:
 
 ```
-python toolbar\opensky-atc-taxi-arrows	oolsssemble_package.py --install "%LOCALAPPDATA%\Packages\Microsoft.Limitless_8wekyb3d8bbwe\LocalCache\Packages\Community"
+python toolbar\opensky-atc-taxi-arrows\tools\assemble_package.py --install "%LOCALAPPDATA%\Packages\Microsoft.Limitless_8wekyb3d8bbwe\LocalCache\Packages\Community"
 ```
 
 (The SDK's `fspackagetool.exe` also builds it, but it has to start the sim itself and waited forever with the Microsoft Store install.)
