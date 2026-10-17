@@ -17,6 +17,9 @@
   <data name="Main.ImportPln" xml:space="preserve">
     <value>Abrir .pln</value>
   </data>
+  <data name="Main.ImportPlan" xml:space="preserve">
+    <value>Importar plan</value>
+  </data>
   <data name="Main.Settings" xml:space="preserve">
     <value>Ajustes</value>
   </data>
@@ -31,6 +34,9 @@
   </data>
   <data name="Main.TaxiArrows" xml:space="preserve">
     <value>Flechas de rodaje</value>
+  </data>
+  <data name="Main.You" xml:space="preserve">
+    <value>Tú</value>
   </data>
   <data name="Main.Callsign" xml:space="preserve">
     <value>Indicativo</value>

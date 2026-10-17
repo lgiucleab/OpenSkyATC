@@ -3,161 +3,232 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:app="clr-namespace:OpenSkyAtc.App"
         xmlns:host="clr-namespace:OpenSkyAtc.Host;assembly=OpenSkyAtc.Host"
-        Title="OpenSkyATC" Width="760" Height="640" MinWidth="560" MinHeight="420">
-    <DockPanel>
-        <!-- Status bar -->
-        <Border DockPanel.Dock="Top" Padding="12,8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
-            <DockPanel LastChildFill="False">
-                <TextBlock Text="OpenSkyATC" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,12,0" />
-                <Border VerticalAlignment="Center">
-                    <Border.Style>
-                        <Style TargetType="Border" BasedOn="{StaticResource Badge}">
-                            <Setter Property="Background" Value="{DynamicResource SystemFillColorNeutralBackgroundBrush}" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Connected}" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <TextBlock Text="{Binding StatusText}" FontSize="12" />
-                </Border>
-                <Border Style="{StaticResource Badge}" VerticalAlignment="Center" Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
-                        Visibility="{Binding PushToTalk, Converter={StaticResource Visible}}">
-                    <TextBlock Text="{Binding [Status.Ptt], Source={x:Static app:Loc.Instance}}" FontSize="12" />
-                </Border>
-                <Border Style="{StaticResource Badge}" VerticalAlignment="Center" Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
-                        Visibility="{Binding Paused, Converter={StaticResource Visible}}">
-                    <TextBlock Text="{Binding [Main.Paused], Source={x:Static app:Loc.Instance}}" FontSize="12" />
-                </Border>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button Content="{Binding [Main.ImportPln], Source={x:Static app:Loc.Instance}}" Command="{Binding OpenPlnCommand}" Margin="0,0,6,0" />
-                    <Button Content="{Binding [Main.StartFlight], Source={x:Static app:Loc.Instance}}" Command="{Binding StartFlightCommand}" Margin="0,0,6,0"
-                            Style="{DynamicResource AccentButtonStyle}"
-                            Visibility="{Binding FlightActive, Converter={StaticResource Collapsed}}" />
-                    <Button Content="{Binding [Main.EndFlight], Source={x:Static app:Loc.Instance}}" Command="{Binding EndFlightCommand}" Margin="0,0,6,0"
-                            Visibility="{Binding FlightActive, Converter={StaticResource Visible}}" />
-                    <Button Content="{Binding [Main.Compact], Source={x:Static app:Loc.Instance}}" Click="Compact_Click" Margin="0,0,6,0" />
-                    <Button Content="{Binding [Main.Settings], Source={x:Static app:Loc.Instance}}" Command="{Binding OpenSettingsCommand}" />
-                </StackPanel>
-            </DockPanel>
-        </Border>
+        Title="OpenSkyATC" Width="780" Height="520" MinWidth="600" MinHeight="420">
+    <Window.Resources>
+        <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+        <Style x:Key="Section" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+        <Style x:Key="Pill" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="10,3" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="Field" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+        <Style x:Key="FieldValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+        <Style x:Key="CallButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="20,9" />
+            <Setter Property="Margin" Value="0,0,10,8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="MinWidth" Value="110" />
+        </Style>
+    </Window.Resources>
 
-        <!-- Status detail / notices -->
-        <StackPanel DockPanel.Dock="Top" Margin="12,6,12,0">
-            <TextBlock Text="{Binding StatusDetail}" Opacity="0.75" TextWrapping="Wrap" />
-            <TextBlock Text="{Binding Notice}" Foreground="{DynamicResource SystemFillColorCautionBrush}" TextWrapping="Wrap" />
-        </StackPanel>
+    <Border Margin="16" CornerRadius="12" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+        <DockPanel>
+            <!-- Header: name, sim and push-to-talk state, import, menu -->
+            <Border DockPanel.Dock="Top" Style="{StaticResource Section}" Padding="18,12">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Command="{Binding ImportPlanCommand}" Padding="16,7" Margin="0,0,10,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8B5;" FontFamily="{StaticResource Icons}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="{Binding [Main.ImportPlan], Source={x:Static app:Loc.Instance}}" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="MenuButton" Click="Menu_Click" Padding="12,7" ToolTip="{Binding [Main.Settings], Source={x:Static app:Loc.Instance}}">
+                            <TextBlock Text="&#xE713;" FontFamily="{StaticResource Icons}" FontSize="15" />
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="{Binding [Main.Settings], Source={x:Static app:Loc.Instance}}" Click="Settings_Click" />
+                                    <MenuItem Header="{Binding [Main.Compact], Source={x:Static app:Loc.Instance}}" Click="Compact_Click" />
+                                    <Separator />
+                                    <MenuItem Header="{Binding [Main.EndFlight], Source={x:Static app:Loc.Instance}}" Command="{Binding EndFlightCommand}"
+                                              IsEnabled="{Binding FlightActive}" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="OpenSkyATC" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,18,0" />
+                        <Border ToolTip="{Binding StatusDetail}">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource Pill}">
+                                    <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Connected}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                                            <Setter Property="TextElement.Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE703;" FontFamily="{StaticResource Icons}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="{Binding StatusText}" />
+                            </StackPanel>
+                        </Border>
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource Pill}">
+                                    <Setter Property="Background" Value="{DynamicResource SystemFillColorAttentionBackgroundBrush}" />
+                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding PushToTalk}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                                            <Setter Property="TextElement.Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE720;" FontFamily="{StaticResource Icons}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="{Binding PttText}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
 
-        <!-- Flight strip -->
-        <UniformGrid DockPanel.Dock="Top" Columns="4" Margin="12,8">
-            <StackPanel Margin="0,0,8,0">
-                <TextBlock Style="{StaticResource Label}" Text="{Binding [Main.Callsign], Source={x:Static app:Loc.Instance}}" />
-                <TextBlock Style="{StaticResource Value}" Text="{Binding Callsign}" />
-            </StackPanel>
-            <StackPanel Margin="0,0,8,0">
-                <TextBlock Style="{StaticResource Label}" Text="{Binding [Main.Route], Source={x:Static app:Loc.Instance}}" />
-                <TextBlock Style="{StaticResource Value}" Text="{Binding Route}" />
-            </StackPanel>
-            <StackPanel Margin="0,0,8,0">
-                <TextBlock Style="{StaticResource Label}" Text="{Binding [Main.Phase], Source={x:Static app:Loc.Instance}}" />
-                <TextBlock Style="{StaticResource Value}" Text="{Binding Phase}" />
-            </StackPanel>
-            <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="{Binding [Main.Cleared], Source={x:Static app:Loc.Instance}}" />
-                <TextBlock Style="{StaticResource Value}" Text="{Binding Cleared}" />
-            </StackPanel>
-        </UniformGrid>
+            <!-- Flight strip -->
+            <Border DockPanel.Dock="Top" Style="{StaticResource Section}" Padding="18,12">
+                <UniformGrid Columns="4">
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Style="{StaticResource Field}" Text="{Binding [Main.Callsign], Source={x:Static app:Loc.Instance}}" />
+                        <TextBlock Style="{StaticResource FieldValue}" Text="{Binding Callsign}" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Style="{StaticResource Field}" Text="{Binding [Main.Route], Source={x:Static app:Loc.Instance}}" />
+                        <TextBlock Style="{StaticResource FieldValue}" Text="{Binding Route}" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Style="{StaticResource Field}" Text="{Binding [Main.Phase], Source={x:Static app:Loc.Instance}}" />
+                        <TextBlock Style="{StaticResource FieldValue}" Text="{Binding Phase}" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Field}" Text="{Binding [Main.Cleared], Source={x:Static app:Loc.Instance}}" />
+                        <TextBlock Style="{StaticResource FieldValue}" Text="{Binding Cleared}" />
+                    </StackPanel>
+                </UniformGrid>
+            </Border>
 
-        <!-- Radio block -->
-        <DockPanel DockPanel.Dock="Top" Margin="12,0,12,8">
-            <Border DockPanel.Dock="Left" Padding="12,8" CornerRadius="6" MinWidth="180" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+            <!-- Radio: what COM1 is on, and the next thing to tune -->
+            <Border DockPanel.Dock="Top" Style="{StaticResource Section}" Padding="18,12">
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" CornerRadius="8" Padding="14,10" MinWidth="200" Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Field}" Text="{Binding [Main.TalkingTo], Source={x:Static app:Loc.Instance}}" />
+                            <TextBlock Text="{Binding Frequency}" FontSize="24" FontWeight="SemiBold" Margin="0,2,0,0" />
+                            <TextBlock Text="{Binding TalkingTo}" FontSize="15" />
+                        </StackPanel>
+                    </Border>
+                    <Border Margin="14,0,0,0" CornerRadius="8" Padding="14,10" VerticalAlignment="Center"
+                            Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                            Visibility="{Binding HintIsWarning, Converter={StaticResource Visible}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE72A;" FontFamily="{StaticResource Icons}" Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                       VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <TextBlock Text="{Binding Hint}" Foreground="{DynamicResource SystemFillColorCautionBrush}" FontSize="15" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </DockPanel>
+            </Border>
+
+            <!-- Pilot calls -->
+            <Border DockPanel.Dock="Bottom" Padding="18,14,18,10" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Main.TalkingTo], Source={x:Static app:Loc.Instance}}" />
-                    <TextBlock Text="{Binding Frequency}" FontSize="22" FontWeight="SemiBold" FontFamily="Consolas" />
-                    <TextBlock Text="{Binding TalkingTo}" />
+                    <ItemsControl ItemsSource="{Binding Intents}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding Label}" Command="{Binding Command}" CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource CallButton}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Primary}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                                    <Setter Property="BorderThickness" Value="2" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Danger}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <CheckBox Content="{Binding [Main.HardMode], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding HardMode}" Margin="0,0,40,0" />
+                        <CheckBox Content="{Binding [Main.TaxiArrows], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding TaxiArrows}" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
-            <Border Margin="10,0,0,0" Padding="12,8" CornerRadius="6" Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
-                    Visibility="{Binding HintIsWarning, Converter={StaticResource Visible}}">
-                <TextBlock Text="{Binding Hint}" TextWrapping="Wrap" VerticalAlignment="Center" />
-            </Border>
+
+            <!-- Transcript -->
+            <ScrollViewer x:Name="TranscriptScroll" VerticalScrollBarVisibility="Auto" Padding="18,12">
+                <StackPanel>
+                    <TextBlock Text="{Binding StatusDetail}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,6"
+                               Visibility="{Binding ShowStatusDetail, Converter={StaticResource Visible}}" />
+                    <ItemsControl ItemsSource="{Binding Transcript}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock TextWrapping="Wrap" FontSize="15" Margin="0,0,0,6">
+                                    <Run Text="{Binding Time, Mode=OneWay}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                    <Run Text="{Binding Who, Mode=OneWay}">
+                                        <Run.Style>
+                                            <Style TargetType="Run">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Atc}">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Pilot}">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Run.Style>
+                                    </Run>
+                                    <Run Text="{Binding Text, Mode=OneWay}">
+                                        <Run.Style>
+                                            <Style TargetType="Run">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Warning}">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Event}">
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Run.Style>
+                                    </Run>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding ArrowsText}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14"
+                               Visibility="{Binding ArrowsText, Converter={StaticResource Visible}}" />
+                    <TextBlock Text="{Binding Notice}" Foreground="{DynamicResource SystemFillColorCautionBrush}" TextWrapping="Wrap" Margin="0,4,0,0"
+                               Visibility="{Binding Notice, Converter={StaticResource Visible}}" />
+                </StackPanel>
+            </ScrollViewer>
         </DockPanel>
-
-        <!-- Pilot calls -->
-        <Border DockPanel.Dock="Bottom" Padding="12,8,12,10" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
-            <StackPanel>
-                <ItemsControl ItemsSource="{Binding Intents}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,0,6,6">
-                                <Button Content="{Binding Label}" Command="{Binding Command}" CommandParameter="{Binding}" Padding="12,6"
-                                        Style="{DynamicResource AccentButtonStyle}" Visibility="{Binding Primary, Converter={StaticResource Visible}}" />
-                                <Button Content="{Binding Label}" Command="{Binding Command}" CommandParameter="{Binding}" Padding="12,6"
-                                        Visibility="{Binding Primary, Converter={StaticResource Collapsed}}" />
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                    <CheckBox Content="{Binding [Main.HardMode], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding HardMode}" Margin="0,0,16,0" />
-                    <CheckBox Content="{Binding [Main.TaxiArrows], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding TaxiArrows}" Margin="0,0,16,0" />
-                    <TextBlock Text="{Binding ArrowsText}" VerticalAlignment="Center" Opacity="0.7" />
-                </StackPanel>
-            </StackPanel>
-        </Border>
-
-        <!-- Transcript -->
-        <ListBox x:Name="TranscriptList" ItemsSource="{Binding Transcript}" Margin="12,0,12,8" BorderThickness="0"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                    <Setter Property="Padding" Value="8,3" />
-                    <Setter Property="MinHeight" Value="0" />
-                </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock TextWrapping="Wrap">
-                        <Run Text="{Binding Time, Mode=OneWay}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                        <Run Text="  " />
-                        <Run Text="{Binding Who, Mode=OneWay}" FontWeight="SemiBold">
-                            <Run.Style>
-                                <Style TargetType="Run">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Atc}">
-                                            <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Pilot}">
-                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Run.Style>
-                        </Run>
-                        <Run Text=" " />
-                        <Run Text="{Binding Text, Mode=OneWay}">
-                            <Run.Style>
-                                <Style TargetType="Run">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Warning}">
-                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Event}">
-                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Run.Style>
-                        </Run>
-                    </TextBlock>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-    </DockPanel>
+    </Border>
 </Window>

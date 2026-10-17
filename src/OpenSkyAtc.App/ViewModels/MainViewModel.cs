@@ -23,6 +23,7 @@ public sealed record TranscriptLine(string Time, string Who, string Text, Transc
 
 public sealed class IntentButton(PilotIntent intent, string label, bool primary, IRelayCommand<IntentButton> command)
 {
+    public bool Danger => Intent is Mayday or PanPan;
     public PilotIntent Intent { get; } = intent;
     public string Label { get; } = label;
     public bool Primary { get; } = primary;
@@ -77,6 +78,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string? _lastAtc;
     [ObservableProperty] private bool _paused;
     [ObservableProperty] private string? _notice;
+    [ObservableProperty] private string _pttText = "";
+    [ObservableProperty] private bool _showStatusDetail;
+
+    /// <summary>Header button: starts a flight with the configured plan source (or ends the current one first).</summary>
+    [RelayCommand]
+    private async Task ImportPlan()
+    {
+        if (FlightActive) EndFlight();
+        await StartFlight();
+    }
 
     public bool HardMode
     {
@@ -190,11 +201,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             string who = l.Kind switch
             {
-                TranscriptKind.Atc => l.Station ?? "ATC",
-                TranscriptKind.Pilot => Callsign,
+                TranscriptKind.Atc => l.Station?.Split(' ')[^1] ?? "ATC",
+                TranscriptKind.Pilot => Loc.Get("Main.You"),
                 _ => "",
             };
-            Transcript.Add(new TranscriptLine(l.Time.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture), who, l.Text, l.Kind));
+            string time = l.Time.TotalHours >= 1 ? l.Time.ToString(@"h\:mm\:ss", CultureInfo.InvariantCulture) : l.Time.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
+            Transcript.Add(new TranscriptLine(time, who, l.Text, l.Kind));
             if (l.Kind == TranscriptKind.Atc) LastAtc = $"{l.Station}: {l.Text}";
         }
         while (Transcript.Count > MaxTranscript) Transcript.RemoveAt(0);
@@ -218,6 +230,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StatusDetail = s?.StatusDetail ?? (FlightActive ? null : Loc.Get("Main.NoFlight"));
         Connected = s?.SimConnected ?? false;
         PushToTalk = s?.PushToTalk ?? false;
+        PttText = Loc.Get(PushToTalk ? "Status.Ptt" : "Status.PttReady");
+        ShowStatusDetail = !string.IsNullOrEmpty(StatusDetail) && status != HostStatus.Running;
         Paused = s?.Paused ?? false;
 
         if (s?.Plan is { } plan)

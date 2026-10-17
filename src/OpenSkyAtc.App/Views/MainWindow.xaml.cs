@@ -19,10 +19,7 @@ public partial class MainWindow : Window, IMainView
         _vm.View = this;
         DataContext = vm;
         Restore(this, vm.Settings.MainWindow);
-        ((INotifyCollectionChanged)vm.Transcript).CollectionChanged += (_, _) =>
-        {
-            if (TranscriptList.Items.Count > 0) TranscriptList.ScrollIntoView(TranscriptList.Items[^1]);
-        };
+        ((INotifyCollectionChanged)vm.Transcript).CollectionChanged += (_, _) => TranscriptScroll.ScrollToEnd();
         Closing += (_, _) =>
         {
             IsClosing = true;
@@ -62,6 +59,20 @@ public partial class MainWindow : Window, IMainView
     }
 
     private void Compact_Click(object sender, RoutedEventArgs e) => ShowCompact();
+
+    private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
+
+    /// <summary>The gear button opens its menu (settings, compact mode, end flight) on a normal click.</summary>
+    private void Menu_Click(object sender, RoutedEventArgs e)
+    {
+        if (MenuButton.ContextMenu is { } menu)
+        {
+            menu.PlacementTarget = MenuButton;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.DataContext = DataContext;
+            menu.IsOpen = true;
+        }
+    }
 
     public Readback? AskReadback(Readback expected)
     {
