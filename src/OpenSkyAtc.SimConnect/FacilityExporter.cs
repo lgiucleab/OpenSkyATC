@@ -13,6 +13,9 @@ namespace OpenSkyAtc.SimConnect;
 /// </summary>
 public sealed class FacilityExporter : IDisposable
 {
+    /// <summary>A route point found in the sim's navdata, its type there, and whether the region had to be dropped.</summary>
+    public sealed record NavaidLookup(GeoPoint Position, char Kind, bool WithoutRegion);
+
     private enum Def { Airport, Frequencies, Waypoint, Vor, Ndb }
     private enum Req { Airport, Frequencies, AirportList, Navaid }
 
@@ -127,7 +130,11 @@ public sealed class FacilityExporter : IDisposable
         _sim.OnRecvFacilityData += OnData;
         _sim.OnRecvFacilityDataEnd += (_, _) => _done = true;
         _sim.OnRecvAirportList += OnAirportList;
-        _sim.OnRecvException += (_, e) => Console.Error.WriteLine($"SimConnect exception {(SIMCONNECT_EXCEPTION)e.dwException} (send {e.dwSendID}, index {e.dwIndex})");
+        _sim.OnRecvException += (_, e) =>
+        {
+            if (_quietErrors) _done = true; // an unknown navaid is answered with an error instead of data: stop waiting
+            else Console.Error.WriteLine($"SimConnect exception {(SIMCONNECT_EXCEPTION)e.dwException} (send {e.dwSendID}, index {e.dwIndex})");
+        };
 
         DefineAirport();
         DefineFrequenciesOnly();
@@ -257,15 +264,38 @@ public sealed class FacilityExporter : IDisposable
     /// Position of a waypoint, VOR or NDB from the sim's navdata (an MSFS 2024 .pln names route points only by ident
     /// and region). <paramref name="kind"/> is 'W', 'V' or 'N'. Null when the sim does not know it.
     /// </summary>
-    public GeoPoint? NavaidPosition(string ident, string? region, char kind, TimeSpan timeout)
+    /// <remarks>
+    /// Flight plans and the sim's navdata do not always agree on a point's region or type (another AIRAC, a VOR
+    /// listed as a waypoint), so after the exact lookup the other types are tried, then each without the region.
+    /// <see cref="NavaidLookup.WithoutRegion"/> says the last kind of match was needed (the caller should check it
+    /// is near the route: without a region the ident may be another point of the same name).
+    /// </remarks>
+    public NavaidLookup? NavaidPosition(string ident, string? region, char kind, TimeSpan timeout)
     {
-        var def = kind switch { 'V' => Def.Vor, 'N' => Def.Ndb, _ => Def.Waypoint };
-        _navaid = null;
-        _done = false;
-        _sim.RequestFacilityData_EX1(def, Req.Navaid, ident.ToUpperInvariant(), region ?? "", (sbyte)(kind is 'V' or 'N' ? kind : 'W'));
-        Pump(() => _done, timeout);
-        return _navaid is { } p && (p.Latitude != 0 || p.Longitude != 0) ? new GeoPoint(p.Latitude, p.Longitude) : null;
+        char[] kinds = [kind is 'V' or 'N' ? kind : 'W', .. "WVN".Where(k => k != kind)];
+        var tries = kinds.Select(k => (k, region ?? "")).Concat(region is { Length: > 0 } ? kinds.Select(k => (k, "")) : []);
+        _quietErrors = true;
+        try
+        {
+            foreach (var (k, r) in tries)
+            {
+                var def = k switch { 'V' => Def.Vor, 'N' => Def.Ndb, _ => Def.Waypoint };
+                _navaid = null;
+                _done = false;
+                _sim.RequestFacilityData_EX1(def, Req.Navaid, ident.ToUpperInvariant(), r, (sbyte)k);
+                Pump(() => _done, timeout);
+                if (_navaid is { } p && (p.Latitude != 0 || p.Longitude != 0))
+                    return new NavaidLookup(new GeoPoint(p.Latitude, p.Longitude), k, WithoutRegion: r.Length == 0 && region is { Length: > 0 });
+            }
+            return null;
+        }
+        finally
+        {
+            _quietErrors = false;
+        }
     }
+
+    private bool _quietErrors;
 
     private PositionData? _navaid;
 

@@ -281,13 +281,34 @@ internal static class LiveCommand
         {
             Console.WriteLine($"Looking up {unknown.Count} route points in the sim's navdata...");
             var positions = provider.NavaidPositionsAsync(unknown.Select(w => (w.Ident, w.Region, w.Kind)).ToList()).GetAwaiter().GetResult();
+            var looseMatches = new HashSet<PlnWaypoint>();
             for (int i = 0; i < unknown.Count; i++)
-                if (positions[i] is { } p) found[unknown[i]] = p;
+            {
+                if (positions[i] is not { } hit) continue;
+                found[unknown[i]] = hit.Position;
+                if (hit.WithoutRegion) looseMatches.Add(unknown[i]);
+            }
+            // A point found only without its region may be another point of the same name: keep it only near the route.
+            var previous = origin.ReferencePoint;
+            foreach (var w in pln.Waypoints)
+            {
+                var p = w.Position ?? (found.TryGetValue(w, out var f) ? f : null);
+                if (p is null) continue;
+                if (looseMatches.Contains(w) && previous is { } prev && GeoMath.DistanceNm(prev, p.Value) > MaxLegNm)
+                {
+                    found.Remove(w);
+                    continue;
+                }
+                previous = p;
+            }
             if (found.Count < unknown.Count)
                 Console.WriteLine($"  {unknown.Count - found.Count} not in the sim's navdata (left out): {string.Join(", ", unknown.Where(w => !found.ContainsKey(w)).Select(w => w.Ident))}");
         }
-        return pln.ToFlightPlan(callsign, telephony, args.Type, w => found.GetValueOrDefault(w), origin.TransitionAltitudeFt);
+        return pln.ToFlightPlan(callsign, telephony, args.Type, w => found.TryGetValue(w, out var p) ? p : null, origin.TransitionAltitudeFt);
     }
+
+    /// <summary>Longest believable leg between route points (oceanic legs included).</summary>
+    private const double MaxLegNm = 1500;
 
     private static FlightPlan Overrides(FlightPlan plan, Args args) => plan with
     {
