@@ -2,8 +2,33 @@
   "asset": {
     "version": "2.0",
     "generator": "OpenSkyATC generate_arrow.py",
-    "copyright": "OpenSkyATC, GPL-3.0"
+    "copyright": "OpenSkyATC, GPL-3.0",
+    "extensions": {
+      "ASOBO_asset_optimized": {
+        "BoundingBoxMax": [
+          1,
+          0.05,
+          1.6
+        ],
+        "BoundingBoxMin": [
+          -1,
+          0.05,
+          -1.4
+        ],
+        "MajorVersion": 4,
+        "MinorVersion": 6,
+        "UseCheckerboardMaterialForMissingTextures": true,
+        "UseOnlyFilenameForImageURI": true
+      },
+      "ASOBO_normal_map_convention": {
+        "tangent_space_convention": "DirectX"
+      }
+    }
   },
+  "extensionsUsed": [
+    "ASOBO_normal_map_convention",
+    "ASOBO_asset_optimized"
+  ],
   "scene": 0,
   "scenes": [
     {
@@ -25,10 +50,25 @@
         {
           "attributes": {
             "POSITION": 0,
-            "NORMAL": 1
+            "TANGENT": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3,
+            "TEXCOORD_1": 4,
+            "COLOR_0": 5
           },
-          "indices": 2,
-          "material": 0
+          "indices": 6,
+          "material": 0,
+          "mode": 4,
+          "extras": {
+            "ASOBO_primitive": {
+              "PrimitiveCount": 4,
+              "VertexCount": 6,
+              "VertexType": "VTX",
+              "VertexVersion": 2,
+              "UVLength": 1.0,
+              "UV2Length": 1.0
+            }
+          }
         }
       ]
     }
@@ -57,32 +97,29 @@
   "buffers": [
     {
       "uri": "TaxiArrow.bin",
-      "byteLength": 168
+      "byteLength": 240
     }
   ],
   "bufferViews": [
     {
       "buffer": 0,
-      "byteOffset": 0,
-      "byteLength": 72,
-      "target": 34962
+      "byteLength": 216,
+      "byteStride": 36,
+      "target": 34962,
+      "name": "BufferViewVertexND"
     },
     {
       "buffer": 0,
-      "byteOffset": 72,
-      "byteLength": 72,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteOffset": 144,
+      "byteOffset": 216,
       "byteLength": 24,
-      "target": 34963
+      "target": 34963,
+      "name": "BufferViewIndexU16"
     }
   ],
   "accessors": [
     {
       "bufferView": 0,
+      "byteOffset": 0,
       "componentType": 5126,
       "count": 6,
       "type": "VEC3",
@@ -98,13 +135,42 @@
       ]
     },
     {
-      "bufferView": 1,
-      "componentType": 5126,
+      "bufferView": 0,
+      "byteOffset": 12,
+      "componentType": 5120,
       "count": 6,
-      "type": "VEC3"
+      "type": "VEC4"
     },
     {
-      "bufferView": 2,
+      "bufferView": 0,
+      "byteOffset": 16,
+      "componentType": 5120,
+      "count": 6,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 20,
+      "componentType": 5122,
+      "count": 6,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 24,
+      "componentType": 5122,
+      "count": 6,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 28,
+      "componentType": 5123,
+      "count": 6,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
       "componentType": 5123,
       "count": 12,
       "type": "SCALAR"
