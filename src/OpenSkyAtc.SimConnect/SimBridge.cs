@@ -49,7 +49,7 @@ public sealed class SimBridge
 {
     private enum Definitions { State, Title, ArrowPosition }
     private enum Requests { State, Title }
-    private enum Events { Pause, PttDown, PttUp, Atc, TogglePushback, TugHeading }
+    private enum Events { Pause, PttDown, PttUp, Atc, TogglePushback, GroundService }
     private enum Groups { Atc }
 
     /// <summary>With GROUPID_IS_PRIORITY the "group" is a priority: 1 is SIMCONNECT_GROUP_PRIORITY_HIGHEST.</summary>
@@ -87,11 +87,10 @@ public sealed class SimBridge
     public void TogglePushback() => _commands.Enqueue((Events.TogglePushback, 0));
 
     /// <summary>
-    /// Steers the pushback tug (TUG_HEADING, 0-360 degrees as 0-4294967295): the heading the sim turns the aircraft
-    /// towards while pushing. Safe to call from any thread.
+    /// Sends a ground-service message (GROUND_SERVICE_ATC_MESSAGE): MSFS 2024 steers the pushback tug this way
+    /// (TUG_HEADING is refused). Safe to call from any thread.
     /// </summary>
-    public void SteerTug(double headingTrueDeg) =>
-        _commands.Enqueue((Events.TugHeading, (uint)Math.Round(((headingTrueDeg % 360) + 360) % 360 / 360.0 * uint.MaxValue)));
+    public void GroundService(GroundServiceMessage message) => _commands.Enqueue((Events.GroundService, (uint)message));
 
     /// <summary>Arrows currently placed in the sim.</summary>
     public int ArrowCount => _arrows?.Count ?? 0;
@@ -170,7 +169,7 @@ public sealed class SimBridge
         sim.SubscribeToSystemEvent(Events.Pause, "Pause_EX1");
         SetUpPushToTalk(sim);
         sim.MapClientEventToSimEvent(Events.TogglePushback, "TOGGLE_PUSHBACK");
-        sim.MapClientEventToSimEvent(Events.TugHeading, "TUG_HEADING");
+        sim.MapClientEventToSimEvent(Events.GroundService, "GROUND_SERVICE_ATC_MESSAGE");
         while (_commands.TryDequeue(out _)) { } // commands from before this connection are stale
         _arrows = new SimArrows(sim, _o.ArrowTitle, Definitions.ArrowPosition, w => Warning?.Invoke(w));
         lock (_arrowLock) _arrowsChanged = true; // a new connection starts with no arrows: place the wanted ones again
