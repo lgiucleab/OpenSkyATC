@@ -8,87 +8,89 @@
 [00:00:23.250] READBACK #2 contact-ground: correct
 [00:00:26.750] PILOT (121.700) RequestPushStart
 [00:00:28.500] ATC Originville Ground: Vueling 1234, Originville Ground, push and start approved
-[00:00:28.750] PHASE Cleared -> Pushback (push and start approved)
-[00:00:59.000] PILOT (121.700) RequestTaxi
-[00:00:59.000] PHASE Pushback -> TaxiOut (taxi requested)
-[00:01:01.250] ATC Originville Ground: Vueling 1234, taxi to holding point A1 runway 09
-[00:01:05.250] PILOT (121.700) Readback HoldingPoint=A1 Runway=09
-[00:01:05.250] READBACK #4 taxi: correct
-[00:02:49.000] ATC Originville Ground: Vueling 1234, contact Tower 118.100, good day
-[00:02:53.000] PILOT (121.700) Readback Frequency=118100
-[00:02:53.000] READBACK #5 contact-tower: correct
-[00:02:59.250] PILOT (118.100) ReadyForDeparture
-[00:02:59.250] PHASE TaxiOut -> Holding (checked in with tower)
-[00:03:02.500] ATC Originville Tower: Vueling 1234, Originville Tower, runway 09, line up and wait
-[00:03:06.500] PILOT (118.100) Readback Runway=09 Clearance=LINEUP
-[00:03:06.500] READBACK #6 line-up: correct
-[00:04:02.250] ATC Originville Tower: Vueling 1234, wind 090/10, runway 09, cleared for takeoff
-[00:04:06.250] PILOT (118.100) Readback Runway=09 Clearance=TAKEOFF
-[00:04:06.250] READBACK #7 takeoff: correct
-[00:04:06.750] PHASE Holding -> TakeoffRoll (takeoff roll on runway 09)
-[00:04:20.500] PHASE TakeoffRoll -> InitialClimb (airborne)
-[00:04:47.500] ATC Originville Tower: Vueling 1234, contact Departure 124.700, bye bye
-[00:04:51.500] PILOT (118.100) Readback Frequency=124700
-[00:04:51.500] READBACK #8 contact-departure: correct
-[00:04:57.750] PILOT (124.700) CheckIn passing=1300 cleared=5000 ft
-[00:04:57.750] PHASE InitialClimb -> Departure (checked in with departure)
-[00:05:01.250] ATC Originville Departure: Vueling 1234, Originville Departure, radar contact, climb to altitude 9000 ft
-[00:05:05.250] PILOT (124.700) Readback Altitude=9000FT
-[00:05:05.250] READBACK #9 climb: correct
-[00:11:06.750] ATC Originville Departure: Vueling 1234, climb FL130
-[00:11:10.750] PILOT (124.700) Readback Altitude=FL130
-[00:11:10.750] READBACK #10 climb: correct
-[00:12:52.250] ATC Originville Departure: Vueling 1234, contact Alpha Control 132.350, good day
-[00:12:56.250] PILOT (124.700) Readback Frequency=132350
-[00:12:56.250] READBACK #11 contact-ctr: correct
-[00:13:02.500] PILOT (132.350) CheckIn passing=12900 cleared=FL130
-[00:13:02.500] PHASE Departure -> EnRoute (checked in with area control)
-[00:13:07.250] ATC Alpha Control: Vueling 1234, Alpha Control, identified
-[00:14:54.500] ATC Alpha Control: Vueling 1234, climb FL160
-[00:14:58.500] PILOT (132.350) Readback Altitude=FL160
-[00:14:58.500] READBACK #12 climb: correct
-[00:17:28.000] ATC Alpha Control: Vueling 1234, climb FL200
-[00:17:32.000] PILOT (132.350) Readback Altitude=FL200
-[00:17:32.000] READBACK #13 climb: correct
-[00:20:15.500] ATC Alpha Control: Vueling 1234, climb FL240
-[00:20:19.500] PILOT (132.350) Readback Altitude=FL240
-[00:20:19.500] READBACK #14 climb: correct
-[00:42:14.500] ATC Alpha Control: Vueling 1234, contact Bravo Control 128.500, bye bye
-[00:42:18.500] PILOT (132.350) Readback Frequency=128500
-[00:42:18.500] READBACK #15 contact-ctr: correct
-[00:42:24.750] PILOT (128.500) CheckIn passing=24000 cleared=FL240
-[00:42:29.000] ATC Bravo Control: Vueling 1234, Bravo Control, identified
-[00:59:04.250] PHASE EnRoute -> Descent (top of descent)
-[00:59:04.500] ATC Bravo Control: Vueling 1234, descend FL100
-[00:59:08.500] PILOT (128.500) Readback Altitude=FL100
-[00:59:08.500] READBACK #16 descent: correct
-[01:02:40.500] ATC Bravo Control: Vueling 1234, contact Destville Approach 120.800, bye bye
-[01:02:44.500] PILOT (128.500) Readback Frequency=120800
-[01:02:44.500] READBACK #17 contact-approach: correct
-[01:02:50.750] PILOT (120.800) CheckIn passing=14600 cleared=FL100
-[01:02:50.750] PHASE Descent -> Approach (checked in with approach)
-[01:02:55.000] ATC Destville Approach: Vueling 1234, Destville Approach, identified, descend to altitude 3000 ft, QNH 1013, expect ILS approach runway 09
-[01:02:59.000] PILOT (120.800) Readback Altitude=3000FT Qnh=1013
-[01:02:59.000] READBACK #18 approach-descent: correct
-[01:10:15.750] ATC Destville Approach: Vueling 1234, cleared ILS runway 09, report established, maintain 160 knots until 4 miles final
-[01:10:19.750] PILOT (120.800) Readback Runway=09 Clearance=APPROACH Speed=160
-[01:10:19.750] READBACK #19 approach: correct
-[01:12:55.000] ATC Destville Approach: Vueling 1234, contact Tower 118.300, bye bye
-[01:12:59.000] PILOT (120.800) Readback Frequency=118300
-[01:12:59.000] READBACK #20 contact-tower: correct
-[01:13:05.250] PILOT (118.300) CheckIn passing=3000 cleared=3000 ft
-[01:13:05.250] PHASE Approach -> Final (checked in with tower)
-[01:13:08.750] ATC Destville Tower: Vueling 1234, Destville Tower, runway 09, cleared to land, surface wind 090/10
-[01:13:12.750] PILOT (118.300) Readback Runway=09 Clearance=LAND
-[01:13:12.750] READBACK #21 landing: correct
-[01:16:46.000] PHASE Final -> LandingRoll (touchdown)
-[01:16:47.500] ATC Destville Tower: Vueling 1234, vacate when able, contact Ground 121.900, bye bye
-[01:16:51.500] PILOT (118.300) Readback Frequency=121900
-[01:16:51.500] READBACK #22 contact-ground: correct
-[01:17:16.750] PHASE LandingRoll -> TaxiIn (vacated the runway)
-[01:17:25.000] PILOT (121.900) CheckIn passing=- cleared=-
-[01:17:28.500] ATC Destville Ground: Vueling 1234, Destville Ground, taxi to stand 12
-[01:17:32.500] PILOT (121.900) Readback Stand=12
-[01:17:32.500] READBACK #23 taxi-in: correct
-[01:19:05.000] PHASE TaxiIn -> Parked (parked)
-[01:19:07.000] ATC Destville Ground: Vueling 1234, good day
+[00:00:32.500] PILOT (121.700) Readback Clearance=PUSH
+[00:00:32.500] READBACK #3 push-start: correct
+[00:00:32.750] PHASE Cleared -> Pushback (push and start approved)
+[00:01:03.000] PILOT (121.700) RequestTaxi
+[00:01:03.000] PHASE Pushback -> TaxiOut (taxi requested)
+[00:01:05.250] ATC Originville Ground: Vueling 1234, taxi to holding point A1 runway 09
+[00:01:09.250] PILOT (121.700) Readback HoldingPoint=A1 Runway=09
+[00:01:09.250] READBACK #4 taxi: correct
+[00:02:53.000] ATC Originville Ground: Vueling 1234, contact Tower 118.100, good day
+[00:02:57.000] PILOT (121.700) Readback Frequency=118100
+[00:02:57.000] READBACK #5 contact-tower: correct
+[00:03:03.250] PILOT (118.100) ReadyForDeparture
+[00:03:03.250] PHASE TaxiOut -> Holding (checked in with tower)
+[00:03:06.500] ATC Originville Tower: Vueling 1234, Originville Tower, runway 09, line up and wait
+[00:03:10.500] PILOT (118.100) Readback Runway=09 Clearance=LINEUP
+[00:03:10.500] READBACK #6 line-up: correct
+[00:04:06.250] ATC Originville Tower: Vueling 1234, wind 090/10, runway 09, cleared for takeoff
+[00:04:10.250] PILOT (118.100) Readback Runway=09 Clearance=TAKEOFF
+[00:04:10.250] READBACK #7 takeoff: correct
+[00:04:10.750] PHASE Holding -> TakeoffRoll (takeoff roll on runway 09)
+[00:04:24.500] PHASE TakeoffRoll -> InitialClimb (airborne)
+[00:04:51.500] ATC Originville Tower: Vueling 1234, contact Departure 124.700, bye bye
+[00:04:55.500] PILOT (118.100) Readback Frequency=124700
+[00:04:55.500] READBACK #8 contact-departure: correct
+[00:05:01.750] PILOT (124.700) CheckIn passing=1300 cleared=5000 ft
+[00:05:01.750] PHASE InitialClimb -> Departure (checked in with departure)
+[00:05:05.250] ATC Originville Departure: Vueling 1234, Originville Departure, radar contact, climb to altitude 9000 ft
+[00:05:09.250] PILOT (124.700) Readback Altitude=9000FT
+[00:05:09.250] READBACK #9 climb: correct
+[00:11:10.750] ATC Originville Departure: Vueling 1234, climb FL130
+[00:11:14.750] PILOT (124.700) Readback Altitude=FL130
+[00:11:14.750] READBACK #10 climb: correct
+[00:12:56.250] ATC Originville Departure: Vueling 1234, contact Alpha Control 132.350, good day
+[00:13:00.250] PILOT (124.700) Readback Frequency=132350
+[00:13:00.250] READBACK #11 contact-ctr: correct
+[00:13:06.500] PILOT (132.350) CheckIn passing=12900 cleared=FL130
+[00:13:06.500] PHASE Departure -> EnRoute (checked in with area control)
+[00:13:11.250] ATC Alpha Control: Vueling 1234, Alpha Control, identified
+[00:14:58.500] ATC Alpha Control: Vueling 1234, climb FL160
+[00:15:02.500] PILOT (132.350) Readback Altitude=FL160
+[00:15:02.500] READBACK #12 climb: correct
+[00:17:32.000] ATC Alpha Control: Vueling 1234, climb FL200
+[00:17:36.000] PILOT (132.350) Readback Altitude=FL200
+[00:17:36.000] READBACK #13 climb: correct
+[00:20:19.500] ATC Alpha Control: Vueling 1234, climb FL240
+[00:20:23.500] PILOT (132.350) Readback Altitude=FL240
+[00:20:23.500] READBACK #14 climb: correct
+[00:42:18.500] ATC Alpha Control: Vueling 1234, contact Bravo Control 128.500, bye bye
+[00:42:22.500] PILOT (132.350) Readback Frequency=128500
+[00:42:22.500] READBACK #15 contact-ctr: correct
+[00:42:28.750] PILOT (128.500) CheckIn passing=24000 cleared=FL240
+[00:42:33.000] ATC Bravo Control: Vueling 1234, Bravo Control, identified
+[00:59:08.250] PHASE EnRoute -> Descent (top of descent)
+[00:59:08.500] ATC Bravo Control: Vueling 1234, descend FL100
+[00:59:12.500] PILOT (128.500) Readback Altitude=FL100
+[00:59:12.500] READBACK #16 descent: correct
+[01:02:44.500] ATC Bravo Control: Vueling 1234, contact Destville Approach 120.800, bye bye
+[01:02:48.500] PILOT (128.500) Readback Frequency=120800
+[01:02:48.500] READBACK #17 contact-approach: correct
+[01:02:54.750] PILOT (120.800) CheckIn passing=14600 cleared=FL100
+[01:02:54.750] PHASE Descent -> Approach (checked in with approach)
+[01:02:59.000] ATC Destville Approach: Vueling 1234, Destville Approach, identified, descend to altitude 3000 ft, QNH 1013, expect ILS approach runway 09
+[01:03:03.000] PILOT (120.800) Readback Altitude=3000FT Qnh=1013
+[01:03:03.000] READBACK #18 approach-descent: correct
+[01:10:19.750] ATC Destville Approach: Vueling 1234, cleared ILS runway 09, report established, maintain 160 knots until 4 miles final
+[01:10:23.750] PILOT (120.800) Readback Runway=09 Clearance=APPROACH Speed=160
+[01:10:23.750] READBACK #19 approach: correct
+[01:12:59.000] ATC Destville Approach: Vueling 1234, contact Tower 118.300, bye bye
+[01:13:03.000] PILOT (120.800) Readback Frequency=118300
+[01:13:03.000] READBACK #20 contact-tower: correct
+[01:13:09.250] PILOT (118.300) CheckIn passing=3000 cleared=3000 ft
+[01:13:09.250] PHASE Approach -> Final (checked in with tower)
+[01:13:12.750] ATC Destville Tower: Vueling 1234, Destville Tower, runway 09, cleared to land, surface wind 090/10
+[01:13:16.750] PILOT (118.300) Readback Runway=09 Clearance=LAND
+[01:13:16.750] READBACK #21 landing: correct
+[01:16:50.000] PHASE Final -> LandingRoll (touchdown)
+[01:16:51.500] ATC Destville Tower: Vueling 1234, vacate when able, contact Ground 121.900, bye bye
+[01:16:55.500] PILOT (118.300) Readback Frequency=121900
+[01:16:55.500] READBACK #22 contact-ground: correct
+[01:17:20.750] PHASE LandingRoll -> TaxiIn (vacated the runway)
+[01:17:29.000] PILOT (121.900) CheckIn passing=- cleared=-
+[01:17:32.500] ATC Destville Ground: Vueling 1234, Destville Ground, taxi to stand 12
+[01:17:36.500] PILOT (121.900) Readback Stand=12
+[01:17:36.500] READBACK #23 taxi-in: correct
+[01:19:09.000] PHASE TaxiIn -> Parked (parked)
+[01:19:11.000] ATC Destville Ground: Vueling 1234, good day

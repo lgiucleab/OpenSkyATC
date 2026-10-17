@@ -94,8 +94,17 @@ public sealed class ClearedPhase : Phase
         {
             case RequestPushStart when _push is null:
                 var unit = Unit(ctx)!;
-                _push = ctx.Conversation.Transmit(unit, [new PushStartApproved()], TransmissionPriority.Reply,
-                    ctx.Now + ctx.Conversation.ReplyDelay(), onSent: () => ctx.Clearance.CurrentFrequencyKhz = unit.FrequencyKhz, tag: "push-start");
+                var push = PushbackPlanner.Plan(ctx.Origin, ctx.Position, ctx.State.HeadingTrueDeg, ctx.DepartureRunway, ctx.Options.TaxiPlanner);
+                var readback = ReadbackExpectation.Builder().Add(ReadbackItem.Clearance, ReadbackValues.Push, new PushStartApproved());
+                if (push is not null) readback.Add(ReadbackItem.Facing, push.Facing.ToUpperInvariant(), new PushStartApproved(push.Facing));
+                _push = ctx.Conversation.Transmit(unit, [new PushStartApproved(push?.Facing)], TransmissionPriority.Reply,
+                    ctx.Now + ctx.Conversation.ReplyDelay(), readback.Build(),
+                    onSent: () =>
+                    {
+                        ctx.Clearance.CurrentFrequencyKhz = unit.FrequencyKhz;
+                        ctx.Clearance.Pushback = push;
+                    },
+                    tag: "push-start", onReadBack: () => ctx.Clearance.PushbackReadBack = true);
                 return PhaseResult.Stay;
             case RequestTaxi:
                 return PhaseResult.To(FlightPhase.TaxiOut, "taxi requested without pushback");
@@ -105,7 +114,7 @@ public sealed class ClearedPhase : Phase
     }
 
     public override PhaseResult Tick(PhaseContext ctx) =>
-        _push?.State == ExchangeState.Done ? PhaseResult.To(FlightPhase.Pushback, "push and start approved") : PhaseResult.Stay;
+        _push?.State is ExchangeState.Done or ExchangeState.Correct ? PhaseResult.To(FlightPhase.Pushback, "push and start approved") : PhaseResult.Stay;
 
     public override IEnumerable<PilotIntent> AvailableIntents(PhaseContext ctx) =>
         _push is null ? [new RequestPushStart(), new RequestTaxi()] : [];

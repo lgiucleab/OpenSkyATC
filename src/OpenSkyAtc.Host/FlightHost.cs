@@ -91,6 +91,7 @@ public sealed class FlightHost : IDisposable
     private SimConnectAirportProvider? _provider;
     private Thread? _loop;
     private readonly TaxiArrowController _arrows = new();
+    private PushbackDriver? _pushback;
     private SimState? _state;
     private int _arrowCount;
     private HostStatus _status = HostStatus.Idle;
@@ -251,11 +252,13 @@ public sealed class FlightHost : IDisposable
     {
         var bridge = new SimBridge(new SimBridgeOptions { PushToTalkInput = _settings.PushToTalkInput, UseAtcKey = _settings.UseAtcKey });
         _bridge = bridge;
+        _pushback = new PushbackDriver(new BridgeTug(bridge));
         int ticks = 0;
         bridge.Connected += () => { if (_status == HostStatus.SimDisconnected) SetStatus(HostStatus.Running, "Reconnected to MSFS"); };
         bridge.Disconnected += () =>
         {
             _radio?.Silence();
+            lock (_gate) _pushback?.Abandon();
             if (!_cancel.IsCancellationRequested) SetStatus(HostStatus.SimDisconnected, "Connection to MSFS lost: ATC paused, retrying every 5 s");
         };
         bridge.Warning += w => Notice?.Invoke(w);
@@ -268,6 +271,7 @@ public sealed class FlightHost : IDisposable
                 _state = s;
                 _brain!.Tick(s, s.Time);
                 _radio?.Update(bridge.PushToTalkHeld, khz => s.IsTunedTo(khz));
+                _pushback?.Update(_brain.Session.Clearance, _brain.Session.Phase, s);
                 var arrows = _arrows.Update(_brain.Session, s);
                 bridge.ShowArrows(arrows);
                 _arrowCount = arrows.Count;
@@ -431,6 +435,7 @@ public sealed class FlightHost : IDisposable
     public void Stop()
     {
         if (_cancel.IsCancellationRequested) return;
+        lock (_gate) _pushback?.Finish();
         _bridge?.ShowArrows([]);
         Thread.Sleep(300); // let the bridge remove the arrows (the sim also removes them on disconnect)
         _cancel.Cancel();

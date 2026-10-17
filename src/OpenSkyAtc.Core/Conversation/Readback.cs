@@ -25,6 +25,9 @@ public enum ReadbackItem
     Frequency,
     Qnh,
     Stand,
+
+    /// <summary>Pushback direction: "facing south".</summary>
+    Facing,
 }
 
 /// <summary>
@@ -39,6 +42,7 @@ public static class ReadbackValues
     public const string Land = "LAND";
     public const string Approach = "APPROACH";
     public const string Cross = "CROSS";
+    public const string Push = "PUSH";
 
     public static string Destination(string icao) => Normalize(icao);
     public static string Route(string? sid) => sid is null ? FlightPlannedRoute : Normalize(sid);

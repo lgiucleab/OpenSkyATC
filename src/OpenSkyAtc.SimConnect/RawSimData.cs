@@ -18,6 +18,7 @@ public struct RawSimData
     public double GearHandle, FlapsHandleIndex;
     public double WindDirection, WindVelocity, Visibility, Temperature, SeaLevelPressure;
     public double SlewActive, ZuluTimeSeconds, ZuluDayOfYear, ZuluYear;
+    public double PushbackState;
 
     /// <summary>SimVar name and unit for each field, in field order. Names checked against the MSFS 2024 SDK docs.</summary>
     public static readonly (string Name, string Unit)[] Definition =
@@ -59,6 +60,7 @@ public struct RawSimData
         ("ZULU TIME", "seconds"),
         ("ZULU DAY OF YEAR", "number"),
         ("ZULU YEAR", "number"),
+        ("PUSHBACK STATE", "Enum"),
     ];
 
     /// <summary>Converts raw values into a <see cref="SimState"/>.</summary>
@@ -73,6 +75,7 @@ public struct RawSimData
             ZuluTime = ToZulu(ZuluYear, ZuluDayOfYear, ZuluTimeSeconds),
             Pause = pause,
             SlewActive = SlewActive != 0,
+            PushbackState = (int)PushbackState,
             Latitude = Latitude,
             Longitude = Longitude,
             AltitudeMslFt = AltitudeMsl,

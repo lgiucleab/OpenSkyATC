@@ -168,5 +168,35 @@ internal static class SyntheticAirports
         };
     }
 
+    /// <summary>
+    /// XPSH: a gate at (0, 60) with the aircraft parked nose north; its lead-in reaches taxilane T (east-west, y = 0)
+    /// at (0, 0). Runway 09/27 lies south of T, joined by W at x = -400 (west) and E at x = +400 (east).
+    /// </summary>
+    public static FacilityDump PushbackApron()
+    {
+        var b = new Builder(unnamed: false);
+        int tw = b.Point(-400, 0), t0 = b.Point(0, 0), te = b.Point(400, 0);
+        b.Chain("T", tw, t0, te);
+        int hw = b.Point(-400, -140, type: 5), he = b.Point(400, -140, type: 5);
+        b.Path(tw, hw, "W");
+        b.Path(te, he, "E");
+        b.Stand(5, 0, 60, t0);
+        var centre = At(0, -200);
+        return new FacilityDump
+        {
+            Icao = "XPSH",
+            Name = "Pushback",
+            Latitude = Origin.Latitude,
+            Longitude = Origin.Longitude,
+            ElevationM = 100,
+            Runways = [new FacilityRunway(centre.Latitude, centre.Longitude, 100, 90, 1600, 45, 9, 0, 27, 0, null, null)],
+            Frequencies = [new FacilityFrequency(5, 121_700_000, "PUSH")],
+            TaxiPoints = b.Points,
+            TaxiPaths = b.Paths,
+            TaxiNames = b.Names,
+            Parkings = b.Parkings,
+        };
+    }
+
     public static FacilityDump NoTaxiNetwork() => Grid() with { Icao = "XNON", TaxiPoints = [], TaxiPaths = [], Parkings = [], TaxiNames = [] };
 }

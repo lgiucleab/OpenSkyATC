@@ -100,6 +100,7 @@ STRINGS = {
     "Item.Frequency": ("Frequency", "Frecuencia"),
     "Item.Qnh": ("QNH", "QNH"),
     "Item.Stand": ("Stand", "Puesto"),
+    "Item.Facing": ("Facing", "Orientado al"),
     # Settings
     "Settings.Title": ("Settings", "Ajustes"),
     "Settings.Save": ("Save", "Guardar"),

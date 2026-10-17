@@ -114,7 +114,8 @@ public static class PilotPhrase
         ReadbackItem.HoldingPoint => $"holding point {value}",
         ReadbackItem.Destination => $"cleared to {value}",
         ReadbackItem.Route => value == ReadbackValues.FlightPlannedRoute ? "flight planned route" : value,
-        ReadbackItem.Clearance => value switch { "LINEUP" => "lining up", "TAKEOFF" => "cleared for takeoff", "LAND" => "cleared to land", "CROSS" => "crossing", _ => value },
+        ReadbackItem.Clearance => value switch { "PUSH" => "push and start approved", "LINEUP" => "lining up", "TAKEOFF" => "cleared for takeoff", "LAND" => "cleared to land", "CROSS" => "crossing", _ => value },
+        ReadbackItem.Facing => $"facing {value.ToLowerInvariant()}",
         ReadbackItem.InitialClimb or ReadbackItem.Altitude => value.EndsWith("FT") ? $"{value[..^2]} ft" : value,
         _ => value,
     };

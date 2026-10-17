@@ -65,6 +65,11 @@ public sealed record SimState
     public double GroundSpeedKt { get; init; }
     public double HeadingMagneticDeg { get; init; }
     public double HeadingTrueDeg { get; init; }
+
+    /// <summary>The sim's PUSHBACK STATE: 0 straight, 1 left, 2 right, 3 no pushback (older recordings: 3).</summary>
+    public int PushbackState { get; init; } = 3;
+
+    public bool PushbackActive => PushbackState is >= 0 and <= 2;
     public double VerticalSpeedFpm { get; init; }
 
     public bool OnGround { get; init; }

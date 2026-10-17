@@ -8,7 +8,9 @@
 [00:00:26.000] READBACK #2 contact-ground: correct
 [00:00:45.000] PILOT (121.700) RequestPushStart
 [00:00:47.750] ATC Testville Ground: Vueling 1234, push and start approved
-[00:00:48.000] PHASE Cleared -> Pushback (push and start approved)
+[00:00:52.000] PILOT (121.700) Readback Clearance=PUSH
+[00:00:52.000] READBACK #3 push-start: correct
+[00:00:52.250] PHASE Cleared -> Pushback (push and start approved)
 [00:01:40.000] PILOT (121.700) RequestTaxi
 [00:01:40.000] PHASE Pushback -> TaxiOut (taxi requested)
 [00:01:42.750] ATC Testville Ground: Vueling 1234, taxi to holding point A1 runway 36 via K, M, hold short runway 06

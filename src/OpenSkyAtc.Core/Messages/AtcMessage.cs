@@ -77,7 +77,8 @@ public enum ContactCondition
 /// <summary>"contact Barcelona Tower 118.100". The unit carries the callsign, role and frequency.</summary>
 public sealed record Contact(ControllerUnit Unit, ContactCondition Condition = ContactCondition.None) : AtcMessagePart;
 
-public sealed record PushStartApproved : AtcMessagePart;
+/// <param name="Facing">Compass word the push ends facing ("south"); null when not planned.</param>
+public sealed record PushStartApproved(string? Facing = null) : AtcMessagePart;
 
 /// <summary>"taxi to holding point A1 runway 24L via K, M, hold short runway 02". Empty segments is the no-route fallback.</summary>
 public sealed record TaxiVia(string? HoldingPoint, string Runway, IReadOnlyList<string> Segments, IReadOnlyList<string> HoldShorts) : AtcMessagePart;

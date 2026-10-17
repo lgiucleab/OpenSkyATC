@@ -8,8 +8,8 @@ public sealed partial class ReadbackField(ReadbackItem item) : ObservableObject
 {
     public ReadbackItem Item { get; } = item;
     public string Label => Loc.Get($"Item.{Item}");
-    public bool IsChoice => Item == ReadbackItem.Clearance;
-    public IReadOnlyList<string> Choices => ReadbackInput.Clearances;
+    public bool IsChoice => Item is ReadbackItem.Clearance or ReadbackItem.Facing;
+    public IReadOnlyList<string> Choices => Item == ReadbackItem.Facing ? ReadbackInput.Directions : ReadbackInput.Clearances;
 
     [ObservableProperty] private string _text = "";
 }

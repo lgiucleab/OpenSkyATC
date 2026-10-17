@@ -109,7 +109,8 @@ public sealed class IcaoRenderer
         Squawk s => SquawkText(s.Code),
         ReadbackCorrect => Pick(Text.Same("readback correct"), Text.Same("correct", european: true)),
         Contact c => ContactText(c),
-        PushStartApproved => Pick(Text.Same("push and start approved"), Text.Same("pushback and start up approved", european: true)),
+        PushStartApproved p => Pick(Text.Same("push and start approved"), Text.Same("pushback and start up approved", european: true))
+                               + (p.Facing is { } facing ? Text.Same($", facing {facing}") : Text.Same("")),
         TaxiVia t => Taxi(t),
         TaxiHoldingPoint h => new Text($"holding point {h.Name}", $"holding point {_say.Designator(h.Name)}"),
         RunwayIs r => RunwayText(r.Runway),

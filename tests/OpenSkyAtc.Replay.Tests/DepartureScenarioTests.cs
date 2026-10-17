@@ -103,6 +103,7 @@ public class DepartureScenarioTests
             00:20 Readback
             00:26 Readback
             00:45 RequestPushStart
+            00:52 Readback
             01:40 RequestTaxi
             01:50 Readback -holdshorts
             01:58 Readback
@@ -121,6 +122,7 @@ public class DepartureScenarioTests
             00:20 Readback
             00:26 Readback
             00:45 RequestPushStart
+            00:52 Readback
             01:40 RequestTaxi
             01:50 Readback
             05:02 Readback frequency=118200

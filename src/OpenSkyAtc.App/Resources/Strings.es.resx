@@ -272,6 +272,9 @@
   <data name="Item.Stand" xml:space="preserve">
     <value>Puesto</value>
   </data>
+  <data name="Item.Facing" xml:space="preserve">
+    <value>Orientado al</value>
+  </data>
   <data name="Settings.Title" xml:space="preserve">
     <value>Ajustes</value>
   </data>

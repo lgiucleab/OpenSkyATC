@@ -10,11 +10,13 @@
 [00:00:46.000] PILOT (121.700) RequestTaxi
 [00:00:47.500] ATC Testville Ground: Vueling 1234, stand by
 [00:00:47.750] ATC Testville Ground: Vueling 1234, push and start approved
-[00:00:48.000] PHASE Cleared -> Pushback (push and start approved)
-[00:00:48.000] PHASE Pushback -> TaxiOut (taxi requested)
-[00:00:51.500] ATC Testville Ground: Vueling 1234, taxi to holding point A1 runway 36
-[00:00:55.500] PILOT (121.700) Readback HoldingPoint=A1 Runway=36
-[00:00:55.500] READBACK #4 taxi: correct
+[00:00:51.750] PILOT (121.700) Readback Clearance=PUSH
+[00:00:51.750] READBACK #3 push-start: correct
+[00:00:52.000] PHASE Cleared -> Pushback (push and start approved)
+[00:00:52.000] PHASE Pushback -> TaxiOut (taxi requested)
+[00:00:55.500] ATC Testville Ground: Vueling 1234, taxi to holding point A1 runway 36
+[00:00:59.500] PILOT (121.700) Readback HoldingPoint=A1 Runway=36
+[00:00:59.500] READBACK #4 taxi: correct
 [00:05:00.000] ATC Testville Ground: Vueling 1234, contact Testville Tower 118.100
 [00:05:04.000] PILOT (121.700) Readback Frequency=118100
 [00:05:04.000] READBACK #5 contact-tower: correct

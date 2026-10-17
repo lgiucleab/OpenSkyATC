@@ -12,7 +12,10 @@ namespace OpenSkyAtc.Core.Conversation;
 public static partial class ReadbackInput
 {
     /// <summary>The choices for <see cref="ReadbackItem.Clearance"/>; the form shows them as a list.</summary>
-    public static readonly IReadOnlyList<string> Clearances = ["LINEUP", "TAKEOFF", "LAND", "CROSS"];
+    public static readonly IReadOnlyList<string> Clearances = ["PUSH", "LINEUP", "TAKEOFF", "LAND", "CROSS"];
+
+    /// <summary>The choices for <see cref="ReadbackItem.Facing"/>.</summary>
+    public static readonly IReadOnlyList<string> Directions = ["NORTH", "NORTHEAST", "EAST", "SOUTHEAST", "SOUTH", "SOUTHWEST", "WEST", "NORTHWEST"];
 
     public static string Normalize(ReadbackItem item, string? text)
     {
@@ -31,6 +34,11 @@ public static partial class ReadbackInput
             ReadbackItem.Route => t is "FPL" or "FLIGHT PLAN" or "FLIGHT PLANNED" or "AS FILED" ? ReadbackValues.FlightPlannedRoute : Squash(t),
             ReadbackItem.HoldingPoint or ReadbackItem.Stand or ReadbackItem.DirectTo or ReadbackItem.Destination => Squash(Strip(t, "HOLDING POINT", "STAND", "GATE", "DIRECT", "TO")),
             ReadbackItem.Clearance => Clearance(t),
+            ReadbackItem.Facing => Squash(Strip(t, "FACING")) switch
+            {
+                "N" => "NORTH", "NE" => "NORTHEAST", "E" => "EAST", "SE" => "SOUTHEAST",
+                "S" => "SOUTH", "SW" => "SOUTHWEST", "W" => "WEST", "NW" => "NORTHWEST", var d => d,
+            },
             _ => t,
         };
     }
@@ -72,6 +80,7 @@ public static partial class ReadbackInput
         "TAKEOFF" or "CLEAREDFORTAKEOFF" or "CLEAREDTAKEOFF" => "TAKEOFF",
         "LAND" or "LANDING" or "CLEAREDTOLAND" => "LAND",
         "CROSS" or "CROSSING" or "CLEAREDTOCROSS" => "CROSS",
+        "PUSH" or "PUSHBACK" or "PUSHANDSTART" or "PUSHANDSTARTAPPROVED" or "PUSHBACKAPPROVED" => "PUSH",
         var other => other,
     };
 

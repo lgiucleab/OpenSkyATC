@@ -59,6 +59,12 @@ public sealed class Clearance
         }
     }
 
+    /// <summary>The approved pushback (owner's request: the app drives the sim's tug); null at stands without one.</summary>
+    public Planning.PushPlan? Pushback { get; internal set; }
+
+    /// <summary>The push approval was read back: the app may start the tug.</summary>
+    public bool PushbackReadBack { get; internal set; }
+
     /// <summary>The pilot read the active taxi route back correctly (or it needed no readback). Taxi arrows wait for this.</summary>
     public bool TaxiReadBack { get; private set; }
 
