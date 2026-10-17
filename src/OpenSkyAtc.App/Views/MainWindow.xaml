@@ -26,7 +26,7 @@
             <Setter Property="Margin" Value="0,2,0,0" />
         </Style>
         <Style x:Key="CallButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Padding" Value="20,9" />
+            <Setter Property="Padding" Value="22,10" />
             <Setter Property="Margin" Value="0,0,10,8" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="MinWidth" Value="110" />
@@ -40,6 +40,9 @@
             <Border DockPanel.Dock="Top" Style="{StaticResource Section}" Padding="18,12">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <StackPanel.Resources>
+                            <StaticResource x:Key="ControlCornerRadius" ResourceKey="PillRadius" />
+                        </StackPanel.Resources>
                         <Button Command="{Binding ImportPlanCommand}" Padding="16,7" Margin="0,0,10,0">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE8B5;" FontFamily="{StaticResource Icons}" VerticalAlignment="Center" Margin="0,0,8,0" />
@@ -68,8 +71,8 @@
                                     <Setter Property="TextElement.Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Connected}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
-                                            <Setter Property="TextElement.Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource Brush.SuccessBg}" />
+                                            <Setter Property="TextElement.Foreground" Value="{DynamicResource Brush.Success}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -82,12 +85,12 @@
                         <Border>
                             <Border.Style>
                                 <Style TargetType="Border" BasedOn="{StaticResource Pill}">
-                                    <Setter Property="Background" Value="{DynamicResource SystemFillColorAttentionBackgroundBrush}" />
-                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                    <Setter Property="Background" Value="{DynamicResource Brush.InfoBg}" />
+                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource Brush.Info}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding PushToTalk}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
-                                            <Setter Property="TextElement.Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource Brush.CautionBg}" />
+                                            <Setter Property="TextElement.Foreground" Value="{DynamicResource Brush.Caution}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -134,12 +137,12 @@
                         </StackPanel>
                     </Border>
                     <Border Margin="14,0,0,0" CornerRadius="8" Padding="14,10" VerticalAlignment="Center"
-                            Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                            Background="{DynamicResource Brush.CautionBg}"
                             Visibility="{Binding HintIsWarning, Converter={StaticResource Visible}}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE72A;" FontFamily="{StaticResource Icons}" Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                            <TextBlock Text="&#xE72A;" FontFamily="{StaticResource Icons}" Foreground="{DynamicResource Brush.Caution}"
                                        VerticalAlignment="Center" Margin="0,0,10,0" />
-                            <TextBlock Text="{Binding Hint}" Foreground="{DynamicResource SystemFillColorCautionBrush}" FontSize="15" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Hint}" Foreground="{DynamicResource Brush.Caution}" FontSize="15" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
                 </DockPanel>
@@ -149,6 +152,9 @@
             <Border DockPanel.Dock="Bottom" Padding="18,14,18,10" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
                 <StackPanel>
                     <ItemsControl ItemsSource="{Binding Intents}">
+                        <ItemsControl.Resources>
+                            <StaticResource x:Key="ControlCornerRadius" ResourceKey="PillRadius" />
+                        </ItemsControl.Resources>
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel />
@@ -161,11 +167,11 @@
                                         <Style TargetType="Button" BasedOn="{StaticResource CallButton}">
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding Primary}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Primary}" />
                                                     <Setter Property="BorderThickness" Value="2" />
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Danger}" Value="True">
-                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Critical}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -196,10 +202,10 @@
                                             <Style TargetType="Run">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Atc}">
-                                                        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Atc}" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Pilot}">
-                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Pilot}" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -210,7 +216,7 @@
                                             <Style TargetType="Run">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Warning}">
-                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Caution}" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Kind}" Value="{x:Static host:TranscriptKind.Event}">
                                                         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -225,7 +231,7 @@
                     </ItemsControl>
                     <TextBlock Text="{Binding ArrowsText}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14"
                                Visibility="{Binding ArrowsText, Converter={StaticResource Visible}}" />
-                    <TextBlock Text="{Binding Notice}" Foreground="{DynamicResource SystemFillColorCautionBrush}" TextWrapping="Wrap" Margin="0,4,0,0"
+                    <TextBlock Text="{Binding Notice}" Foreground="{DynamicResource Brush.Caution}" TextWrapping="Wrap" Margin="0,4,0,0"
                                Visibility="{Binding Notice, Converter={StaticResource Visible}}" />
                 </StackPanel>
             </ScrollViewer>

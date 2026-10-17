@@ -5,18 +5,21 @@
         Title="OpenSkyATC" Width="420" Height="230" MinWidth="320" MinHeight="160"
         Topmost="True" ShowInTaskbar="True" WindowStyle="ToolWindow">
     <DockPanel Margin="10,8">
+        <DockPanel.Resources>
+            <StaticResource x:Key="ControlCornerRadius" ResourceKey="PillRadius" />
+        </DockPanel.Resources>
         <DockPanel DockPanel.Dock="Top">
             <Button DockPanel.Dock="Right" Content="{Binding [Main.Expand], Source={x:Static app:Loc.Instance}}" Click="Expand_Click" />
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Frequency}" FontSize="20" FontWeight="SemiBold" FontFamily="Consolas" VerticalAlignment="Center" />
                 <TextBlock Text="{Binding TalkingTo}" Margin="10,0,0,0" VerticalAlignment="Center" />
-                <Border Style="{StaticResource Badge}" Margin="10,0,0,0" VerticalAlignment="Center" Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                <Border Style="{StaticResource Badge}" Margin="10,0,0,0" VerticalAlignment="Center" Background="{DynamicResource Brush.CautionBg}"
                         Visibility="{Binding PushToTalk, Converter={StaticResource Visible}}">
                     <TextBlock Text="{Binding [Status.Ptt], Source={x:Static app:Loc.Instance}}" FontSize="12" />
                 </Border>
             </StackPanel>
         </DockPanel>
-        <TextBlock DockPanel.Dock="Top" Text="{Binding Hint}" Foreground="{DynamicResource SystemFillColorCautionBrush}" TextWrapping="Wrap"
+        <TextBlock DockPanel.Dock="Top" Text="{Binding Hint}" Foreground="{DynamicResource Brush.Caution}" TextWrapping="Wrap"
                    Visibility="{Binding Hint, Converter={StaticResource Visible}}" Margin="0,4,0,0" />
         <TextBlock DockPanel.Dock="Top" Text="{Binding LastAtc}" TextWrapping="Wrap" Margin="0,6,0,6" MaxHeight="60" TextTrimming="CharacterEllipsis" />
         <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -33,11 +36,11 @@
                                 <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Primary}" Value="True">
-                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Primary}" />
                                             <Setter Property="BorderThickness" Value="2" />
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding Danger}" Value="True">
-                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Critical}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
