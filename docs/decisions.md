@@ -282,3 +282,11 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **Readback timing with voices:** the brain gave 10 s from release, which a spoken clearance plus queueing would mostly use up. New `IAtcBrain.TransmissionHeard(message)`: the voice layer reports when a call finished playing (or was cut), and the readback timeout restarts then. Text-only mode never calls it. Test: a clearance heard 7 s after release is repeated 7 s later than in text mode.
 - **libritts_r subset:** 48 speakers spread over the 904 (every 19th id) until the owner has listened (`voices audition libritts_r`) and kept the clear ones.
 - **Done-when demo:** `ReplayAudioTests` renders the synthetic departure to `tests/fixtures/audio/departure-normal.wav` (git-ignored) where voices are installed; `voices play` plays it.
+
+## 2026-10-17 - Answers before step 13
+
+- **Layout:** the mockup (status bar, flight strip, radio block with "next frequency", transcript, pilot-call buttons, hard-mode and arrows toggles) plus a compact always-on-top mode (frequency, last ATC line, call buttons).
+- **Hard mode:** the readback opens a form with one field per item (squawk, altitude, runway, frequency...) that the pilot fills in; ATC checks it and corrects mistakes with the existing readback logic. Off: the button sends the correct readback.
+- **Theme:** follows Windows light/dark, WPF's built-in Fluent theme (.NET 10), no theme library.
+- **MVVM:** CommunityToolkit.Mvvm (MIT, .NET Foundation).
+- **My defaults:** settings in a separate window with sections (Flight plan, Voice, Push-to-talk, Speech recognition for step 14, Taxi arrows, Language), saved to %APPDATA%\OpenSkyATC\settings.json; the flight-running logic moves from the console `live` command into a shared `OpenSkyAtc.Host` library used by both the app and the console.
