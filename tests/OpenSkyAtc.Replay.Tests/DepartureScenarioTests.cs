@@ -69,6 +69,18 @@ public class DepartureScenarioTests
     }
 
     [Fact]
+    public void AnUnreadableCall_GetsSayAgain_ThenTheRequestIsServed()
+    {
+        var t = RunScenario("""
+            00:10 Unreadable
+            00:20 RequestClearance
+            """, seed: 1, Manual);
+        int sayAgain = t.ToList().FindIndex(l => l.EndsWith("Vueling 1234, say again"));
+        int cleared = t.ToList().FindIndex(l => l.Contains("cleared to"));
+        Assert.InRange(sayAgain, 0, cleared - 1);
+    }
+
+    [Fact]
     public void MissingClearanceItem_IsRequested()
     {
         var t = RunScenario("""

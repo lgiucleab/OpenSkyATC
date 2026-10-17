@@ -499,3 +499,6 @@ tests/fixtures/simbrief/*.local.pln
 
 # Rendered replay audio (voice demo): generated, not committed
 tests/fixtures/audio/*.wav
+
+# The owner's own voice recordings for the speech tests: local only
+tests/fixtures/speech/owner/

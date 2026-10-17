@@ -140,6 +140,9 @@
   <data name="Status.DownloadingVoices" xml:space="preserve">
     <value>Downloading voices</value>
   </data>
+  <data name="Status.LoadingSpeech" xml:space="preserve">
+    <value>Loading speech recognition</value>
+  </data>
   <data name="Status.Running" xml:space="preserve">
     <value>MSFS connected</value>
   </data>
@@ -157,6 +160,12 @@
   </data>
   <data name="Status.PttReady" xml:space="preserve">
     <value>PTT ready</value>
+  </data>
+  <data name="Status.Listening" xml:space="preserve">
+    <value>Listening</value>
+  </data>
+  <data name="Status.Transcribing" xml:space="preserve">
+    <value>Understanding</value>
   </data>
   <data name="Intent.Readback" xml:space="preserve">
     <value>Read back</value>
@@ -333,7 +342,13 @@
     <value>Key or button in the sim (SimConnect)</value>
   </data>
   <data name="Settings.PttHelp" xml:space="preserve">
-    <value>Examples: VK_LCONTROL+T, joystick:0:button:3. A global key and joystick outside the sim come with voice input.</value>
+    <value>Examples: VK_LCONTROL+T, joystick:0:button:3 (yoke and joystick buttons work here). Works while the sim has focus.</value>
+  </data>
+  <data name="Settings.PttKeyboard" xml:space="preserve">
+    <value>Keyboard key in any window</value>
+  </data>
+  <data name="Settings.PttKeyboardHelp" xml:space="preserve">
+    <value>Examples: F12, Ctrl+Space, RCtrl, NumPad0. The key still reaches the sim, so pick one it does not use.</value>
   </data>
   <data name="Settings.AtcKey" xml:space="preserve">
     <value>Use the sim's ATC key (Scroll Lock) as push-to-talk</value>
@@ -344,8 +359,17 @@
   <data name="Settings.WhisperModel" xml:space="preserve">
     <value>Whisper model</value>
   </data>
-  <data name="Settings.SpeechLater" xml:space="preserve">
-    <value>Voice input arrives in a later version; this choice is kept for it.</value>
+  <data name="Settings.VoiceInput" xml:space="preserve">
+    <value>Talk to ATC with your voice (hold push-to-talk)</value>
+  </data>
+  <data name="Settings.Microphone" xml:space="preserve">
+    <value>Microphone</value>
+  </data>
+  <data name="Settings.DefaultMicrophone" xml:space="preserve">
+    <value>Windows default</value>
+  </data>
+  <data name="Settings.SpeechHelp" xml:space="preserve">
+    <value>Whisper runs on your PC; nothing is sent anywhere. The model downloads once on first use. Larger models understand more but answer later. If ATC is not sure what you said, it asks you to say again.</value>
   </data>
   <data name="Settings.Arrows" xml:space="preserve">
     <value>Taxi arrows</value>

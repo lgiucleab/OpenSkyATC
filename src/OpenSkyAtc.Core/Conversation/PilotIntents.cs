@@ -33,6 +33,12 @@ public sealed record ReportVacated : PilotIntent;
 public sealed record Readback(IReadOnlyDictionary<ReadbackItem, string> Items, int? ExchangeId = null) : PilotIntent;
 
 public sealed record SayAgain : PilotIntent;
+
+/// <summary>
+/// A spoken call that could not be understood (low recognition confidence, or no intent in it): ATC answers
+/// "say again" instead of guessing. <paramref name="Heard"/> is the transcript, for the log.
+/// </summary>
+public sealed record Unreadable(string? Heard = null) : PilotIntent;
 public sealed record Wilco : PilotIntent;
 public sealed record Unable(string? Reason = null) : PilotIntent;
 public sealed record Mayday : PilotIntent;

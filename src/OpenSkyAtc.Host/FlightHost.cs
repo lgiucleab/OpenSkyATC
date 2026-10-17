@@ -11,6 +11,7 @@ using OpenSkyAtc.SimBrief;
 using OpenSkyAtc.SimConnect;
 using OpenSkyAtc.TaxiArrows;
 using OpenSkyAtc.Voice;
+using OpenSkyAtc.Voice.Input;
 
 namespace OpenSkyAtc.Host;
 
@@ -22,6 +23,7 @@ public enum HostStatus
     LoadingAirports,
     SearchingCenters,
     DownloadingVoices,
+    LoadingSpeech,
     Running,
     SimDisconnected,
     Failed,
@@ -55,6 +57,11 @@ public sealed record HostSnapshot
     public string? StatusDetail { get; init; }
     public bool SimConnected { get; init; }
     public bool PushToTalk { get; init; }
+
+    /// <summary>Voice in: recording the pilot (push-to-talk held), or working out what was said.</summary>
+    public bool Listening { get; init; }
+    public bool Transcribing { get; init; }
+    public bool VoiceInput { get; init; }
     public FlightPlan? Plan { get; init; }
     public string? CallsignSpoken { get; init; }
     public FlightPhase Phase { get; init; }
@@ -92,6 +99,9 @@ public sealed class FlightHost : IDisposable
     private Thread? _loop;
     private readonly TaxiArrowController _arrows = new();
     private PushbackDriver? _pushback;
+    private VoiceInput? _voiceIn;
+    private KeyboardPushToTalk? _keyboard;
+    private bool _pttHeld, _transcribing;
     private SimState? _state;
     private int _arrowCount;
     private HostStatus _status = HostStatus.Idle;
@@ -129,7 +139,10 @@ public sealed class FlightHost : IDisposable
                 Status = _status,
                 StatusDetail = _statusDetail,
                 SimConnected = _bridge?.IsConnected ?? false,
-                PushToTalk = _bridge?.PushToTalkHeld ?? false,
+                PushToTalk = _pttHeld,
+                Listening = _voiceIn?.IsListening ?? false,
+                Transcribing = _transcribing,
+                VoiceInput = _voiceIn is not null,
                 Plan = _brain is null ? null : _plan,
                 CallsignSpoken = _spokenCallsign,
                 Phase = _brain?.Session.Phase ?? FlightPhase.Preflight,
@@ -200,6 +213,10 @@ public sealed class FlightHost : IDisposable
             }
 
             if (_settings.VoiceEnabled) _radio = await StartRadioAsync(seed, brain);
+            if (_settings.VoiceInput) await StartVoiceInAsync(plan, origin, destination, brain);
+            _keyboard = KeyboardPushToTalk.Start(_settings.KeyboardPushToTalk);
+            if (_keyboard is not null) _keyboard.Changed += _ => PushToTalkChanged();
+            else if (!string.IsNullOrWhiteSpace(_settings.KeyboardPushToTalk)) Notice?.Invoke($"Unknown push-to-talk key '{_settings.KeyboardPushToTalk}'.");
             StartBridge();
             SetStatus(HostStatus.Running, $"{plan.Callsign} {plan.Origin} to {plan.Destination}");
         }
@@ -262,7 +279,7 @@ public sealed class FlightHost : IDisposable
             if (!_cancel.IsCancellationRequested) SetStatus(HostStatus.SimDisconnected, "Connection to MSFS lost: ATC paused, retrying every 5 s");
         };
         bridge.Warning += w => Notice?.Invoke(w);
-        bridge.PushToTalkChanged += (_, _) => Updated?.Invoke();
+        bridge.PushToTalkChanged += (_, _) => PushToTalkChanged();
         bridge.StateReceived += s =>
         {
             IReadOnlyList<TranscriptEntry> lines;
@@ -270,7 +287,7 @@ public sealed class FlightHost : IDisposable
             {
                 _state = s;
                 _brain!.Tick(s, s.Time);
-                _radio?.Update(bridge.PushToTalkHeld, khz => s.IsTunedTo(khz));
+                _radio?.Update(_pttHeld, khz => s.IsTunedTo(khz));
                 _pushback?.Update(_brain.Session.Clearance, _brain.Session.Phase, s);
                 var arrows = _arrows.Update(_brain.Session, s);
                 bridge.ShowArrows(arrows);
@@ -282,6 +299,79 @@ public sealed class FlightHost : IDisposable
         };
         _loop = new Thread(() => bridge.Run(_cancel.Token)) { IsBackground = true, Name = "SimBridge" };
         _loop.Start();
+    }
+
+    /// <summary>
+    /// Push-to-talk from any source (sim key or button, the sim's ATC key, the keyboard key): ATC never talks over it,
+    /// and with voice in the pilot is recorded while it is held and understood when it is let go.
+    /// </summary>
+    private void PushToTalkChanged()
+    {
+        bool held = (_bridge?.PushToTalkHeld ?? false) || (_keyboard?.Held ?? false);
+        VoiceInput? voice;
+        lock (_gate)
+        {
+            if (held == _pttHeld) return;
+            _pttHeld = held;
+            voice = _status == HostStatus.Running ? _voiceIn : null;
+            if (voice is not null && held) voice.Begin();
+        }
+        if (voice is not null && !held && voice.IsListening) _ = UnderstandAsync(voice);
+        Updated?.Invoke();
+    }
+
+    private async Task UnderstandAsync(VoiceInput voice)
+    {
+        lock (_gate) _transcribing = true;
+        Updated?.Invoke();
+        try
+        {
+            var call = await voice.EndAsync(() =>
+            {
+                lock (_gate) return new ParseContext(_brain?.AvailableIntents ?? [], voice.Context?.Aliases);
+            }, _cancel.Token);
+            if (call is null) return;
+            Transcript?.Invoke([new TranscriptEntry(Snapshot().SimTime, TranscriptKind.Event, null, null,
+                $"Heard: \"{call.Text}\" ({call.Confidence:P0}, {call.Took.TotalSeconds:0.0} s)")]);
+            Send(call.Intent);
+        }
+        catch (Exception e) when (e is IOException or InvalidOperationException or OperationCanceledException or NAudio.MmException)
+        {
+            if (!_cancel.IsCancellationRequested) Notice?.Invoke($"Voice input failed: {e.Message}");
+        }
+        finally
+        {
+            lock (_gate) _transcribing = false;
+            Updated?.Invoke();
+        }
+    }
+
+    /// <summary>Loads Whisper (downloading the model once) and primes it with this flight's words.</summary>
+    private async Task StartVoiceInAsync(FlightPlan plan, AirportData origin, AirportData destination, AtcBrain brain)
+    {
+        try
+        {
+            var model = WhisperModels.Find(_settings.WhisperModel) ?? WhisperModels.Base;
+            SetStatus(HostStatus.LoadingSpeech, $"Loading speech recognition ({model.Id})");
+            var voice = await VoiceInput.StartAsync(_settings, (mb, total) =>
+            {
+                lock (_gate) _statusDetail = $"Downloading the speech model ({mb} of {total} MB, once)";
+                Updated?.Invoke();
+            }, _cancel.Token);
+            var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var a in new[] { origin, destination })
+                if (a.Name is { Length: > 0 } name) aliases[name] = a.Icao;
+            var names = new List<string?> { plan.PlannedSid, plan.PlannedStar, plan.Origin, plan.Destination, origin.Name, destination.Name };
+            names.AddRange(origin.Runways.Concat(destination.Runways).SelectMany(r => new[] { r.First.Designator, r.Second.Designator }).Select(d => $"runway {d}"));
+            names.AddRange(plan.Route.Select(w => w.Ident));
+            voice.Prompt = SpeechPrompt.Build(_spokenCallsign, brain.Units.Select(u => u.Callsign).Distinct(), names.OfType<string>());
+            voice.Context = new ParseContext([], aliases);
+            lock (_gate) _voiceIn = voice;
+        }
+        catch (Exception e) when (e is HttpRequestException or IOException or InvalidOperationException or DllNotFoundException or TaskCanceledException)
+        {
+            if (!_cancel.IsCancellationRequested) Notice?.Invoke($"Voice input is off for this flight: {e.Message}");
+        }
     }
 
     private async Task<AtcRadio?> StartRadioAsync(int seed, AtcBrain brain)
@@ -440,6 +530,7 @@ public sealed class FlightHost : IDisposable
         Thread.Sleep(300); // let the bridge remove the arrows (the sim also removes them on disconnect)
         _cancel.Cancel();
         _radio?.Silence();
+        _keyboard?.Dispose();
         _loop?.Join(TimeSpan.FromSeconds(3));
         SetStatus(HostStatus.Stopped, null);
     }
@@ -448,6 +539,7 @@ public sealed class FlightHost : IDisposable
     {
         Stop();
         _radio?.Dispose();
+        _voiceIn?.Dispose();
         _provider?.Dispose();
         _cancel.Dispose();
     }

@@ -35,9 +35,20 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Developer check: "--screenshot FILE.png [main|compact|settings|readback] [en|es]" renders one window with
-    /// sample content to a PNG and exits (settings come from a throwaway file, never the user's).
+    /// Developer check: "--screenshot FILE.png [main|compact|settings[:TAB]|readback] [en|es]" renders one window with
+    /// sample content to a PNG and exits (settings come from a throwaway file, never the user's; TAB is the settings
+    /// tab number, from 0).
     /// </summary>
+    private static SettingsWindow SettingsAt(MainViewModel vm, string which) => new(new SettingsViewModel(vm.Settings));
+
+    private static System.Windows.Controls.TabControl? FindTabs(DependencyObject root)
+    {
+        if (root is System.Windows.Controls.TabControl tabs) return tabs;
+        foreach (var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
+            if (FindTabs(child) is { } found) return found;
+        return null;
+    }
+
     private void Screenshot(string file, string which, string language)
     {
         var store = new SettingsStore(Path.Combine(Path.GetTempPath(), "openskyatc-screenshot-settings.json"));
@@ -52,11 +63,13 @@ public partial class App : Application
         Window window = which switch
         {
             "compact" => new CompactWindow(vm, new MainWindow(vm)),
-            "settings" => new SettingsWindow(new SettingsViewModel(vm.Settings)),
+            _ when which.StartsWith("settings", StringComparison.Ordinal) => SettingsAt(vm, which),
             "readback" => new ReadbackWindow(new ReadbackFormViewModel(sample)),
             _ => new MainWindow(vm),
         };
         window.WindowStartupLocation = WindowStartupLocation.Manual;
+        if (window is SettingsWindow && which.Split(':') is [_, var tab] && int.TryParse(tab, out int index))
+            window.Loaded += (_, _) => { if (FindTabs(window) is { } tabs) tabs.SelectedIndex = index; };
         window.Left = -10_000; // off screen
         window.ContentRendered += (_, _) => Dispatcher.InvokeAsync(() =>
         {

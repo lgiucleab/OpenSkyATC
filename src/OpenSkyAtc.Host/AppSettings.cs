@@ -27,12 +27,21 @@ public sealed record AppSettings
     public IReadOnlyList<string> VoiceModels { get; init; } = ["vctk", "libritts_r", "joe", "norman", "john", "cori"];
     public bool RadioFilter { get; init; } = true;
 
-    // Push-to-talk (step 9; keyboard global hotkey and joystick outside the sim come in step 14)
+    // Push-to-talk: a key or joystick button through the sim (step 9), the sim's ATC key, and a keyboard key that
+    // works in any window (step 14, "F12", "Ctrl+Space"...; see KeyboardPushToTalk).
     public string? PushToTalkInput { get; init; }
     public bool UseAtcKey { get; init; } = true;
+    public string? KeyboardPushToTalk { get; init; }
 
     // Speech recognition (step 14)
+    public bool VoiceInput { get; init; } = true;
     public string WhisperModel { get; init; } = "base.en";
+
+    /// <summary>WinMM input device number; -1 is the Windows default microphone.</summary>
+    public int MicrophoneDevice { get; init; } = -1;
+
+    /// <summary>Below this Whisper confidence (0-1) ATC says "say again" instead of acting on the call.</summary>
+    public double MinSpeechConfidence { get; init; } = 0.4;
 
     // Taxi arrows (step 10)
     public bool TaxiArrows { get; init; } = true;

@@ -11,7 +11,7 @@ public static class IntentFactory
     private static readonly string[] Names =
     [
         "RequestClearance", "RequestPushStart", "RequestTaxi", "ReadyForDeparture", "RejectTakeoff", "CheckIn",
-        "RequestDescent", "ReportEstablished", "GoingAround", "ReportVacated", "Readback", "SayAgain", "Wilco",
+        "RequestDescent", "ReportEstablished", "GoingAround", "ReportVacated", "Readback", "SayAgain", "Unreadable", "Wilco",
         "Unable", "Mayday", "PanPan",
     ];
 
@@ -31,6 +31,7 @@ public static class IntentFactory
         "GoingAround" => new GoingAround(),
         "ReportVacated" => new ReportVacated(),
         "SayAgain" => new SayAgain(),
+        "Unreadable" => new Unreadable(),
         "Wilco" => new Wilco(),
         "Unable" => new Unable(s.Args.GetValueOrDefault("reason")),
         "Mayday" => new Mayday(),

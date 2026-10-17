@@ -92,6 +92,8 @@ public static class PilotPhrase
         GoingAround => "Going around",
         ReportVacated => "Runway vacated",
         SayAgain => "Say again",
+        Unreadable { Heard: { Length: > 0 } heard } => $"(not understood) \"{heard}\"",
+        Unreadable => "(not understood)",
         Wilco => "Wilco",
         Unable u => u.Reason is { } why ? $"Unable, {why}" : "Unable",
         Mayday => "Mayday, mayday, mayday",

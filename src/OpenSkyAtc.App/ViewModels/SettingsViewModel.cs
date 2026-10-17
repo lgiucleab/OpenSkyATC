@@ -31,7 +31,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         _radioFilter = s.RadioFilter;
         _pushToTalkInput = s.PushToTalkInput ?? "";
         _useAtcKey = s.UseAtcKey;
+        _keyboardPushToTalk = s.KeyboardPushToTalk ?? "";
+        _voiceInput = s.VoiceInput;
         _whisperModel = s.WhisperModel;
+        Microphones = [new(-1, Loc.Get("Settings.DefaultMicrophone")), .. Voice.Input.Microphone.Devices().Select(d => new MicrophoneChoice(d.Number, d.Name))];
+        _microphone = Microphones.FirstOrDefault(m => m.Number == s.MicrophoneDevice) ?? Microphones[0];
         _taxiArrows = s.TaxiArrows;
         _arrowLookAheadM = s.ArrowLookAheadM;
         _arrowSpacingM = s.ArrowSpacingM;
@@ -42,7 +46,8 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<VoiceChoice> Voices { get; }
     public IReadOnlyList<LanguageChoice> Languages { get; } = [new("en", "English"), new("es", "Español")];
-    public IReadOnlyList<string> WhisperModels { get; } = ["tiny.en", "base.en", "small.en"];
+    public IReadOnlyList<string> WhisperModels { get; } = Voice.Input.WhisperModels.All.Select(m => m.Id).ToList();
+    public IReadOnlyList<MicrophoneChoice> Microphones { get; }
 
     [ObservableProperty] private bool _useSimBrief;
     [ObservableProperty] private string _simBriefPilotId;
@@ -52,6 +57,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _radioFilter;
     [ObservableProperty] private string _pushToTalkInput;
     [ObservableProperty] private bool _useAtcKey;
+    [ObservableProperty] private string _keyboardPushToTalk;
+    [ObservableProperty] private bool _voiceInput;
+    [ObservableProperty] private MicrophoneChoice _microphone;
     [ObservableProperty] private string _whisperModel;
     [ObservableProperty] private bool _taxiArrows;
     [ObservableProperty] private double _arrowLookAheadM;
@@ -78,6 +86,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         VoiceModels = Voices.Where(v => v.Enabled).Select(v => v.Model.Id).ToList() is { Count: > 0 } chosen ? chosen : _original.VoiceModels,
         PushToTalkInput = string.IsNullOrWhiteSpace(PushToTalkInput) ? null : PushToTalkInput.Trim(),
         UseAtcKey = UseAtcKey,
+        KeyboardPushToTalk = string.IsNullOrWhiteSpace(KeyboardPushToTalk) ? null : KeyboardPushToTalk.Trim(),
+        VoiceInput = VoiceInput,
+        MicrophoneDevice = Microphone.Number,
         WhisperModel = WhisperModel,
         TaxiArrows = TaxiArrows,
         ArrowLookAheadM = Math.Clamp(ArrowLookAheadM, 50, 1000),
@@ -117,4 +128,9 @@ public sealed partial class SettingsViewModel : ObservableObject
             TestStatus = e.Message;
         }
     }
+}
+
+public sealed record MicrophoneChoice(int Number, string Name)
+{
+    public override string ToString() => Name;
 }

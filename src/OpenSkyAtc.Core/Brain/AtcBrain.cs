@@ -93,6 +93,9 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         _phaseEntered = false;
     }
 
+    /// <summary>Every controller unit of the flight (terminal units of both airports and the CTR sectors), for the voice layer.</summary>
+    public IReadOnlyList<ControllerUnit> Units => _airspace is null ? [] : _airspace.Units;
+
     public IReadOnlyList<PilotIntent> AvailableIntents
     {
         get
@@ -195,6 +198,9 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
                 return;
             case SayAgain:
                 _conversation.SayAgain(unit, now);
+                return;
+            case Unreadable:
+                _conversation.Say(unit, [new SayAgainRequest()], TransmissionPriority.Reply, now + _conversation.ReplyDelay());
                 return;
             case Mayday or PanPan:
                 var kind = intent is Mayday ? EmergencyKind.Mayday : EmergencyKind.PanPan;

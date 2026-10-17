@@ -54,14 +54,20 @@
                     <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.PttInput], Source={x:Static app:Loc.Instance}}" />
                     <TextBox Text="{Binding PushToTalkInput, UpdateSourceTrigger=PropertyChanged}" Width="260" HorizontalAlignment="Left" Margin="0,4" />
                     <TextBlock Text="{Binding [Settings.PttHelp], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" Margin="0,0,0,12" />
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.PttKeyboard], Source={x:Static app:Loc.Instance}}" />
+                    <TextBox Text="{Binding KeyboardPushToTalk, UpdateSourceTrigger=PropertyChanged}" Width="260" HorizontalAlignment="Left" Margin="0,4" />
+                    <TextBlock Text="{Binding [Settings.PttKeyboardHelp], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" Margin="0,0,0,12" />
                     <CheckBox Content="{Binding [Settings.AtcKey], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding UseAtcKey}" />
                 </StackPanel>
             </TabItem>
             <TabItem Header="{Binding [Settings.Speech], Source={x:Static app:Loc.Instance}}">
                 <StackPanel Margin="12">
+                    <CheckBox Content="{Binding [Settings.VoiceInput], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding VoiceInput}" Margin="0,0,0,12" />
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.Microphone], Source={x:Static app:Loc.Instance}}" />
+                    <ComboBox ItemsSource="{Binding Microphones}" SelectedItem="{Binding Microphone}" Width="260" HorizontalAlignment="Left" Margin="0,4,0,12" />
                     <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.WhisperModel], Source={x:Static app:Loc.Instance}}" />
                     <ComboBox ItemsSource="{Binding WhisperModels}" SelectedItem="{Binding WhisperModel}" Width="160" HorizontalAlignment="Left" Margin="0,4" />
-                    <TextBlock Text="{Binding [Settings.SpeechLater], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding [Settings.SpeechHelp], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" />
                 </StackPanel>
             </TabItem>
             <TabItem Header="{Binding [Settings.Arrows], Source={x:Static app:Loc.Instance}}">

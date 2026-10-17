@@ -233,7 +233,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StatusDetail = s?.StatusDetail ?? (FlightActive ? null : Loc.Get("Main.NoFlight"));
         Connected = s?.SimConnected ?? false;
         PushToTalk = s?.PushToTalk ?? false;
-        PttText = Loc.Get(PushToTalk ? "Status.Ptt" : "Status.PttReady");
+        PttText = Loc.Get(s?.Transcribing == true ? "Status.Transcribing"
+            : PushToTalk ? (s?.Listening == true ? "Status.Listening" : "Status.Ptt")
+            : "Status.PttReady");
         ShowStatusDetail = !string.IsNullOrEmpty(StatusDetail) && status != HostStatus.Running;
         Paused = s?.Paused ?? false;
 

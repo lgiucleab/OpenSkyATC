@@ -1,0 +1,35 @@
+# Pilot calls for the speech tests (step 14). One per line: id | what the pilot says, written as spoken.
+# The owner records them with "Recorder stt record" (tests/fixtures/speech/owner/, local only);
+# "Recorder stt synth" renders them with Piper into tests/fixtures/speech/piper/ (committed).
+# The expected intent of each id is in tests/OpenSkyAtc.Voice.Tests/SpeechSamples.cs.
+clearance-request | Madrid Delivery, Iberia one two three four, stand one two, request I F R clearance to Barcelona, information Bravo
+clearance-readback | Cleared to Barcelona, PINA four November departure, climb six thousand feet, squawk four seven two one, Iberia one two three four
+clearance-readback-fpr | Cleared to Barcelona, flight planned route, initial climb flight level one three zero, squawk two three five one, Iberia one two three four
+push-request | Madrid Ground, Iberia one two three four, stand one two, request push and start
+push-readback | Push and start approved, facing south, Iberia one two three four
+taxi-request | Iberia one two three four, request taxi
+taxi-readback | Taxi to holding point alpha one, runway three six left, hold short runway three six right, Iberia one two three four
+ready | Iberia one two three four, holding point alpha one, ready for departure
+lineup-readback | Lining up and wait runway three six left, Iberia one two three four
+takeoff-readback | Cleared for takeoff runway three six left, Iberia one two three four
+contact-departure | Contact Madrid Departure one two seven decimal one, Iberia one two three four
+checkin-departure | Madrid Departure, Iberia one two three four, passing four thousand five hundred feet, climbing six thousand feet
+climb-readback | Climb flight level one two zero, Iberia one two three four
+heading-readback | Turn right heading zero niner zero, Iberia one two three four
+direct-readback | Proceed direct TOBEK, Iberia one two three four
+checkin-control | Madrid Control, Iberia one two three four, passing flight level one eight zero, climbing flight level two five zero
+level-request | Iberia one two three four, request flight level three six zero
+direct-request | Iberia one two three four, request direct tango oscar bravo echo kilo
+descent-request | Iberia one two three four, request descent
+descent-readback | Descend flight level one zero zero, Iberia one two three four
+speed-readback | Reduce speed two two zero knots, Iberia one two three four
+qnh-readback | Descend altitude five thousand feet, Q N H one zero one three, Iberia one two three four
+established | Iberia one two three four, established localizer runway two four right
+tower-readback | Contact Barcelona Tower one one eight decimal one, Iberia one two three four
+land-readback | Runway two four right, cleared to land, Iberia one two three four
+go-around | Iberia one two three four, going around
+vacated | Iberia one two three four, runway vacated
+stand-readback | Taxi to stand two two via November, Iberia one two three four
+say-again | Say again, Iberia one two three four
+wilco | Wilco, Iberia one two three four
+mayday | Mayday mayday mayday, Iberia one two three four, engine fire, returning to Madrid
