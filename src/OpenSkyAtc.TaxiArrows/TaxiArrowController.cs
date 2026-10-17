@@ -18,8 +18,8 @@ public sealed record TaxiArrowOptions
     /// <summary>No arrow closer than this ahead of the aircraft's reference point (it would sit under the nose).</summary>
     public double MinAheadM { get; init; } = 8;
 
-    /// <summary>Within this distance of the route's end (holding point or stand) the arrows are removed.</summary>
-    public double EndReachedM { get; init; } = 30;
+    /// <summary>Within this distance of the route's end (holding point or stand) the arrows are removed; until then the last one marks where to stop.</summary>
+    public double EndReachedM { get; init; } = 10;
 
     /// <summary>How far back along the route the aircraft may be found again (a small reverse or GPS jitter).</summary>
     public double BacktrackM { get; init; } = 15;
@@ -85,6 +85,14 @@ public sealed class TaxiArrowController(TaxiArrowOptions? options = null)
         {
             var (p, track) = path.At(k * o.SpacingM);
             arrows.Add(new ArrowPose(_version * 1_000_000 + k, p, track));
+        }
+
+        // Where the arrows end at a stop (a hold-short line, the holding point, the stand) rather than at the
+        // look-ahead, one more arrow sits exactly on it, so the line of arrows shows where to stop.
+        if (stop <= _progress + o.LookAheadM && stop >= first && (arrows.Count == 0 || stop - (arrows[^1].Key % 1_000_000) * o.SpacingM > 1))
+        {
+            var (p, track) = path.At(stop);
+            arrows.Add(new ArrowPose(_version * 1_000_000 + 900_000 + (long)Math.Round(stop), p, track));
         }
         return arrows;
     }

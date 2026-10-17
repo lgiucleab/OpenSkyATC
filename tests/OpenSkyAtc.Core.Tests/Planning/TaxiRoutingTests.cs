@@ -180,6 +180,20 @@ public class TaxiRoutingTests
     }
 
     [Fact]
+    public void NeverCrossesTheDepartureRunway_ToReachAHoldingPointOnTheFarSide()
+    {
+        // Owner's LEMD flight: taxiing up Y on the east side of 36R, the route crossed just behind the threshold to
+        // a west-side hold-short (nearer the threshold) and led the aircraft onto the runway.
+        var airport = FacilityConverter.ToAirportData(SyntheticAirports.ThresholdShortcut());
+        var plan = Planner.PlanToHoldingPoint(airport, At(300, 600), airport.FindRunway("36")!.First);
+
+        Assert.False(plan.IsFallback, plan.FallbackReason);
+        Assert.Equal(["A", "Y", "E1"], plan.Via);
+        Assert.True(GeoMath.DistanceM(plan.Target, At(80, 100)) < 1, "ends at the near-side hold-short");
+        Assert.All(plan.Path, p => Assert.True(Math.Abs(airport.FindRunway("36")!.Project(p).Cross) > 22.5, "no point of the route on the runway"));
+    }
+
+    [Fact]
     public void TaxiIn_ToThePlannedStand_OrTheNearestGate()
     {
         var exit = At(1500, -200);

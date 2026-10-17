@@ -122,6 +122,18 @@ public class TaxiArrowControllerTests
     }
 
     [Fact]
+    public void AStopBetweenTheSpacingMarks_GetsAnArrowExactlyOnIt()
+    {
+        // Hold-short at 155 m: arrows at 10 ... 150 m, then one on the line at 155 m.
+        var taxi = Routes.NorthThenEast() with { Crossings = [("27", Routes.At(0, 155))] };
+        var arrows = new TaxiArrowController().Update(Routes.Session(taxi), Routes.Aircraft(0, 0));
+        Assert.Equal(16, arrows.Count);
+        Assert.True(GeoMath.DistanceM(arrows[^1].Position, Routes.At(0, 155)) < 0.5);
+        Assert.True(GeoMath.DistanceM(arrows[^2].Position, Routes.At(0, 150)) < 0.5);
+        Assert.Equal(arrows.Count, arrows.Select(a => a.Key).Distinct().Count());
+    }
+
+    [Fact]
     public void AReRoute_ReplacesTheArrows_AndWaitsForItsReadback()
     {
         var session = Routes.Session(Routes.NorthThenEast(crossing: false));
@@ -145,9 +157,10 @@ public class TaxiArrowControllerTests
     {
         var session = Routes.Session(Routes.NorthThenEast(crossing: false));
         var c = new TaxiArrowController();
-        Assert.NotEmpty(c.Update(session, Routes.Aircraft(400, 1000)));
-        Assert.Empty(c.Update(session, Routes.Aircraft(480, 1000)));
-        Assert.Empty(c.Update(session, Routes.Aircraft(440, 1000)));
+        var near = c.Update(session, Routes.Aircraft(470, 1000));
+        Assert.True(GeoMath.DistanceM(near[^1].Position, Routes.At(500, 1000)) < 0.5, "the last arrow is on the end of the route");
+        Assert.Empty(c.Update(session, Routes.Aircraft(492, 1000)));
+        Assert.Empty(c.Update(session, Routes.Aircraft(470, 1000)));
     }
 
     [Fact]

@@ -18,8 +18,17 @@ public sealed record TaxiRoutingOptions
     /// <summary>Apron lanes cost this many times their length, so routes use them only to reach stands.</summary>
     public double ApronLaneCostFactor { get; init; } = 3;
 
-    /// <summary>Holding points tried, nearest the runway end first, before giving up.</summary>
+    /// <summary>Holding points compared (those nearest the runway end); the cheapest route wins.</summary>
     public int HoldingPointCandidates { get; init; } = 4;
+
+    /// <summary>
+    /// Added per metre a holding point is from the runway end, so of two about equally good routes the one to the
+    /// full-length holding point wins; small next to a runway crossing, so it never sends a route across a runway.
+    /// </summary>
+    public double HoldingPointDistanceWeight { get; init; } = 1;
+
+    /// <summary>A node this far beyond a runway end, within the runway's width, still counts as on the runway.</summary>
+    public double RunwayEndMarginM { get; init; } = 60;
 }
 
 /// <summary>
@@ -46,10 +55,16 @@ public sealed class GraphTaxiPlanner(TaxiRoutingOptions? options = null) : ITaxi
             .ToList();
         if (goals.Count == 0) return FallbackTaxiPlanner.Fallback(airport, runway, $"no hold-short point for runway {runway.Designator}");
 
-        foreach (var goal in goals)
+        // Every candidate is routed; the cheapest wins (not simply the first reachable one, which could be on the far
+        // side of the departure runway).
+        var best = goals
+            .Select(g => (Goal: g, Route: AStar(graph, airport, start.Id, g.Id, departure)))
+            .Where(x => x.Route is not null)
+            .OrderBy(x => x.Route!.Value.Cost + _o.HoldingPointDistanceWeight * GeoMath.DistanceM(x.Goal.Position, runway.Position))
+            .Take(1);
+        foreach (var (goal, found) in best)
         {
-            var route = AStar(graph, airport, start.Id, goal.Id, departure);
-            if (route is null) continue;
+            var route = found!.Value.Edges;
             var plan = Describe(graph, airport, route, departure);
             var hp = new HoldingPoint(null, goal.Position, runway.Designator);
             if (plan.Via.Count == 0) return FallbackTaxiPlanner.Fallback(airport, runway, "no named taxiway on the route") with { HoldingPoint = hp, Target = goal.Position };
@@ -71,8 +86,7 @@ public sealed class GraphTaxiPlanner(TaxiRoutingOptions? options = null) : ITaxi
         var start = StartNode(graph, from);
         if (start is null) return Fallback("aircraft not near the taxi network");
 
-        var route = AStar(graph, airport, start.Id, stand.NodeId, departure: null);
-        if (route is null) return Fallback("no path to the stand");
+        if (AStar(graph, airport, start.Id, stand.NodeId, departure: null) is not { Edges: var route }) return Fallback("no path to the stand");
         var plan = Describe(graph, airport, route, departure: null);
         if (plan.UnnamedShare > _o.MaxUnnamedShare) return Fallback($"{plan.UnnamedShare:P0} of the route is unnamed");
         if (plan.Via.Count == 0) return Fallback("no named taxiway on the route");
@@ -108,11 +122,13 @@ public sealed class GraphTaxiPlanner(TaxiRoutingOptions? options = null) : ITaxi
 
     private readonly record struct State(int Node, string? LastName);
 
-    /// <summary>A* over (node, last taxiway name), so name changes can be costed.</summary>
-    private List<TaxiEdge>? AStar(TaxiGraph graph, AirportData airport, int start, int goal, Runway? departure)
+    /// <summary>
+    /// A* over (node, last taxiway name), so name changes can be costed. Entering any runway costs a crossing, the
+    /// departure runway included: a taxi-out ends at its hold-short, and only Tower clears onto it.
+    /// </summary>
+    private (List<TaxiEdge> Edges, double Cost)? AStar(TaxiGraph graph, AirportData airport, int start, int goal, Runway? departure)
     {
-        var inRunway = RunwayMembership(graph, airport);
-        int? departureIndex = departure is null ? null : airport.Runways.ToList().IndexOf(departure);
+        var inRunway = RunwayMembership(graph, airport, _o.RunwayEndMarginM);
         var goalPos = graph.Nodes[goal].Position;
 
         var open = new PriorityQueue<State, double>();
@@ -124,7 +140,7 @@ public sealed class GraphTaxiPlanner(TaxiRoutingOptions? options = null) : ITaxi
 
         while (open.TryDequeue(out var s, out _))
         {
-            if (s.Node == goal) return Rebuild(came, s);
+            if (s.Node == goal) return (Rebuild(came, s), cost[s]);
             double here = cost[s];
             foreach (var e in graph.From(s.Node))
             {
@@ -137,8 +153,8 @@ public sealed class GraphTaxiPlanner(TaxiRoutingOptions? options = null) : ITaxi
                     last = name;
                 }
                 int fromR = inRunway[e.From], toR = inRunway[e.To];
-                if (toR >= 0 && toR != fromR && toR != departureIndex) c += _o.RunwayCrossingPenaltyM;
-                if (e.Kind == TaxiEdgeKind.Runway && (departure is null || e.Runway != departure.Name)) c += _o.AlongOtherRunwayPenaltyM;
+                if (toR >= 0 && toR != fromR) c += _o.RunwayCrossingPenaltyM;
+                if (e.Kind == TaxiEdgeKind.Runway) c += _o.AlongOtherRunwayPenaltyM;
 
                 var next = new State(e.To, last);
                 double total = here + c;
@@ -159,8 +175,8 @@ public sealed class GraphTaxiPlanner(TaxiRoutingOptions? options = null) : ITaxi
         return edges;
     }
 
-    /// <summary>Index of the runway whose polygon contains each node, or -1.</summary>
-    private static int[] RunwayMembership(TaxiGraph graph, AirportData airport)
+    /// <summary>Index of the runway whose area (its width, from <paramref name="endMarginM"/> before one end to as far past the other) contains each node, or -1.</summary>
+    private static int[] RunwayMembership(TaxiGraph graph, AirportData airport, double endMarginM)
     {
         var result = new int[graph.Nodes.Count];
         for (int i = 0; i < result.Length; i++)
@@ -171,7 +187,7 @@ public sealed class GraphTaxiPlanner(TaxiRoutingOptions? options = null) : ITaxi
             {
                 var rwy = airport.Runways[r];
                 var (along, cross) = rwy.Project(p);
-                if (along >= 0 && along <= rwy.LengthM && Math.Abs(cross) <= rwy.WidthM / 2)
+                if (along >= -endMarginM && along <= rwy.LengthM + endMarginM && Math.Abs(cross) <= rwy.WidthM / 2)
                 {
                     result[i] = r;
                     break;
@@ -190,7 +206,7 @@ public sealed class GraphTaxiPlanner(TaxiRoutingOptions? options = null) : ITaxi
     /// </summary>
     private Description Describe(TaxiGraph graph, AirportData airport, List<TaxiEdge> route, Runway? departure)
     {
-        var inRunway = RunwayMembership(graph, airport);
+        var inRunway = RunwayMembership(graph, airport, _o.RunwayEndMarginM);
         var path = new List<GeoPoint> { graph.Nodes[route[0].From].Position };
         var via = new List<string>();
         var crossings = new List<TaxiCrossing>();

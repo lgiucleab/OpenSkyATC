@@ -134,5 +134,39 @@ internal static class SyntheticAirports
         };
     }
 
+    /// <summary>
+    /// XTHR: runway 18/36 from (0, 0) north to (0, 3000), approached from the east along taxiway Y (x = 150).
+    /// The hold-short nearest the 36 threshold (82 m from it) is on the far, west side, reachable only via Z, which
+    /// passes 30 m behind the threshold; the near-side hold-short on E1 is 100 m from it.
+    /// </summary>
+    public static FacilityDump ThresholdShortcut()
+    {
+        var b = new Builder(unnamed: false);
+        int y0 = b.Point(150, 600), y1 = b.Point(150, 100), y2 = b.Point(150, -30);
+        b.Chain("Y", y0, y1, y2);
+        int e1 = b.Point(80, 100, type: 5);
+        b.Path(y1, e1, "E1");
+        int z1 = b.Point(0, -30), z2 = b.Point(-80, -30), farHold = b.Point(-80, 20, type: 5);
+        b.Chain("Z", y2, z1, z2, farHold);
+        int stand = b.Point(300, 600);
+        b.Path(stand, y0, "A");
+
+        var centre = At(0, 1500);
+        return new FacilityDump
+        {
+            Icao = "XTHR",
+            Name = "Threshold",
+            Latitude = Origin.Latitude,
+            Longitude = Origin.Longitude,
+            ElevationM = 100,
+            Runways = [new FacilityRunway(centre.Latitude, centre.Longitude, 100, 0, 3000, 45, 36, 0, 18, 0, null, null)],
+            Frequencies = [new FacilityFrequency(5, 121_700_000, "THRESHOLD")],
+            TaxiPoints = b.Points,
+            TaxiPaths = b.Paths,
+            TaxiNames = b.Names,
+            Parkings = b.Parkings,
+        };
+    }
+
     public static FacilityDump NoTaxiNetwork() => Grid() with { Icao = "XNON", TaxiPoints = [], TaxiPaths = [], Parkings = [], TaxiNames = [] };
 }
