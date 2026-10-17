@@ -496,3 +496,6 @@ toolbar/*/_PackageInt/
 # Real SimBrief OFPs (Navigraph output, personal): local only
 tests/fixtures/simbrief/*.ofp.json
 tests/fixtures/simbrief/*.local.pln
+
+# Rendered replay audio (voice demo): generated, not committed
+tests/fixtures/audio/*.wav

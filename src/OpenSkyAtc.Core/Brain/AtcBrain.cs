@@ -142,6 +142,13 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         Release(state, simTime);
     }
 
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<AtcMessage, Exchange> _exchangeOf = new();
+
+    public void TransmissionHeard(AtcMessage message)
+    {
+        if (_exchangeOf.TryGetValue(message, out var exchange)) _conversation.Heard(exchange, _events.ActiveTime);
+    }
+
     public void HandlePilotIntent(PilotIntent intent)
     {
         if (_state is not { } state) return;
@@ -275,6 +282,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
             var message = new AtcMessage(simTime, t.Unit, _callsign, t.Parts, t.Priority);
             t.OnSent?.Invoke();
             _conversation.OnSent(t, _events.ActiveTime);
+            if (t.Exchange is { } exchange) _exchangeOf.AddOrUpdate(message, exchange);
             Session.Log.Add(new AtcTransmissionLogged(message));
             Transmission?.Invoke(message);
         }

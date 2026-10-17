@@ -186,3 +186,38 @@ public class DepartureScenarioTests
         public TaxiPlan PlanToStand(AirportData airport, Core.Geo.GeoPoint from, Stand? stand) => new FallbackTaxiPlanner().PlanToStand(airport, from, stand);
     }
 }
+
+/// <summary>Step 12: with voices, the readback time counts from when the transmission finished playing.</summary>
+public class TransmissionHeardTests
+{
+    private static List<string> Run(double heardAfterSeconds)
+    {
+        var brain = new AtcBrain();
+        var released = new List<(Core.Messages.AtcMessage Message, TimeSpan At)>();
+        brain.Transmission += m => released.Add((m, brain.Session.SimTime));
+        var heard = new HashSet<Core.Messages.AtcMessage>();
+        var t = ReplayRunner.Run(brain, Build(), IntentScript.Parse("00:10 RequestClearance"), Plan, Origin, Destination, seed: 1,
+            new ReplayOptions { AutoReadback = false }, afterTick: (b, s) =>
+            {
+                foreach (var (m, at) in released)
+                    if (heardAfterSeconds > 0 && !heard.Contains(m) && s.Time >= at + TimeSpan.FromSeconds(heardAfterSeconds))
+                    {
+                        heard.Add(m);
+                        b.TransmissionHeard(m);
+                    }
+            });
+        return t.Where(l => l.Contains("cleared to XDST")).ToList();
+    }
+
+    private static double Seconds(string line) => TimeSpan.ParseExact(line[1..13], @"hh\:mm\:ss\.fff", null).TotalSeconds;
+
+    [Fact]
+    public void TheReadbackTimer_StartsWhenTheClearanceHasBeenHeard()
+    {
+        var textOnly = Run(heardAfterSeconds: 0);
+        var spoken = Run(heardAfterSeconds: 7);
+        double repeatText = Seconds(textOnly[1]) - Seconds(textOnly[0]);
+        double repeatSpoken = Seconds(spoken[1]) - Seconds(spoken[0]);
+        Assert.InRange(repeatSpoken - repeatText, 6.5, 7.5);
+    }
+}

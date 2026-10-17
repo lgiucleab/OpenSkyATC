@@ -107,6 +107,12 @@ public sealed class ConversationManager(TransmissionQueue queue, IRandom rng, Ev
         ex.State = ex.Outstanding.Count > 0 ? ExchangeState.AwaitingReadback : ExchangeState.Done;
     }
 
+    /// <summary>The transmission finished playing: the readback timeout counts from now (only while still awaited).</summary>
+    internal void Heard(Exchange ex, TimeSpan now)
+    {
+        if (ex.State is ExchangeState.AwaitingReadback && ex.SentAt is { } sent && now > sent) ex.SentAt = now;
+    }
+
     internal void OnDropped(QueuedTransmission t)
     {
         if (t.Exchange is { State: ExchangeState.Queued } ex) ex.State = ExchangeState.Dropped;

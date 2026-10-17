@@ -11,6 +11,7 @@ using OpenSkyAtc.Phraseology;
 using OpenSkyAtc.SimBrief;
 using OpenSkyAtc.SimConnect;
 using OpenSkyAtc.TaxiArrows;
+using OpenSkyAtc.Voice;
 
 namespace OpenSkyAtc.Recorder;
 
@@ -38,6 +39,8 @@ internal static class LiveCommand
         public bool Arrows { get; init; } = true;
         public double ArrowLookAheadM { get; init; } = 300;
         public double ArrowSpacingM { get; init; } = 10;
+        public bool Voice { get; init; } = true;
+        public float Volume { get; init; } = 0.8f;
         public int Seed { get; init; } = Environment.TickCount;
     }
 
@@ -45,13 +48,14 @@ internal static class LiveCommand
         "live (--simbrief PILOT_ID | --pln FILE | --from ICAO --to ICAO --callsign VLG1234)\n" +
         "     [--type A320] [--cruise 350] [--sid NAME] [--star NAME] [--stand NAME]   (override the imported plan)\n" +
         "     [--ptt \"VK_LCONTROL+T\" | --ptt \"joystick:0:button:3\"] [--no-atc-key] [--seed N]\n" +
-        "     [--no-arrows] [--arrow-lookahead M] [--arrow-spacing M]";
+        "     [--no-arrows] [--arrow-lookahead M] [--arrow-spacing M] [--no-voice] [--volume 0..1]";
 
     public static Args? Parse(string[] a)
     {
         string? from = null, to = null, callsign = null, type = null, sid = null, star = null, stand = null, ptt = null, simbrief = null, pln = null;
         int? cruise = null, seed = null;
-        bool atcKey = true, arrows = true;
+        bool atcKey = true, arrows = true, voice = true;
+        float volume = 0.8f;
         double lookAhead = 300, spacing = 10;
         for (int i = 1; i < a.Length; i++)
         {
@@ -71,6 +75,8 @@ internal static class LiveCommand
                 case "--ptt": ptt = Next(); break;
                 case "--no-atc-key": atcKey = false; break;
                 case "--no-arrows": arrows = false; break;
+                case "--no-voice": voice = false; break;
+                case "--volume": volume = float.Parse(Next() ?? "", CultureInfo.InvariantCulture); break;
                 case "--arrow-lookahead": lookAhead = double.Parse(Next() ?? "", CultureInfo.InvariantCulture); break;
                 case "--arrow-spacing": spacing = double.Parse(Next() ?? "", CultureInfo.InvariantCulture); break;
                 case "--seed": seed = int.Parse(Next() ?? "", CultureInfo.InvariantCulture); break;
@@ -83,7 +89,7 @@ internal static class LiveCommand
             SimBriefPilotId = simbrief, PlnPath = pln,
             From = from, To = to, Callsign = callsign, Type = type, CruiseFl = cruise, Sid = sid, Star = star, Stand = stand,
             PushToTalk = ptt, AtcKey = atcKey, Seed = seed ?? Environment.TickCount,
-            Arrows = arrows, ArrowLookAheadM = lookAhead, ArrowSpacingM = spacing,
+            Arrows = arrows, ArrowLookAheadM = lookAhead, ArrowSpacingM = spacing, Voice = voice, Volume = volume,
         };
     }
 
@@ -136,12 +142,18 @@ internal static class LiveCommand
         var gate = new object();
         Console.WriteLine($"Seed {args.Seed}. Brain started: {plan.Callsign} {plan.Origin} -> {plan.Destination}.");
 
+        using var radio = args.Voice ? StartRadio(args, callsigns, brain) : null;
+
         var bridge = new SimBridge(new SimBridgeOptions { PushToTalkInput = args.PushToTalk, UseAtcKey = args.AtcKey });
         long samples = 0;
         int lastTransmitKhz = 0, lastArrowCount = -1;
         var arrowController = new TaxiArrowController(new TaxiArrowOptions { Enabled = args.Arrows, LookAheadM = args.ArrowLookAheadM, SpacingM = args.ArrowSpacingM });
         bridge.Connected += () => Console.WriteLine("[sim] connected, 4 Hz");
-        bridge.Disconnected += () => { if (!cancel.IsCancellationRequested) Console.WriteLine("[sim] connection lost: ATC paused, retrying every 5 s"); };
+        bridge.Disconnected += () =>
+        {
+            radio?.Silence();
+            if (!cancel.IsCancellationRequested) Console.WriteLine("[sim] connection lost: ATC paused, retrying every 5 s");
+        };
         bridge.TitleReceived += t => Console.WriteLine($"[sim] aircraft: {t}");
         bridge.Warning += w => Console.WriteLine($"[sim] {w}");
         bridge.PushToTalkChanged += (down, source) => Console.WriteLine($"[ptt] {(down ? "DOWN" : "UP")} ({source})");
@@ -151,6 +163,7 @@ internal static class LiveCommand
             {
                 brain.Tick(s, s.Time);
                 lastTransmitKhz = s.TransmitFrequencyKhz;
+                radio?.Update(bridge.PushToTalkHeld, khz => s.IsTunedTo(khz));
                 var arrows = arrowController.Update(brain.Session, s);
                 bridge.ShowArrows(arrows);
                 if ((arrows.Count == 0) != (lastArrowCount == 0))
@@ -235,6 +248,57 @@ internal static class LiveCommand
         }) { IsBackground = true, Name = "stdin" };
         t.Start();
         return t;
+    }
+
+    /// <summary>
+    /// ATC voices: the chosen Piper voices are downloaded on first use (step 12), then every transmission is spoken
+    /// by its unit's voice through the radio channel. Null (text only) when no voice can be installed.
+    /// </summary>
+    private static AtcRadio? StartRadio(Args args, CallsignTable callsigns, AtcBrain brain)
+    {
+        var store = new VoiceStore();
+        var missing = VoiceCatalog.All.Where(m => !store.IsInstalled(m)).ToList();
+        if (missing.Count > 0)
+        {
+            Console.WriteLine($"Downloading ATC voices on first use: {string.Join(", ", missing.Select(m => m.Id))} (about 70 MB each, once)...");
+            using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+            foreach (var m in missing)
+            {
+                try
+                {
+                    store.InstallAsync(m, http).GetAwaiter().GetResult();
+                    Console.WriteLine($"  {m.Id}: installed");
+                }
+                catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException or TaskCanceledException)
+                {
+                    Console.WriteLine($"  {m.Id}: could not download ({e.Message})");
+                }
+            }
+        }
+        var installed = store.Installed();
+        if (installed.Count == 0)
+        {
+            Console.WriteLine("No ATC voice installed: text only.");
+            return null;
+        }
+
+        var radio = new AtcRadio(new IcaoRenderer(args.Seed, callsigns: callsigns), new VoiceAssigner(args.Seed, installed), new PiperSynthesizer(store), args.Seed)
+        {
+            Volume = Math.Clamp(args.Volume, 0f, 1f),
+        };
+        radio.Error += e => Console.WriteLine($"[voice] {e}");
+        radio.Action += a =>
+        {
+            switch (a)
+            {
+                case Dropped d: Console.WriteLine($"[voice] not heard: you left {d.Transmission.Unit} before it spoke"); break;
+                case CutOff c: Console.WriteLine($"[voice] {c.Transmission.Unit} cut off by an urgent call"); break;
+            }
+        };
+        brain.Transmission += m => radio.Say(m);
+        radio.Heard += brain.TransmissionHeard; // raised from Update, inside the brain's lock
+        Console.WriteLine($"ATC voices: {string.Join(", ", installed.Select(m => m.Id))} (radio filter on, volume {radio.Volume:0.0}).");
+        return radio;
     }
 
     /// <summary>The plan from SimBrief, a .pln (completed once the sim is up) or the command line.</summary>

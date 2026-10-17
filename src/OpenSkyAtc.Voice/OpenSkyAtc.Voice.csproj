@@ -1,13 +1,27 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\OpenSkyAtc.Core\OpenSkyAtc.Core.csproj" />
-  </ItemGroup>
-
+  <!-- Voice out (step 12): Piper voices through sherpa-onnx, radio filter, the radio channel and playback.
+       Windows x64: NAudio's WinMM output and the sherpa-onnx win-x64 native runtime. -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenSkyAtc.Core\OpenSkyAtc.Core.csproj" />
+    <ProjectReference Include="..\OpenSkyAtc.Phraseology\OpenSkyAtc.Phraseology.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.8" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="OpenSkyAtc.Voice.Tests" />
+  </ItemGroup>
 
 </Project>

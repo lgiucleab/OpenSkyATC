@@ -40,6 +40,8 @@ Run the brain against the live sim in a console (step 9 checklist: `docs/step-09
 dotnet run --project src/OpenSkyAtc.Recorder -- live --from LEMD --to LEBL --callsign IBE1234 --type A320 --cruise 330 --ptt "VK_LCONTROL+T"
 ```
 
+Voices: `voices list | install [ids|all] | say "text" [--voice vctk:12] [--out f.wav] | audition MODEL | play FILE.wav`. `live` speaks every ATC call (downloads missing voices first; `--no-voice`, `--volume`). The replay-to-audio demo is `ReplayAudioTests` (writes `tests/fixtures/audio/departure-normal.wav` where voices are installed).
+
 With a flight plan: `live --simbrief PILOT_ID` (latest SimBrief OFP) or `live --pln FILE` (MSFS .pln; callsign from the sim aircraft, waypoint positions from the sim's navdata).
 
 `taxi ICAO` loads the airport live through `SimConnectAirportProvider` (the same path the app uses) and prints its units and a routed taxi from a gate to every runway end.
@@ -53,7 +55,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 - `src/OpenSkyAtc.Core` - the brain (phases, events, clearance, conformance, airspace, planning, taxi routing). No project or package references.
 - `src/OpenSkyAtc.Phraseology` - ICAO renderer (display + speech text). References Core.
 - `src/OpenSkyAtc.SimConnect` - sim bridge: `SimBridge` (SimState at 4 Hz, push-to-talk, reconnect every 5 s; its `SimState.Time` only advances while connected), `SimConnectAirportProvider` (airports from the sim, reopens its connection after the sim restarts), `FacilityExporter`. References Core.
-- `src/OpenSkyAtc.Voice` - Piper TTS, radio filter, Whisper STT, intent parser, push-to-talk. References Core.
+- `src/OpenSkyAtc.Voice` - voice out (net10.0-windows, x64): `VoiceCatalog`/`VoiceAssigner` (a fixed voice per unit per session), `VoiceStore` (download on first use to %LOCALAPPDATA%\OpenSkyATCoices), `PiperSynthesizer` (sherpa-onnx), `RadioFilter`, `RadioChannel` (queue rules, pure), `AtcRadio` (glue + NAudio playback). Whisper STT and the intent parser come in step 14. References Core and Phraseology.
 - `src/OpenSkyAtc.SimBrief` - flight plan import: `SimBriefClient` + `OfpParser` (SimBrief json=v2), `PlnParser` (MSFS .pln), errors as `FlightPlanImportException`. References Core. Tests: `tests/OpenSkyAtc.SimBrief.Tests` with hand-written samples in `tests/fixtures/simbrief` (real OFPs `*.ofp.json` and `*.local.pln` are git-ignored).
 - `src/OpenSkyAtc.TaxiArrows` - taxi arrow logic (app layer, pure): `TaxiArrowController` (which arrows where, from `FlightSession`) and `ArrowPool` (sim-object changes). References Core.
 - `src/OpenSkyAtc.App` - WPF app (net10.0-windows). References all libraries.
@@ -78,6 +80,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 - Phases never read raw `SimState` numbers; they react to `EventEngine` events. Thresholds live in `EventEngineOptions`.
 - Owner-filled data files (`data/*.json`) are parsed by `Core/Config/DataFiles` from text the host reads; CENTER frequencies for a flight are the sim's (searched along `CenterSearch.RoutePoints`) merged with `data/ctr-frequencies.json`.
 - Taxi arrows: the brain never knows about them. It exposes the route (`Clearance.Taxi`), `TaxiReadBack` and `IsCrossReadBack`; `TaxiArrowController` reads those and `SimBridge.ShowArrows` places them. Checklist: `docs/step-10-checklist.md`.
+- Voice timing: the brain releases a transmission when due; `RadioChannel` decides when it can be heard (push-to-talk, 1 s gap, urgent cuts, drop when off frequency), and `IAtcBrain.TransmissionHeard` restarts the readback timer when the audio ends.
 - Recordings: JSON-lines, header line then one `SimState` per line (`RecordingFormat`). Core converts lines only; callers do file I/O.
 - Shared build settings live in `Directory.Build.props`: nullable on, implicit usings, warnings are errors.
 - Every dependency, model, voice or dataset must be GPL-3.0-compatible and listed in `THIRD_PARTY_NOTICES.md` before it is added.

@@ -35,6 +35,30 @@ None yet.
 | --- | --- | --- |
 | Microsoft.FlightSimulator.SimConnect.dll, SimConnect.dll (MSFS 2024 SDK) | Microsoft Flight Simulator SDK EULA (proprietary) | Not in the repo or releases. Loaded at runtime from the user's SDK install. Linking is allowed by `LICENSE-EXCEPTION.md`. |
 
+## Libraries (shipped)
+
+| Component | Licence | Notes |
+| --- | --- | --- |
+| [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (`org.k2fsa.sherpa.onnx` 1.13.8, with its native `sherpa-onnx-c-api.dll`) | Apache-2.0 | Runs the Piper voices in-process (`OpenSkyAtc.Voice`). |
+| [ONNX Runtime](https://github.com/microsoft/onnxruntime) (`onnxruntime.dll`, inside the sherpa-onnx runtime package) | MIT | Neural network runtime used by sherpa-onnx. |
+| [NAudio](https://github.com/naudio/NAudio) 2.2.1 | MIT | Audio playback and WAV files. |
+| [SharpZipLib](https://github.com/icsharpcode/SharpZipLib) 1.4.2 | MIT | Unpacks the downloaded voice archives (.tar.bz2). |
+
+## Voices (downloaded on first use, not in the repo or installer)
+
+Pre-converted Piper models from the [sherpa-onnx tts-models release](https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models), stored in `%LOCALAPPDATA%\OpenSkyATCoices`. Each licence is the voice's training dataset licence, as stated in its MODEL_CARD (checked 2026-10-17). Each archive also contains [espeak-ng](https://github.com/espeak-ng/espeak-ng) phoneme data (GPL-3.0).
+
+| Voice | Speakers | Licence | Credit |
+| --- | --- | --- | --- |
+| en_GB-vctk-medium | 109 | CC BY 4.0 | CSTR VCTK Corpus, Centre for Speech Technology Research, University of Edinburgh. |
+| en_US-libritts_r-medium | 904 (48 used) | CC BY 4.0 | LibriTTS-R (Koizumi et al.), from LibriVox recordings. |
+| en_US-joe-medium | 1 | CC0 | Joe voice dataset, Open Home Foundation. |
+| en_US-norman-medium | 1 | Public domain | Bryce Beattie, from LibriVox recordings. |
+| en_US-john-medium | 1 | Public domain | Bryce Beattie, from LibriVox recordings. |
+| en_GB-cori-high | 1 | Public domain | Bryce Beattie, from LibriVox recordings. |
+
+The Piper voice models themselves were trained by the [Piper](https://github.com/rhasspy/piper) project (MIT).
+
 ## Online services (used at the user's request, nothing shipped)
 
 | Service | Use | Notes |
