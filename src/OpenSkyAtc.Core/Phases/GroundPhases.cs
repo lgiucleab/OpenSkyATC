@@ -11,7 +11,7 @@ namespace OpenSkyAtc.Core.Phases;
 public sealed class PreflightPhase : Phase
 {
     private Exchange? _clearance;
-    private (RunwayEnd? Runway, AltitudeTarget Climb, int Squawk)? _plan;
+    private (RunwayEnd? Runway, string? Sid, AltitudeTarget Climb, int Squawk)? _plan;
 
     public override FlightPhase Id => FlightPhase.Preflight;
     public override ControllerUnit? Unit(PhaseContext ctx) => ctx.Airspace.ClearanceUnit;
@@ -22,12 +22,13 @@ public sealed class PreflightPhase : Phase
 
         var unit = Unit(ctx)!;
         var c = ctx.Clearance;
-        _plan ??= (
-            ctx.Planning.ChooseDepartureRunway(ctx.State),
-            InitialClimbRule.For(ctx.Origin, ctx.Plan.PlannedSid),
-            SquawkAllocator.Allocate(ctx.Options.Squawks, ctx.Origin.Icao, ctx.Rng));
-        var (runway, climb, squawk) = _plan.Value;
-        string? sid = ctx.Plan.PlannedSid;
+        if (_plan is null)
+        {
+            var assigned = ctx.Planning.ChooseDepartureRunway(ctx.State);
+            string? chosenSid = SidChooser.Choose(ctx.Origin, ctx.Plan.PlannedSid, assigned);
+            _plan = (assigned, chosenSid, InitialClimbRule.For(ctx.Origin, chosenSid), SquawkAllocator.Allocate(ctx.Options.Squawks, ctx.Origin.Icao, ctx.Rng));
+        }
+        var (runway, sid, climb, squawk) = _plan.Value;
 
         var expectation = ReadbackExpectation.Builder()
             .Add(ReadbackItem.Destination, ReadbackValues.Destination(ctx.Plan.Destination), new ClearedTo(ctx.Plan.Destination, ctx.Destination.Name))

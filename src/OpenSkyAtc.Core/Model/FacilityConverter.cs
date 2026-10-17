@@ -41,7 +41,7 @@ public static class FacilityConverter
             Frequencies = Frequencies(d, place),
             TransitionAltitudeFt = d.TransitionAltitudeM > 0 ? (int)(Math.Round(d.TransitionAltitudeM * FtPerM / 100) * 100) : null,
             TransitionLevel = d.TransitionLevelM > 0 ? (int)Math.Round(d.TransitionLevelM * FtPerM / 100) : null,
-            Sids = d.Departures.Distinct().Select(n => new SidInfo(n)).ToList(),
+            Sids = Sids(d),
             Stars = d.Arrivals.Distinct().ToList(),
             Taxi = graph,
         };
@@ -107,6 +107,20 @@ public static class FacilityConverter
     }
 
     private static int Khz(int hz) => (int)Math.Round(hz / 1000.0);
+
+    /// <summary>SIDs with the runway ends they start from (runway numbers 37-44 are compass directions, not runways).</summary>
+    private static List<SidInfo> Sids(FacilityDump d)
+    {
+        var byName = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < d.Departures.Count; i++)
+        {
+            if (!byName.TryGetValue(d.Departures[i], out var runways)) byName[d.Departures[i]] = runways = new(StringComparer.OrdinalIgnoreCase);
+            if (i < d.DepartureRunways.Count)
+                foreach (var t in d.DepartureRunways[i])
+                    if (t.Length == 2 && t[0] is >= 1 and <= 36) runways.Add(Designator(t[0], t[1]));
+        }
+        return byName.Select(kv => new SidInfo(kv.Key, null, kv.Value.Order(StringComparer.Ordinal).ToList())).ToList();
+    }
 
     public static string Designator(int number, int designator)
     {

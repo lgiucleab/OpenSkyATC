@@ -22,6 +22,12 @@ public sealed record RunwayRules
     /// <summary>A preferred runway is kept with up to this much tailwind (design doc).</summary>
     public double MaxPreferredTailwindKt { get; init; } = 5;
 
+    /// <summary>
+    /// The flight plan's own runway is kept with up to this much tailwind (owner's checklist feedback: pilots plan
+    /// with SimBrief's real-world runway; switching it at 5 kt felt wrong).
+    /// </summary>
+    public double MaxPlanTailwindKt { get; init; } = 10;
+
     /// <summary>Never pick a runway with more crosswind than this if another is available (design doc).</summary>
     public double MaxCrosswindKt { get; init; } = 25;
 
@@ -54,12 +60,15 @@ public static class RunwaySelector
         var pool = withinCrosswind.Count > 0 ? withinCrosswind : ends;
 
         var wanted = new HashSet<string>(preferred ?? [], StringComparer.OrdinalIgnoreCase);
-        if (hint is not null) wanted.Add(hint);
 
         IEnumerable<RunwayEnd> Best(IEnumerable<RunwayEnd> xs) => xs
             .OrderByDescending(e => Math.Round(HeadwindKt(e, windFromTrueDeg, windKt), 6))
             .ThenBy(e => e.Designator, StringComparer.Ordinal);
 
+        // The plan's runway first, then the airport's preferred ones, then the best for the wind.
+        if (hint is not null && pool.FirstOrDefault(e => e.Designator.Equals(hint, StringComparison.OrdinalIgnoreCase)) is { } planned
+            && HeadwindKt(planned, windFromTrueDeg, windKt) >= -rules.MaxPlanTailwindKt)
+            return planned;
         var preferredOk = pool.Where(e => wanted.Contains(e.Designator) && HeadwindKt(e, windFromTrueDeg, windKt) >= -rules.MaxPreferredTailwindKt);
         return Best(preferredOk).FirstOrDefault() ?? Best(pool).First();
     }
@@ -127,6 +136,36 @@ public static class SquawkAllocator
     public static bool IsValidCode(int code) => code is >= 0 and <= 7777 && code.ToString().All(ch => ch <= '7');
 
     private static IEnumerable<int> AllCodes() => Enumerable.Range(0, 7778).Where(IsValidCode);
+}
+
+/// <summary>
+/// The SID to clear: the plan's when the sim has it for the assigned runway; otherwise the sim's SID with the same
+/// name stem for that runway (the plan's AIRAC can be newer than the sim's navdata: PINA3N planned, PINA4N in the
+/// sim), preferring the same final letter; otherwise none ("flight planned route"). Without SID data in the sim, the
+/// plan's SID is used as filed.
+/// </summary>
+public static class SidChooser
+{
+    public static string? Choose(AirportData origin, string? plannedSid, RunwayEnd? runway)
+    {
+        if (plannedSid is null) return null;
+        if (origin.Sids.Count == 0) return plannedSid;
+        bool Fits(SidInfo s) => runway is null || s.Serves(runway.Designator);
+
+        if (origin.Sids.FirstOrDefault(s => s.Name.Equals(plannedSid, StringComparison.OrdinalIgnoreCase)) is { } exact && Fits(exact)) return exact.Name;
+
+        string stem = Stem(plannedSid);
+        char last = char.ToUpperInvariant(plannedSid[^1]);
+        return origin.Sids
+            .Where(s => stem.Length > 0 && Stem(s.Name).Equals(stem, StringComparison.OrdinalIgnoreCase) && Fits(s))
+            .OrderByDescending(s => char.ToUpperInvariant(s.Name[^1]) == last)
+            .ThenBy(s => s.Name, StringComparer.Ordinal)
+            .Select(s => s.Name)
+            .FirstOrDefault();
+    }
+
+    /// <summary>The fix part of a SID name: "PINA3N" -> "PINA", "CCS2X" -> "CCS".</summary>
+    private static string Stem(string sid) => new(sid.TakeWhile(char.IsLetter).ToArray());
 }
 
 public static class InitialClimbRule

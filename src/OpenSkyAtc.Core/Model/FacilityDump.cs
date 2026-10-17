@@ -37,6 +37,9 @@ public sealed record FacilityDump
     public IReadOnlyList<string> TaxiNames { get; init; } = [];
     public IReadOnlyList<FacilityApproach> Approaches { get; init; } = [];
     public IReadOnlyList<string> Departures { get; init; } = [];
+
+    /// <summary>Runway transitions per SID, as (runway number, designator code) pairs; same order as <see cref="Departures"/>. Older dumps lack it.</summary>
+    public IReadOnlyList<IReadOnlyList<int[]>> DepartureRunways { get; init; } = [];
     public IReadOnlyList<string> Arrivals { get; init; } = [];
 
     private static readonly JsonSerializerOptions Options = new()

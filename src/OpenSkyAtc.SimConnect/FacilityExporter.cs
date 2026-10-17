@@ -96,6 +96,12 @@ public sealed class FacilityExporter : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private struct RunwayTransitionData
+    {
+        public int Number, Designator;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct ProcedureNameData
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)] public byte[] Name;
@@ -118,6 +124,7 @@ public sealed class FacilityExporter : IDisposable
     private readonly List<string> _names = [];
     private readonly List<FacilityApproach> _approaches = [];
     private readonly List<string> _departures = [];
+    private readonly List<List<int[]>> _departureRunways = [];
     private readonly List<string> _arrivals = [];
     private bool _done;
     private readonly List<(string Icao, string Region, double Lat, double Lon)> _airportList = [];
@@ -157,6 +164,7 @@ public sealed class FacilityExporter : IDisposable
                      (SIMCONNECT_FACILITY_DATA_TYPE.APPROACH, () => _sim.RegisterFacilityDataDefineStruct<ApproachData>(SIMCONNECT_FACILITY_DATA_TYPE.APPROACH)),
                      (SIMCONNECT_FACILITY_DATA_TYPE.DEPARTURE, () => _sim.RegisterFacilityDataDefineStruct<ProcedureNameData>(SIMCONNECT_FACILITY_DATA_TYPE.DEPARTURE)),
                      (SIMCONNECT_FACILITY_DATA_TYPE.ARRIVAL, () => _sim.RegisterFacilityDataDefineStruct<ProcedureNameData>(SIMCONNECT_FACILITY_DATA_TYPE.ARRIVAL)),
+                     (SIMCONNECT_FACILITY_DATA_TYPE.RUNWAY_TRANSITION, () => _sim.RegisterFacilityDataDefineStruct<RunwayTransitionData>(SIMCONNECT_FACILITY_DATA_TYPE.RUNWAY_TRANSITION)),
                      (SIMCONNECT_FACILITY_DATA_TYPE.WAYPOINT, () => _sim.RegisterFacilityDataDefineStruct<PositionData>(SIMCONNECT_FACILITY_DATA_TYPE.WAYPOINT)),
                      (SIMCONNECT_FACILITY_DATA_TYPE.VOR, () => _sim.RegisterFacilityDataDefineStruct<PositionData>(SIMCONNECT_FACILITY_DATA_TYPE.VOR)),
                      (SIMCONNECT_FACILITY_DATA_TYPE.NDB, () => _sim.RegisterFacilityDataDefineStruct<PositionData>(SIMCONNECT_FACILITY_DATA_TYPE.NDB)),
@@ -204,6 +212,10 @@ public sealed class FacilityExporter : IDisposable
 
         Add(d, "OPEN DEPARTURE");
         Add(d, "NAME");
+        Add(d, "OPEN RUNWAY_TRANSITION");
+        Add(d, "RUNWAY_NUMBER");
+        Add(d, "RUNWAY_DESIGNATOR");
+        Add(d, "CLOSE RUNWAY_TRANSITION");
         Add(d, "CLOSE DEPARTURE");
 
         Add(d, "OPEN ARRIVAL");
@@ -256,6 +268,7 @@ public sealed class FacilityExporter : IDisposable
             TaxiNames = [.. _names],
             Approaches = [.. _approaches],
             Departures = [.. _departures],
+            DepartureRunways = _departureRunways.Select(r => (IReadOnlyList<int[]>)r.ToList()).ToList(),
             Arrivals = [.. _arrivals],
         };
     }
@@ -355,6 +368,12 @@ public sealed class FacilityExporter : IDisposable
                 break;
             case SIMCONNECT_FACILITY_DATA_TYPE.DEPARTURE:
                 _departures.Add(Text(((ProcedureNameData)item).Name) ?? "");
+                _departureRunways.Add([]);
+                break;
+            case SIMCONNECT_FACILITY_DATA_TYPE.RUNWAY_TRANSITION when _departureRunways.Count > 0:
+                // Only departures ask for runway transitions, so each belongs to the latest departure.
+                var rt = (RunwayTransitionData)item;
+                _departureRunways[^1].Add([rt.Number, rt.Designator]);
                 break;
             case SIMCONNECT_FACILITY_DATA_TYPE.ARRIVAL:
                 _arrivals.Add(Text(((ProcedureNameData)item).Name) ?? "");
@@ -378,7 +397,7 @@ public sealed class FacilityExporter : IDisposable
     {
         _airport = null;
         _runways.Clear(); _frequencies.Clear(); _points.Clear(); _parkings.Clear(); _paths.Clear();
-        _names.Clear(); _approaches.Clear(); _departures.Clear(); _arrivals.Clear();
+        _names.Clear(); _approaches.Clear(); _departures.Clear(); _departureRunways.Clear(); _arrivals.Clear();
         _done = false;
     }
 

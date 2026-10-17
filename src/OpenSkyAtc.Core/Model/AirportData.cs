@@ -45,7 +45,11 @@ public sealed record HoldShortPoint(GeoPoint Position, string RunwayDesignator);
 public sealed record AirportFrequency(ControllerRole Role, int FrequencyKhz, string? Callsign = null);
 
 /// <summary>A SID from the sim's procedure data; <paramref name="TopAltitudeFt"/> is its final altitude constraint when known.</summary>
-public sealed record SidInfo(string Name, int? TopAltitudeFt = null);
+/// <param name="Runways">Runway ends the SID starts from ("36L"); empty when the sim did not say.</param>
+public sealed record SidInfo(string Name, int? TopAltitudeFt = null, IReadOnlyList<string>? Runways = null)
+{
+    public bool Serves(string runway) => Runways is not { Count: > 0 } r || r.Contains(runway, StringComparer.OrdinalIgnoreCase);
+}
 
 /// <summary>A named runway holding point. <paramref name="Name"/> may be null when the data has no name.</summary>
 public sealed record HoldingPoint(string? Name, GeoPoint Position, string RunwayDesignator);
