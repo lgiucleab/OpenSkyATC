@@ -42,6 +42,7 @@ None yet.
 | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (`org.k2fsa.sherpa.onnx` 1.13.8, with its native `sherpa-onnx-c-api.dll`) | Apache-2.0 | Runs the Piper voices in-process (`OpenSkyAtc.Voice`). |
 | [ONNX Runtime](https://github.com/microsoft/onnxruntime) (`onnxruntime.dll`, inside the sherpa-onnx runtime package) | MIT | Neural network runtime used by sherpa-onnx. |
 | [NAudio](https://github.com/naudio/NAudio) 2.2.1 | MIT | Audio playback and WAV files. |
+| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) 8.4.2 | MIT | View models of the WPF app (.NET Foundation). |
 | [SharpZipLib](https://github.com/icsharpcode/SharpZipLib) 1.4.2 | MIT | Unpacks the downloaded voice archives (.tar.bz2). |
 
 ## Voices (downloaded on first use, not in the repo or installer)

@@ -89,6 +89,9 @@ public sealed class AtcRadio : IDisposable
 
     public float Volume { get => _player.Volume; set => _player.Volume = value; }
 
+    /// <summary>Radio effect on (band-pass, hiss, squelch) or clean voices.</summary>
+    public bool Filter { get; init; } = true;
+
     /// <summary>Raised on the caller of <see cref="Update"/> for each start, cut and drop (for logs and the UI).</summary>
     public event Action<RadioAction>? Action;
 
@@ -143,7 +146,8 @@ public sealed class AtcRadio : IDisposable
             try
             {
                 var voice = _voices.VoiceFor(message.Unit.Callsign);
-                var clip = RadioFilter.Apply(_tts.Speak(speech, voice), unchecked(_seed + _filterSeed++));
+                var clean = _tts.Speak(speech, voice);
+                var clip = Filter ? RadioFilter.Apply(clean, unchecked(_seed + _filterSeed++)) : clean;
                 _ready.Enqueue(new RadioTransmission(message.Unit.Callsign, message.Unit.FrequencyKhz, message.Priority, clip, speech, message));
             }
             catch (Exception e)

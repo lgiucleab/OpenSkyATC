@@ -109,7 +109,7 @@ internal static class Program
             Console.Error.WriteLine(e.Message);
             return 1;
         }
-        return LiveCommand.Run(live);
+        return LiveCommand.Run(live.Request, live.Settings);
     }
 
     // Kept separate from Main so no SimConnect type is touched before the DLLs are loaded.

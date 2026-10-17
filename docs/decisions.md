@@ -290,3 +290,12 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **Theme:** follows Windows light/dark, WPF's built-in Fluent theme (.NET 10), no theme library.
 - **MVVM:** CommunityToolkit.Mvvm (MIT, .NET Foundation).
 - **My defaults:** settings in a separate window with sections (Flight plan, Voice, Push-to-talk, Speech recognition for step 14, Taxi arrows, Language), saved to %APPDATA%\OpenSkyATC\settings.json; the flight-running logic moves from the console `live` command into a shared `OpenSkyAtc.Host` library used by both the app and the console.
+
+## 2026-10-17 - Step 13
+
+- **`OpenSkyAtc.Host`** (new library): `FlightHost` runs one flight for both the app and the console `live` command (which is now a thin shell over it): plan import (SimBrief or .pln, with the .pln callsign and navdata lookups), waiting for the sim, both airports, CENTER search, brain, voices (missing ones downloaded first), taxi arrows and the bridge thread. The brain is only touched under one lock; the UI reads a `HostSnapshot` and gets events from background threads. Settings live in %APPDATA%\OpenSkyATC\settings.json; a broken file is kept as `.bad` and defaults are used.
+- **App:** Fluent theme following Windows (`ThemeMode="System"`; the WPF0001 "for evaluation" warning is silenced on purpose). Main window as in the mockup, a compact always-on-top strip (closing it returns to the full window; the app reopens in the mode it was closed in), settings window with sections, hard-mode readback form. Window positions are restored when still on a screen.
+- **Hard mode:** the form lists the items to read back without their values; `ReadbackInput.Normalize` (Core, pure, unit-tested; reused by speech in step 14) turns typed text into canonical values ("121.63" -> 121630, "FL 120" -> FL120, "rwy 36l" -> 36L), and the brain checks them as any readback.
+- **Languages:** English and Spanish UI from one table (`tools/app-strings/generate.py` -> `.resx`), switched live. Radio, pilot phrases in the transcript and host status details stay English (the radio language).
+- **Applies when:** arrows on/off, look-ahead, spacing, volume, hard mode and language apply at once; voices, push-to-talk and the plan source apply to the next flight.
+- **Layout checked by rendering:** `OpenSkyATC.exe --screenshot` renders each window (light/dark, English/Spanish) to a PNG; it found two crashes on exit (a never-shown window's placement is infinite and could not be saved; the compact strip tried to reopen the closed main window), both fixed.

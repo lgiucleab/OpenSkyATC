@@ -1,0 +1,90 @@
+<Window x:Class="OpenSkyAtc.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:OpenSkyAtc.App"
+        Title="{Binding [Settings.Title], Source={x:Static app:Loc.Instance}}"
+        Width="640" Height="620" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <DockPanel Margin="12">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="{Binding [Settings.Save], Source={x:Static app:Loc.Instance}}" Click="Save_Click" IsDefault="True"
+                    Style="{DynamicResource AccentButtonStyle}" Margin="0,0,6,0" MinWidth="90" />
+            <Button Content="{Binding [Settings.Cancel], Source={x:Static app:Loc.Instance}}" IsCancel="True" MinWidth="90" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding [Settings.AppliesNext], Source={x:Static app:Loc.Instance}}" Opacity="0.7"
+                   TextWrapping="Wrap" Margin="0,8,0,0" />
+        <TabControl>
+            <TabItem Header="{Binding [Settings.FlightPlan], Source={x:Static app:Loc.Instance}}">
+                <StackPanel Margin="12">
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.PlanSource], Source={x:Static app:Loc.Instance}}" />
+                    <RadioButton Content="{Binding [Settings.SourceSimBrief], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding UseSimBrief}" Margin="0,4" />
+                    <RadioButton Content="{Binding [Settings.SourcePln], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding UsePln}" Margin="0,4,0,12" />
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.SimBriefId], Source={x:Static app:Loc.Instance}}" />
+                    <TextBox Text="{Binding SimBriefPilotId, UpdateSourceTrigger=PropertyChanged}" MaxLength="7" Width="160" HorizontalAlignment="Left" Margin="0,4" />
+                    <TextBlock Text="{Binding [Settings.SimBriefHelp], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" Margin="0,0,0,12" />
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.PlnFile], Source={x:Static app:Loc.Instance}}" />
+                    <DockPanel Margin="0,4">
+                        <Button DockPanel.Dock="Right" Content="{Binding [Settings.Browse], Source={x:Static app:Loc.Instance}}" Click="Browse_Click" Margin="6,0,0,0" />
+                        <TextBox Text="{Binding PlnPath, UpdateSourceTrigger=PropertyChanged}" />
+                    </DockPanel>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="{Binding [Settings.Voice], Source={x:Static app:Loc.Instance}}">
+                <StackPanel Margin="12">
+                    <CheckBox Content="{Binding [Settings.VoiceEnabled], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding VoiceEnabled}" Margin="0,0,0,8" />
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.Volume], Source={x:Static app:Loc.Instance}}" />
+                    <Slider Minimum="0" Maximum="100" Value="{Binding Volume}" Width="260" HorizontalAlignment="Left" Margin="0,4,0,8" />
+                    <CheckBox Content="{Binding [Settings.RadioFilter], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding RadioFilter}" Margin="0,0,0,12" />
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.Voices], Source={x:Static app:Loc.Instance}}" />
+                    <ItemsControl ItemsSource="{Binding Voices}" Margin="0,4">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Content="{Binding Title}" IsChecked="{Binding Enabled}" Margin="0,2" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Margin="0,6">
+                        <Button Content="{Binding [Settings.TestVoice], Source={x:Static app:Loc.Instance}}" Command="{Binding TestVoiceCommand}" MinWidth="90" />
+                        <TextBlock Text="{Binding TestStatus}" VerticalAlignment="Center" Margin="10,0,0,0" Opacity="0.7" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding [Settings.Credits], Source={x:Static app:Loc.Instance}}" Opacity="0.6" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0" />
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="{Binding [Settings.PushToTalk], Source={x:Static app:Loc.Instance}}">
+                <StackPanel Margin="12">
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.PttInput], Source={x:Static app:Loc.Instance}}" />
+                    <TextBox Text="{Binding PushToTalkInput, UpdateSourceTrigger=PropertyChanged}" Width="260" HorizontalAlignment="Left" Margin="0,4" />
+                    <TextBlock Text="{Binding [Settings.PttHelp], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" Margin="0,0,0,12" />
+                    <CheckBox Content="{Binding [Settings.AtcKey], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding UseAtcKey}" />
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="{Binding [Settings.Speech], Source={x:Static app:Loc.Instance}}">
+                <StackPanel Margin="12">
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.WhisperModel], Source={x:Static app:Loc.Instance}}" />
+                    <ComboBox ItemsSource="{Binding WhisperModels}" SelectedItem="{Binding WhisperModel}" Width="160" HorizontalAlignment="Left" Margin="0,4" />
+                    <TextBlock Text="{Binding [Settings.SpeechLater], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" />
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="{Binding [Settings.Arrows], Source={x:Static app:Loc.Instance}}">
+                <StackPanel Margin="12">
+                    <CheckBox Content="{Binding [Settings.ArrowsEnabled], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding TaxiArrows}" Margin="0,0,0,12" />
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.LookAhead], Source={x:Static app:Loc.Instance}}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
+                        <Slider Minimum="50" Maximum="1000" TickFrequency="50" IsSnapToTickEnabled="True" Value="{Binding ArrowLookAheadM}" Width="260" />
+                        <TextBlock Text="{Binding ArrowLookAheadM, StringFormat={}{0:0} m}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.Spacing], Source={x:Static app:Loc.Instance}}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <Slider Minimum="3" Maximum="50" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding ArrowSpacingM}" Width="260" />
+                        <TextBlock Text="{Binding ArrowSpacingM, StringFormat={}{0:0} m}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="{Binding [Settings.Language], Source={x:Static app:Loc.Instance}}">
+                <StackPanel Margin="12">
+                    <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" DisplayMemberPath="Name" Width="200" HorizontalAlignment="Left" Margin="0,0,0,8" />
+                    <TextBlock Text="{Binding [Settings.LanguageHelp], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" />
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

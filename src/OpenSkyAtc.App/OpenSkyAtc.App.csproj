@@ -1,19 +1,29 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\OpenSkyAtc.Core\OpenSkyAtc.Core.csproj" />
-    <ProjectReference Include="..\OpenSkyAtc.Phraseology\OpenSkyAtc.Phraseology.csproj" />
-    <ProjectReference Include="..\OpenSkyAtc.SimConnect\OpenSkyAtc.SimConnect.csproj" />
-    <ProjectReference Include="..\OpenSkyAtc.Voice\OpenSkyAtc.Voice.csproj" />
-    <ProjectReference Include="..\OpenSkyAtc.SimBrief\OpenSkyAtc.SimBrief.csproj" />
-  </ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AssemblyName>OpenSkyATC</AssemblyName>
+    <!-- WPF's Fluent theme (ThemeMode) is marked for evaluation in .NET 10 (owner's choice, step 13). -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenSkyAtc.Host\OpenSkyAtc.Host.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <!-- WPF projects leave these out of the implicit usings. -->
+  <ItemGroup>
+    <Using Include="System.IO" />
+    <Using Include="System.Net.Http" />
+  </ItemGroup>
 
 </Project>
