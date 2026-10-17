@@ -1,14 +1,14 @@
 # Step 10 checklist (in-sim taxi arrows)
 
-## One-time setup (sim closed)
+## One-time setup
 
-The package tool builds by starting the sim in a build mode, so close MSFS 2024 first.
+The arrow has no textures, so the package needs no compiling. Assemble it and copy it into the Community folder (Microsoft Store version shown), then start the sim:
 
 ```
-"C:\MSFS 2024 SDK\Tools\bin\fspackagetool.exe" toolbar\opensky-atc-taxi-arrows\opensky-atc-taxi-arrows.xml -nopause
+python toolbar\opensky-atc-taxi-arrows	oolsssemble_package.py --install "%LOCALAPPDATA%\Packages\Microsoft.Limitless_8wekyb3d8bbwe\LocalCache\Packages\Community"
 ```
 
-Copy the built `toolbar\opensky-atc-taxi-arrows\Packages\opensky-atc-taxi-arrows` folder into the Community folder (Microsoft Store version: `%LOCALAPPDATA%\Packages\Microsoft.Limitless_8wekyb3d8bbwe\LocalCache\Packages\Community`), then start the sim.
+(The SDK's `fspackagetool.exe` also builds it, but it has to start the sim itself and waited forever with the Microsoft Store install.)
 
 ## Run
 

@@ -57,7 +57,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 - `src/OpenSkyAtc.App` - WPF app (net10.0-windows). References all libraries.
 - `src/OpenSkyAtc.Recorder` - console tool, records SimState to JSON-lines.
 - `tests/*` - xUnit test projects; `tests/fixtures` holds airport JSON and recorded flights.
-- `toolbar/` - MSFS 2024 Community-folder packages (toolbar panel, taxi arrow model). `toolbar/opensky-atc-taxi-arrows`: build with `"C:\MSFS 2024 SDK\Toolsinspackagetool.exe" toolbar\opensky-atc-taxi-arrows\opensky-atc-taxi-arrows.xml -nopause` with the sim closed (it starts the sim to build); the model comes from its `tools/generate_arrow.py`.
+- `toolbar/` - MSFS 2024 Community-folder packages (toolbar panel, taxi arrow model). `toolbar/opensky-atc-taxi-arrows`: `python toolbar/opensky-atc-taxi-arrows/tools/assemble_package.py [--install <Community folder>]` writes the package (no compiling needed: no textures); the model comes from its `tools/generate_arrow.py`. `fspackagetool.exe` hangs with the Microsoft Store sim.
 
 ## Conventions
 
