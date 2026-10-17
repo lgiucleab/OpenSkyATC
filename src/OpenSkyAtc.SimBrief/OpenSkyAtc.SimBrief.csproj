@@ -4,6 +4,10 @@
     <ProjectReference Include="..\OpenSkyAtc.Core\OpenSkyAtc.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="OpenSkyAtc.SimBrief.Tests" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

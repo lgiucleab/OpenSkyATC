@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-written OpenSkyATC test sample in the MSFS 2024 (AppVersion 12) .pln layout. Invented route. -->
+<SimBase.Document>
+    <FlightPlan.FlightPlan>
+        <DepartureID>LEMD</DepartureID>
+        <DestinationID>LEBL</DestinationID>
+        <Title>LEMD - LEBL</Title>
+        <FPType>IFR</FPType>
+        <CruisingAlt>35000</CruisingAlt>
+        <AppVersion>
+            <AppVersionMajor>12</AppVersionMajor>
+        </AppVersion>
+        <DepartureDetails>
+            <RunwayNumberFP>36</RunwayNumberFP>
+            <RunwayDesignatorFP>LEFT</RunwayDesignatorFP>
+            <DepartureFP>TESTA1A</DepartureFP>
+        </DepartureDetails>
+        <ATCWaypoint>
+            <ATCWaypointType>Intersection</ATCWaypointType>
+            <ICAO>
+                <ICAORegion>LE</ICAORegion>
+                <ICAOIdent>TESTA</ICAOIdent>
+            </ICAO>
+        </ATCWaypoint>
+        <ATCWaypoint>
+            <ATCWaypointType>VOR</ATCWaypointType>
+            <ATCAirway>UN100</ATCAirway>
+            <ICAO>
+                <ICAORegion>LE</ICAORegion>
+                <ICAOIdent>OSK</ICAOIdent>
+            </ICAO>
+        </ATCWaypoint>
+        <ATCWaypoint>
+            <ATCWaypointType>NDB</ATCWaypointType>
+            <ICAO>
+                <ICAORegion>LE</ICAORegion>
+                <ICAOIdent>TB</ICAOIdent>
+            </ICAO>
+        </ATCWaypoint>
+        <ArrivalDetails>
+            <RunwayNumberFP>2</RunwayNumberFP>
+            <RunwayDesignatorFP>RIGHT</RunwayDesignatorFP>
+            <ArrivalFP>TESTB1B</ArrivalFP>
+        </ArrivalDetails>
+        <ApproachDetails>
+            <ApproachTypeFP>ILS</ApproachTypeFP>
+            <RunwayNumberFP>2</RunwayNumberFP>
+            <RunwayDesignatorFP>RIGHT</RunwayDesignatorFP>
+        </ApproachDetails>
+    </FlightPlan.FlightPlan>
+</SimBase.Document>

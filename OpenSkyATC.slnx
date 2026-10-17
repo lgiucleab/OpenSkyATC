@@ -13,6 +13,7 @@
     <Project Path="tests/OpenSkyAtc.Core.Tests/OpenSkyAtc.Core.Tests.csproj" />
     <Project Path="tests/OpenSkyAtc.Phraseology.Tests/OpenSkyAtc.Phraseology.Tests.csproj" />
     <Project Path="tests/OpenSkyAtc.Replay.Tests/OpenSkyAtc.Replay.Tests.csproj" />
+    <Project Path="tests/OpenSkyAtc.SimBrief.Tests/OpenSkyAtc.SimBrief.Tests.csproj" />
     <Project Path="tests/OpenSkyAtc.TaxiArrows.Tests/OpenSkyAtc.TaxiArrows.Tests.csproj" />
     <Project Path="tests/OpenSkyAtc.Voice.Tests/OpenSkyAtc.Voice.Tests.csproj" />
   </Folder>

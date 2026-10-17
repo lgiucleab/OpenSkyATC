@@ -1,0 +1,22 @@
+{
+  "_comment": "Hand-written OpenSkyATC test sample in the shape of a SimBrief json=v2 OFP. Invented content, not SimBrief output.",
+  "fetch": { "userid": "1234567", "static_id": "", "status": "Success", "time": "0.1000" },
+  "params": { "request_id": "1", "user_id": "1234567", "airac": "0000", "units": "kgs" },
+  "general": {
+    "icao_airline": "IBE", "flight_number": "1234", "initial_altitude": "35000",
+    "route": "TESTA1A TESTA UN100 OSKYA DCT OSKYB TESTB1B", "sid_ident": "TESTA1A", "star_ident": "TESTB1B"
+  },
+  "origin": { "icao_code": "LEMD", "plan_rwy": "36L", "trans_alt": "13000", "pos_lat": "40.471926", "pos_long": "-3.562640" },
+  "destination": { "icao_code": "LEBL", "plan_rwy": "24R", "trans_alt": "6000", "pos_lat": "41.297078", "pos_long": "2.078464" },
+  "alternate": [ { "icao_code": "LERS", "plan_rwy": "07" } ],
+  "atc": { "callsign": "IBE1234", "initial_alt": "350" },
+  "aircraft": { "icaocode": "A320", "icao_code": "A320", "name": "A320-200", "reg": "EC-TST" },
+  "navlog": [
+    { "ident": "TS001", "type": "wpt", "via_airway": "TESTA1A", "is_sid_star": "1", "stage": "CLB", "pos_lat": "40.550000", "pos_long": "-3.560000" },
+    { "ident": "TESTA", "type": "wpt", "via_airway": "TESTA1A", "is_sid_star": "1", "stage": "CLB", "pos_lat": "40.700000", "pos_long": "-3.400000" },
+    { "ident": "OSKYA", "type": "vor", "via_airway": "UN100", "is_sid_star": "0", "stage": "CRZ", "pos_lat": "41.000000", "pos_long": "-2.000000" },
+    { "ident": "OSKYB", "type": "wpt", "via_airway": "DCT", "is_sid_star": "0", "stage": "DSC", "pos_lat": "41.200000", "pos_long": "0.800000" },
+    { "ident": "TS002", "type": "wpt", "via_airway": "TESTB1B", "is_sid_star": "1", "stage": "DSC", "pos_lat": "41.250000", "pos_long": "1.700000" },
+    { "ident": "LEBL", "type": "apt", "via_airway": "DCT", "is_sid_star": "0", "stage": "DSC", "pos_lat": "41.297078", "pos_long": "2.078464" }
+  ]
+}

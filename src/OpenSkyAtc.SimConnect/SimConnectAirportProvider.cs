@@ -27,6 +27,11 @@ public sealed class SimConnectAirportProvider : IAirportDataProvider, IDisposabl
         return dump is null ? null : FacilityConverter.ToAirportData(dump);
     }
 
+    /// <summary>Positions of route points from the sim's navdata; null for each point the sim does not know.</summary>
+    /// <param name="points">Ident, region and kind ('W' waypoint, 'V' VOR, 'N' NDB).</param>
+    public async Task<IReadOnlyList<GeoPoint?>> NavaidPositionsAsync(IReadOnlyList<(string Ident, string? Region, char Kind)> points) =>
+        await Locked(e => (IReadOnlyList<GeoPoint?>)points.Select(p => e.NavaidPosition(p.Ident, p.Region, p.Kind, TimeSpan.FromSeconds(5))).ToList());
+
     public async Task<IReadOnlyList<CenterFrequency>> CenterFrequenciesAlongAsync(IReadOnlyList<GeoPoint> route, double radiusNm)
     {
         return await Locked(exporter =>

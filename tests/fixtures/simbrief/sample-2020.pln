@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-written OpenSkyATC test sample in the older MSFS .pln layout (WorldPosition, procedures on waypoints). Invented route. -->
+<SimBase.Document Type="AceXML" version="1,0">
+    <FlightPlan.FlightPlan>
+        <FPType>IFR</FPType>
+        <CruisingAlt>9000</CruisingAlt>
+        <DepartureID>LEMD</DepartureID>
+        <DestinationID>LEVD</DestinationID>
+        <ATCWaypoint id="LEMD">
+            <ATCWaypointType>Airport</ATCWaypointType>
+            <WorldPosition>N40° 28' 18.93",W3° 33' 45.50",+001998.00</WorldPosition>
+            <DepartureFP>TESTC2C</DepartureFP>
+            <RunwayNumberFP>14</RunwayNumberFP>
+            <RunwayDesignatorFP>RIGHT</RunwayDesignatorFP>
+            <ICAO>
+                <ICAOIdent>LEMD</ICAOIdent>
+            </ICAO>
+        </ATCWaypoint>
+        <ATCWaypoint id="TESTC">
+            <ATCWaypointType>Intersection</ATCWaypointType>
+            <WorldPosition>N41° 0' 30.00",W4° 15' 0.00",+009000.00</WorldPosition>
+            <DepartureFP>TESTC2C</DepartureFP>
+            <ICAO>
+                <ICAORegion>LE</ICAORegion>
+                <ICAOIdent>TESTC</ICAOIdent>
+            </ICAO>
+        </ATCWaypoint>
+        <ATCWaypoint id="USR01">
+            <ATCWaypointType>User</ATCWaypointType>
+            <WorldPosition>S1° 30' 0.00",E10° 0' 36.00",+009000.00</WorldPosition>
+        </ATCWaypoint>
+        <ATCWaypoint id="LEVD">
+            <ATCWaypointType>Airport</ATCWaypointType>
+            <WorldPosition>N41° 42' 22.00",W4° 51' 7.00",+002776.00</WorldPosition>
+            <RunwayNumberFP>23</RunwayNumberFP>
+            <ICAO>
+                <ICAOIdent>LEVD</ICAOIdent>
+            </ICAO>
+        </ATCWaypoint>
+    </FlightPlan.FlightPlan>
+</SimBase.Document>

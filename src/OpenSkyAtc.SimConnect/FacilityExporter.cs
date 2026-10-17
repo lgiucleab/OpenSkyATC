@@ -13,8 +13,14 @@ namespace OpenSkyAtc.SimConnect;
 /// </summary>
 public sealed class FacilityExporter : IDisposable
 {
-    private enum Def { Airport, Frequencies }
-    private enum Req { Airport, Frequencies, AirportList }
+    private enum Def { Airport, Frequencies, Waypoint, Vor, Ndb }
+    private enum Req { Airport, Frequencies, AirportList, Navaid }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private struct PositionData
+    {
+        public double Latitude, Longitude;
+    }
 
     // ---- Structs: one per facility data type, fields in the order they are added below.
 
@@ -125,6 +131,13 @@ public sealed class FacilityExporter : IDisposable
 
         DefineAirport();
         DefineFrequenciesOnly();
+        foreach (var (def, entry, lat, lon) in new[] { (Def.Waypoint, "WAYPOINT", "LATITUDE", "LONGITUDE"), (Def.Vor, "VOR", "VOR_LATITUDE", "VOR_LONGITUDE"), (Def.Ndb, "NDB", "LATITUDE", "LONGITUDE") })
+        {
+            Add(def, $"OPEN {entry}");
+            Add(def, lat);
+            Add(def, lon);
+            Add(def, $"CLOSE {entry}");
+        }
         foreach (var (type, register) in new (SIMCONNECT_FACILITY_DATA_TYPE, Action)[]
                  {
                      (SIMCONNECT_FACILITY_DATA_TYPE.AIRPORT, () => _sim.RegisterFacilityDataDefineStruct<AirportData>(SIMCONNECT_FACILITY_DATA_TYPE.AIRPORT)),
@@ -137,6 +150,9 @@ public sealed class FacilityExporter : IDisposable
                      (SIMCONNECT_FACILITY_DATA_TYPE.APPROACH, () => _sim.RegisterFacilityDataDefineStruct<ApproachData>(SIMCONNECT_FACILITY_DATA_TYPE.APPROACH)),
                      (SIMCONNECT_FACILITY_DATA_TYPE.DEPARTURE, () => _sim.RegisterFacilityDataDefineStruct<ProcedureNameData>(SIMCONNECT_FACILITY_DATA_TYPE.DEPARTURE)),
                      (SIMCONNECT_FACILITY_DATA_TYPE.ARRIVAL, () => _sim.RegisterFacilityDataDefineStruct<ProcedureNameData>(SIMCONNECT_FACILITY_DATA_TYPE.ARRIVAL)),
+                     (SIMCONNECT_FACILITY_DATA_TYPE.WAYPOINT, () => _sim.RegisterFacilityDataDefineStruct<PositionData>(SIMCONNECT_FACILITY_DATA_TYPE.WAYPOINT)),
+                     (SIMCONNECT_FACILITY_DATA_TYPE.VOR, () => _sim.RegisterFacilityDataDefineStruct<PositionData>(SIMCONNECT_FACILITY_DATA_TYPE.VOR)),
+                     (SIMCONNECT_FACILITY_DATA_TYPE.NDB, () => _sim.RegisterFacilityDataDefineStruct<PositionData>(SIMCONNECT_FACILITY_DATA_TYPE.NDB)),
                  })
         {
             register();
@@ -237,6 +253,22 @@ public sealed class FacilityExporter : IDisposable
         };
     }
 
+    /// <summary>
+    /// Position of a waypoint, VOR or NDB from the sim's navdata (an MSFS 2024 .pln names route points only by ident
+    /// and region). <paramref name="kind"/> is 'W', 'V' or 'N'. Null when the sim does not know it.
+    /// </summary>
+    public GeoPoint? NavaidPosition(string ident, string? region, char kind, TimeSpan timeout)
+    {
+        var def = kind switch { 'V' => Def.Vor, 'N' => Def.Ndb, _ => Def.Waypoint };
+        _navaid = null;
+        _done = false;
+        _sim.RequestFacilityData_EX1(def, Req.Navaid, ident.ToUpperInvariant(), region ?? "", (sbyte)(kind is 'V' or 'N' ? kind : 'W'));
+        Pump(() => _done, timeout);
+        return _navaid is { } p && (p.Latitude != 0 || p.Longitude != 0) ? new GeoPoint(p.Latitude, p.Longitude) : null;
+    }
+
+    private PositionData? _navaid;
+
     /// <summary>Every airport the sim knows: ICAO, region and position (SimConnect_RequestAllFacilities).</summary>
     public IReadOnlyList<(string Icao, string Region, double Lat, double Lon)> AllAirports(TimeSpan timeout)
     {
@@ -296,6 +328,9 @@ public sealed class FacilityExporter : IDisposable
                 break;
             case SIMCONNECT_FACILITY_DATA_TYPE.ARRIVAL:
                 _arrivals.Add(Text(((ProcedureNameData)item).Name) ?? "");
+                break;
+            case SIMCONNECT_FACILITY_DATA_TYPE.WAYPOINT or SIMCONNECT_FACILITY_DATA_TYPE.VOR or SIMCONNECT_FACILITY_DATA_TYPE.NDB:
+                _navaid = (PositionData)item;
                 break;
         }
     }

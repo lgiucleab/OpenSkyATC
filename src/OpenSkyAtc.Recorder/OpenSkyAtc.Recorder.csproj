@@ -5,6 +5,7 @@
     <ProjectReference Include="..\OpenSkyAtc.Phraseology\OpenSkyAtc.Phraseology.csproj" />
     <ProjectReference Include="..\OpenSkyAtc.SimConnect\OpenSkyAtc.SimConnect.csproj" />
     <ProjectReference Include="..\OpenSkyAtc.TaxiArrows\OpenSkyAtc.TaxiArrows.csproj" />
+    <ProjectReference Include="..\OpenSkyAtc.SimBrief\OpenSkyAtc.SimBrief.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

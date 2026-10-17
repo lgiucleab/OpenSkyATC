@@ -1,0 +1,14 @@
+{
+  "_comment": "Hand-written OpenSkyATC test sample in the older SimBrief json=1 shape (navlog.fix, single alternate, no atc callsign). Invented content.",
+  "fetch": { "status": "Success" },
+  "general": { "icao_airline": "", "flight_number": "ECTST", "initial_altitude": "9000", "sid_ident": "", "star_ident": "" },
+  "origin": { "icao_code": "lelc", "plan_rwy": "23", "trans_alt": "13000" },
+  "destination": { "icao_code": "LEAL", "plan_rwy": "", "trans_alt": "6000" },
+  "alternate": { "icao_code": "LEMI" },
+  "atc": { "callsign": "" },
+  "aircraft": { "icaocode": "C172" },
+  "navlog": { "fix": [
+    { "ident": "TS100", "type": "wpt", "via_airway": "DCT", "is_sid_star": "0", "pos_lat": "38.200000", "pos_long": "-0.900000" },
+    { "ident": "TS101", "type": "ltlg", "via_airway": "DCT", "is_sid_star": "0", "pos_lat": "", "pos_long": "-0.700000" }
+  ] }
+}

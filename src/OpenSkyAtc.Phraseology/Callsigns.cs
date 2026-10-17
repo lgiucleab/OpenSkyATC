@@ -19,6 +19,29 @@ public sealed class CallsignTable
 
     public string? Telephony(string icaoDesignator) => _telephony.GetValueOrDefault(icaoDesignator.ToUpperInvariant());
 
+    /// <summary>The ICAO designator whose telephony is <paramref name="telephony"/> ("Iberia" -> "IBE"); the first alphabetically when several share it.</summary>
+    public string? Designator(string telephony) =>
+        _telephony.Where(kv => kv.Value.Equals(TitleCase(telephony.Trim()), StringComparison.OrdinalIgnoreCase))
+            .Select(kv => kv.Key.ToUpperInvariant()).Order(StringComparer.Ordinal).FirstOrDefault();
+
+    /// <summary>
+    /// The callsign for a plan without one (a .pln) from the sim aircraft's ATC settings: airline radio name and
+    /// flight number give "IBE1234" spoken "Iberia 1234" (an airline missing from the table keeps its name as the
+    /// telephony); otherwise the tail number as a registration. Null when the sim has none of them.
+    /// </summary>
+    public (string Callsign, string? Telephony)? FromSimIdentity(string? airline, string? flightNumber, string? tailNumber)
+    {
+        string flight = new((flightNumber ?? "").Where(char.IsAsciiLetterOrDigit).ToArray());
+        if (!string.IsNullOrWhiteSpace(airline) && flight.Length > 0 && char.IsAsciiDigit(flight[0]))
+        {
+            string telephony = TitleCase(airline.Trim());
+            string code = Designator(telephony)
+                ?? new string(telephony.Where(char.IsAsciiLetter).Select(char.ToUpperInvariant).Take(3).ToArray()).PadRight(3, 'X');
+            return ($"{code}{flight.ToUpperInvariant()}", telephony);
+        }
+        return string.IsNullOrWhiteSpace(tailNumber) ? null : (tailNumber.Trim().ToUpperInvariant(), null);
+    }
+
     public static CallsignTable Load(string path) => Parse(File.ReadLines(path));
 
     /// <summary>Parses "ICAO,TELEPHONY" lines; blank lines and lines starting with # are skipped. Telephony is title-cased.</summary>

@@ -34,3 +34,9 @@ None yet.
 | Component | Licence | Notes |
 | --- | --- | --- |
 | Microsoft.FlightSimulator.SimConnect.dll, SimConnect.dll (MSFS 2024 SDK) | Microsoft Flight Simulator SDK EULA (proprietary) | Not in the repo or releases. Loaded at runtime from the user's SDK install. Linking is allowed by `LICENSE-EXCEPTION.md`. |
+
+## Online services (used at the user's request, nothing shipped)
+
+| Service | Use | Notes |
+| --- | --- | --- |
+| SimBrief (Navigraph) | Imports the user's own latest flight plan by their SimBrief Pilot ID, only when they press import (`https://www.simbrief.com/api/xml.fetcher.php?userid=...&json=v2`). | OpenSkyATC is not affiliated with or endorsed by Navigraph or SimBrief. SimBrief plans are for flight simulation only, never for real-world navigation. No SimBrief output is committed: tests use hand-written samples; a developer's real plan stays local and git-ignored. |

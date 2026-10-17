@@ -244,6 +244,28 @@ public class MessageRenderingTests
         Assert.Equal("KLM", table.Telephony("KLM"));
     }
 
+    [Theory]
+    [InlineData("IBERIA", "1234", "EC-ABC", "IBE1234", "Iberia")]     // airline in the table: its designator
+    [InlineData("Vueling", " 12a ", null, "VLG12A", "Vueling")]
+    [InlineData("Skyfarer", "77", null, "SKY77", "Skyfarer")]         // not in the table: name kept as telephony
+    [InlineData("Iberia", "", "EC-ABC", "EC-ABC", null)]               // no flight number: registration
+    [InlineData(null, "1234", "ec-abc", "EC-ABC", null)]
+    public void CallsignFromTheSimAircraft(string? airline, string? flight, string? tail, string callsign, string? telephony)
+    {
+        var table = CallsignTable.Parse(["IBE,IBERIA", "VLG,VUELING"]);
+        Assert.Equal((callsign, telephony), table.FromSimIdentity(airline, flight, tail));
+    }
+
+    [Fact]
+    public void CallsignFromTheSimAircraft_NothingSet_IsNull()
+    {
+        Assert.Null(CallsignTable.Empty.FromSimIdentity(null, null, " "));
+        var r = new IcaoRenderer(1, Plain with { StationNameOnFirstContact = false });
+        var (code, telephony) = CallsignTable.Empty.FromSimIdentity("Skyfarer", "77", null)!.Value;
+        var m = r.Render(Samples.Message(Samples.Tower, code, telephony, new Roger()));
+        Assert.Equal("Skyfarer 77, roger", m.Display);
+    }
+
     [Fact]
     public void CallsignTable_RejectsBadLines()
     {
