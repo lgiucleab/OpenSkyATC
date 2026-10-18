@@ -21,8 +21,8 @@ Start MSFS 2024 and load a flight at a gate. Do not start the app yet.
 4. [ ] Start the app and Import plan. Within a few seconds the panel shows a green dot, your callsign and status, COM1 and who you talk to, and the buttons the app shows.
 5. [ ] Press a button in the panel (Request clearance): ATC answers, the call appears in the panel's last calls and in the app's transcript.
 6. [ ] The readback button in the panel (blue, with the countdown) is accepted like the app's.
-7. [ ] The yellow box shows the next handoff or the frequency to tune, as in the app.
-8. [ ] Hold push-to-talk: the panel shows "Transmitting" (or "Listening" with voice input) in red.
+7. [ ] The blue "▸" line under COM1 shows the next handoff or the frequency to tune, as in the app.
+8. [ ] Hold push-to-talk: the top right shows TRANSMITTING (or LISTENING with voice input) in blue.
 9. [ ] The Taxi arrows switch turns the arrows off and on during a taxi, and the app's checkbox follows it (and the other way round).
 10. [ ] Hard mode on (app): the panel shows "Read back by voice: hold push-to-talk" instead of the readback button.
 11. [ ] Pause the sim (Esc): nothing freezes; unpausing, the panel catches up within a few seconds.
