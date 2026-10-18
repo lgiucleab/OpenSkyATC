@@ -64,6 +64,8 @@
                         </Button>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
+                        <Image Source="pack://application:,,,/Assets/logo.png" Width="24" Height="24" Margin="0,0,8,0" VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
                         <TextBlock Text="OpenSkyATC" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,18,0" />
                         <Border ToolTip="{Binding StatusDetail}">
                             <Border.Style>

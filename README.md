@@ -1,3 +1,5 @@
+<img src="branding/logo.png" alt="OpenSkyATC logo" width="96" align="right">
+
 # OpenSkyATC
 
 A free, open-source (GPL-3.0) replacement ATC add-on for **Microsoft Flight Simulator 2024**.
@@ -22,7 +24,7 @@ Everything runs on your PC. No accounts, no cloud services, no telemetry.
 
 ## Status
 
-**0.1.1 preview.** All planned features are built and tested with a simulated pilot; live testing in the sim is in progress (see the checklists in [docs](docs)). Expect rough edges and please report them in [Issues](https://github.com/lgiucleab/OpenSkyATC/issues).
+**0.1.2 preview.** All planned features are built and tested with a simulated pilot; live testing in the sim is in progress (see the checklists in [docs](docs)). Expect rough edges and please report them in [Issues](https://github.com/lgiucleab/OpenSkyATC/issues).
 
 ## Install
 

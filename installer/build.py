@@ -49,7 +49,7 @@ def run(*args: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", default="0.1.1")
+    parser.add_argument("--version", default="0.1.2")
     version = parser.parse_args().version
 
     publish = ROOT / "artifacts" / "publish" / "app"

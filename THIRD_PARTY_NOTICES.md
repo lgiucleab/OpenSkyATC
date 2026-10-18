@@ -29,6 +29,10 @@ None yet.
 | --- | --- |
 | UK CAA CAP 413 Radiotelephony Manual, edition 24 | Checked phraseology wording and number rules. No text is copied into the project. |
 
+## Brand artwork
+
+The OpenSkyATC logo, icon and installer images (`branding/`, made by `branding/tools/generate_branding.py`) and the toolbar icon are original artwork, GPL-3.0 like the rest of the project. The name on the installer's side image is rendered with Windows' Segoe UI font into the picture; the font itself is not distributed.
+
 ## Tools used to build the installer (not part of the program)
 
 | Component | Licence | Notes |
