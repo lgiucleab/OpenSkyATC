@@ -32,7 +32,7 @@ Debrief (step 16, checklist `docs/step-16-checklist.md`): built from the session
 
 Brand (logo B, the control tower, owner's choice): `python branding/tools/generate_branding.py` (needs Pillow, a developer tool) writes `branding/logo.png`, `branding/OpenSkyATC.ico` (bolder tower below 40 px) and the installer's side and corner images for 100-250 % DPI; the app uses the icon (`ApplicationIcon`) and the logo in its header.
 
-Installer (step 17): `python installer/build.py [--version 0.1.2]` publishes the app self-contained, assembles both MSFS packages and compiles `installer/OpenSkyATC.iss` with Inno Setup 6 into `artifacts/installer/OpenSkyATC-Setup-<version>.exe` (git-ignored). Silent test install: `Setup.exe /VERYSILENT /DIR=... /COMMUNITY=... /TASKS=packages` (run it from PowerShell: Git Bash rewrites `/X` switches as paths). Releases: GitHub `lgiucleab/OpenSkyATC`, pre-releases while 0.x.
+Installer (step 17): `python installer/build.py [--version 1.0.0-alpha]` publishes the app self-contained, assembles both MSFS packages and compiles `installer/OpenSkyATC.iss` with Inno Setup 6 into `artifacts/installer/OpenSkyATC-Setup-<version>.exe` (git-ignored). Silent test install: `Setup.exe /VERYSILENT /DIR=... /COMMUNITY=... /TASKS=packages` (run it from PowerShell: Git Bash rewrites `/X` switches as paths). Releases: GitHub `lgiucleab/OpenSkyATC`, marked pre-release while alpha/beta (1.0.0-alpha first; Windows file versions use the numeric part).
 
 Record a flight (the sim must be running or the recorder waits for it):
 

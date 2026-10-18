@@ -5,7 +5,7 @@
 2. Assembles the two MSFS Community packages (toolbar panel, taxi arrows).
 3. Compiles installer/OpenSkyATC.iss with Inno Setup 6 into artifacts/installer/OpenSkyATC-Setup-<version>.exe.
 
-Run from anywhere: python installer/build.py [--version 0.1.0]
+Run from anywhere: python installer/build.py [--version 1.0.0-alpha]
 Needs the .NET 10 SDK, the MSFS 2024 SDK (to build the SimConnect project) and Inno Setup 6
 (winget install JRSoftware.InnoSetup).
 """
@@ -49,7 +49,7 @@ def run(*args: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", default="0.1.2")
+    parser.add_argument("--version", default="1.0.0-alpha")
     version = parser.parse_args().version
 
     publish = ROOT / "artifacts" / "publish" / "app"

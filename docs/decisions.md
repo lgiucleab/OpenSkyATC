@@ -382,3 +382,7 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **Incident during the checks:** an early version of the script stopped every process running from `%TEMP%\is-*`, which included a Visual Studio Code background update (the owner was told). Later, the owner's `%APPDATA%\OpenSkyATC\settings.json` was found missing after the test runs (the uninstaller's data deletion did not run: the voices were untouched); it was restored from the contents read earlier in the session. The test script now touches only processes named `OpenSkyATC-Setup*` and `_unins*` that it started.
 - **Version:** 0.1.2.
 
+## 2026-10-18 - 1.0.0 alpha
+
+- **Owner's request:** publish "the official 1.0.0 version alpha" with what exists now (this replaces "0.x.y until the live checklists are done"). Version `1.0.0-alpha` (SemVer pre-release), tag `v1.0.0-alpha`, marked pre-release on GitHub because it is an alpha; the installer's numeric file version is 1.0.0. The live checklists (steps 13, 14, 16) are still open and listed as known limits.
+

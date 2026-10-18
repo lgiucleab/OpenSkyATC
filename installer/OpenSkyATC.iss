@@ -6,7 +6,13 @@
 ; and Spanish; light or dark follows Windows (owner's choice).
 
 #ifndef AppVersion
-  #define AppVersion "0.1.2"
+  #define AppVersion "1.0.0-alpha"
+#endif
+; Windows' file version must be numbers only: "1.0.0-alpha" -> 1.0.0.
+#if Pos("-", AppVersion) > 0
+  #define NumericVersion Copy(AppVersion, 1, Pos("-", AppVersion) - 1)
+#else
+  #define NumericVersion AppVersion
 #endif
 #define AppName "OpenSkyATC"
 #define Root ".."
@@ -25,7 +31,8 @@ AppUpdatesURL={#RepoUrl}/releases
 AppCopyright=OpenSkyATC contributors, GPL-3.0
 VersionInfoDescription={#AppName} Setup
 VersionInfoProductName={#AppName}
-VersionInfoVersion={#AppVersion}
+VersionInfoVersion={#NumericVersion}
+VersionInfoTextVersion={#AppVersion}
 ; Per-user install: no administrator rights, and the sim's Community folder is in the user's profile too.
 PrivilegesRequired=lowest
 DefaultDirName={autopf}\{#AppName}

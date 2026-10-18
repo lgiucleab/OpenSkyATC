@@ -24,7 +24,7 @@ Everything runs on your PC. No accounts, no cloud services, no telemetry.
 
 ## Status
 
-**0.1.2 preview.** All planned features are built and tested with a simulated pilot; live testing in the sim is in progress (see the checklists in [docs](docs)). Expect rough edges and please report them in [Issues](https://github.com/lgiucleab/OpenSkyATC/issues).
+**1.0.0 alpha.** The first official version: all planned features are built and tested with a simulated pilot; live testing in the sim is still in progress (see the checklists in [docs](docs)). Expect rough edges and please report them in [Issues](https://github.com/lgiucleab/OpenSkyATC/issues).
 
 ## Install
 
