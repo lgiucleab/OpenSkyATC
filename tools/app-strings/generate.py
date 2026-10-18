@@ -63,6 +63,8 @@ STRINGS = {
     "Status.PttReady": ("PTT ready", "PTT listo"),
     "Status.Listening": ("Listening", "Escuchando"),
     "Status.Transcribing": ("Understanding", "Interpretando"),
+    "Panel.Arrows": ("Taxi arrows", "Flechas de rodaje"),
+    "Panel.ReadbackByVoice": ("Read back by voice: hold push-to-talk", "Colaciona por voz: mantén pulsar para hablar"),
     # Pilot calls (buttons)
     "Intent.Readback": ("Read back", "Colacionar"),
     "Intent.ReadbackForm": ("Read back...", "Colacionar..."),

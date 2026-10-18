@@ -102,6 +102,8 @@ public sealed class FlightHost : IDisposable
     private VoiceInput? _voiceIn;
     private KeyboardPushToTalk? _keyboard;
     private bool _pttHeld, _transcribing;
+    private readonly PanelLink _panel = new();
+    private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private SimState? _state;
     private int _arrowCount;
     private HostStatus _status = HostStatus.Idle;
@@ -122,6 +124,9 @@ public sealed class FlightHost : IDisposable
 
     /// <summary>The snapshot may have changed (raised at most 4 times a second, and after each pilot call).</summary>
     public event Action? Updated;
+
+    /// <summary>A button or toggle pressed in the in-sim toolbar panel (step 15); raised on the bridge thread.</summary>
+    public event Action<PanelCommand>? PanelCommand;
 
     /// <summary>Things the user should know that are not part of the radio (voice download, arrows package missing...).</summary>
     public event Action<string>? Notice;
@@ -250,6 +255,19 @@ public sealed class FlightHost : IDisposable
         Updated?.Invoke();
     }
 
+    /// <summary>
+    /// The toolbar panel's state as the app shows it; sent over the CommBus when it changed or as a heartbeat
+    /// (<see cref="PanelLink"/>). Call it whenever the app refreshes.
+    /// </summary>
+    public void UpdatePanel(PanelState state)
+    {
+        if (_bridge is not { IsConnected: true } bridge) return;
+        string json = PanelProtocol.Serialize(state);
+        bool send;
+        lock (_gate) send = _panel.ShouldSend(json, _clock.Elapsed, state.Paused);
+        if (send) bridge.SendToPanel(json);
+    }
+
     /// <summary>Applies changed settings at once (arrows, volume); voices, push-to-talk and the plan apply to the next flight.</summary>
     public void Apply(AppSettings settings)
     {
@@ -271,7 +289,18 @@ public sealed class FlightHost : IDisposable
         _bridge = bridge;
         _pushback = new PushbackDriver(new BridgeTug(bridge));
         int ticks = 0;
-        bridge.Connected += () => { if (_status == HostStatus.SimDisconnected) SetStatus(HostStatus.Running, "Reconnected to MSFS"); };
+        bridge.Connected += () =>
+        {
+            lock (_gate) _panel.Reset();
+            if (_status == HostStatus.SimDisconnected) SetStatus(HostStatus.Running, "Reconnected to MSFS");
+        };
+        bridge.PanelCommand += text =>
+        {
+            if (PanelProtocol.Parse(text) is not { } command) return;
+            if (command is PanelCommand.Hello) lock (_gate) _panel.Reset();
+            PanelCommand?.Invoke(command);
+            Updated?.Invoke();
+        };
         bridge.Disconnected += () =>
         {
             _radio?.Silence();

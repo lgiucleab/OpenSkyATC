@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/SCSS/common.css" />
+    <link rel="stylesheet" href="OpenSkyATC.css" />
+
+    <script type="text/javascript" src="/JS/coherent.js"></script>
+    <script type="text/javascript" src="/JS/common.js"></script>
+    <script type="text/javascript" src="/JS/Services/ToolBarPanels.js"></script>
+    <script type="text/javascript" src="/JS/Services/CommBus.js"></script>
+    <link rel="import" href="/templates/ingameUi/ingameUi.html" />
+
+    <script type="text/javascript" src="OpenSkyATCView.js"></script>
+    <script type="text/javascript" src="OpenSkyATC.js"></script>
+</head>
+
+<body class="border-box">
+    <opensky-atc-panel>
+        <ingame-ui id="OpenSkyATCPanel" panel-id="PANEL_OPENSKYATC" title="OpenSkyATC" class="ingameUiFrame panelInvisible" min-width="220" min-height="200">
+            <div id="osa">
+                <div id="osa-status" class="osa-row">
+                    <span id="osa-dot" class="osa-dot"></span>
+                    <span id="osa-status-text"></span>
+                    <span id="osa-ptt" class="osa-ptt"></span>
+                </div>
+                <div id="osa-radio" class="osa-block">
+                    <div class="osa-row">
+                        <span id="osa-frequency" class="osa-frequency"></span>
+                        <span id="osa-unit" class="osa-unit"></span>
+                    </div>
+                    <div id="osa-hint" class="osa-hint"></div>
+                </div>
+                <div id="osa-calls" class="osa-block"></div>
+                <div id="osa-voice-readback" class="osa-voice"></div>
+                <div id="osa-buttons"></div>
+                <div id="osa-arrows" class="osa-toggle"></div>
+            </div>
+        </ingame-ui>
+    </opensky-atc-panel>
+</body>
+</html>

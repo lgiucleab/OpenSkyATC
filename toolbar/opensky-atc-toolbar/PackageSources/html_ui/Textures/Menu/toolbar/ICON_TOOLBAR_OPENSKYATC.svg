@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- OpenSkyATC toolbar icon: a radio mast sending waves (original drawing, GPL-3.0). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 26 L22 58 M32 26 L42 58 M25 48 L39 48" />
+    <path d="M22 14 A14 14 0 0 0 22 34" />
+    <path d="M42 14 A14 14 0 0 1 42 34" />
+    <path d="M14 8 A24 24 0 0 0 14 40" />
+    <path d="M50 8 A24 24 0 0 1 50 40" />
+  </g>
+  <circle cx="32" cy="24" r="5" fill="#ffffff" />
+</svg>

@@ -1,0 +1,162 @@
+/* OpenSkyATC toolbar panel: the app's compact strip, readable in VR (large text, high contrast). */
+
+#OpenSkyATCPanel #osa {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    height: 100%;
+    overflow-y: auto;
+    font-size: 16px;
+    color: #f2f4f7;
+    background-color: rgba(20, 24, 31, 0.92);
+}
+
+.osa-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.osa-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: #e5484d;
+    flex-shrink: 0;
+}
+
+.osa-dot.on {
+    background-color: #30a46c;
+}
+
+#osa-status-text {
+    flex-grow: 1;
+}
+
+.osa-ptt {
+    font-size: 13px;
+    color: #9aa4b2;
+}
+
+.osa-ptt.live {
+    color: #ffffff;
+    background-color: #e5484d;
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+
+.osa-block {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.osa-frequency {
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.osa-unit {
+    color: #b8c2d0;
+}
+
+.osa-hint {
+    margin-top: 6px;
+    font-size: 14px;
+}
+
+.osa-hint.warn {
+    color: #1c1500;
+    background-color: #f5c84c;
+    border-radius: 6px;
+    padding: 4px 6px;
+}
+
+.osa-call {
+    font-size: 14px;
+    margin: 2px 0;
+}
+
+.osa-call:first-child {
+    font-size: 15px;
+}
+
+.osa-who {
+    color: #7cc4fa;
+    font-weight: bold;
+}
+
+.osa-voice {
+    font-size: 14px;
+    color: #7cc4fa;
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+    padding: 6px 8px;
+}
+
+#osa-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.osa-button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background-color: #2b323d;
+    cursor: pointer;
+}
+
+.osa-button:hover {
+    background-color: #39424f;
+}
+
+.osa-button.primary {
+    background-color: #2563eb;
+    flex-basis: 100%;
+}
+
+.osa-button.primary:hover {
+    background-color: #3b74f0;
+}
+
+.osa-button.danger {
+    background-color: #8f1d22;
+}
+
+.osa-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.osa-switch {
+    width: 32px;
+    height: 18px;
+    border-radius: 9px;
+    background-color: #4b5563;
+    position: relative;
+}
+
+.osa-switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: #ffffff;
+}
+
+.osa-switch.on {
+    background-color: #2563eb;
+}
+
+.osa-switch.on::after {
+    left: 16px;
+}

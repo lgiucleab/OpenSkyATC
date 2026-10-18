@@ -46,6 +46,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private FlightHost? _host;
     private int _refreshQueued;
     private string _intentKey = "";
+    private readonly List<PanelCall> _recentCalls = [];
 
     public MainViewModel(SettingsStore store, Dispatcher ui)
     {
@@ -136,12 +137,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (Settings.PlanSource == PlanSource.PlnFile && string.IsNullOrWhiteSpace(Settings.LastPlnPath) && !OpenPlnFile()) return;
 
         Transcript.Clear();
+        _recentCalls.Clear();
         Notice = null;
         var host = new FlightHost(Settings);
         host.StatusChanged += (_, _) => QueueRefresh();
         host.Updated += QueueRefresh;
         host.Notice += n => _ui.InvokeAsync(() => Notice = n);
         host.Transcript += lines => _ui.InvokeAsync(() => AddTranscript(lines));
+        host.PanelCommand += c => _ui.InvokeAsync(() => OnPanelCommand(c));
         _host = host;
         FlightActive = true;
         try
@@ -210,7 +213,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             };
             string time = l.Time.TotalHours >= 1 ? l.Time.ToString(@"h\:mm\:ss", CultureInfo.InvariantCulture) : l.Time.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
             Transcript.Add(new TranscriptLine(time, who, l.Text, l.Kind));
-            if (l.Kind == TranscriptKind.Atc) LastAtc = $"{l.Station}: {l.Text}";
+            if (l.Kind == TranscriptKind.Atc)
+            {
+                LastAtc = $"{l.Station}: {l.Text}";
+                _recentCalls.Add(new PanelCall(l.Station ?? "ATC", l.Text));
+                if (_recentCalls.Count > 3) _recentCalls.RemoveAt(0);
+            }
         }
         while (Transcript.Count > MaxTranscript) Transcript.RemoveAt(0);
     }
@@ -287,6 +295,56 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
         foreach (var b in Intents)
             b.Label = b.Intent is Readback { Items.Count: > 0 } ? b.BaseLabel + countdown : b.BaseLabel;
+
+        if (s is not null) _host?.UpdatePanel(PanelSnapshot(s));
+    }
+
+    /// <summary>The toolbar panel's view of the flight (step 15): the compact strip's content in the app's language.</summary>
+    private PanelState PanelSnapshot(HostSnapshot s)
+    {
+        var buttons = new List<PanelButton>();
+        string? voiceReadback = null;
+        for (int i = 0; i < Intents.Count; i++)
+        {
+            var b = Intents[i];
+            // Hard mode: no typing in the sim, the readback is said by voice (owner's choice).
+            if (b.Intent is Readback { Items.Count: > 0 } && HardMode) voiceReadback = Loc.Get("Panel.ReadbackByVoice");
+            else buttons.Add(new PanelButton(i, PanelProtocol.Key(i, b.Intent), b.Label, b.Primary));
+        }
+        return new PanelState
+        {
+            Flight = FlightActive,
+            Sim = Connected,
+            Paused = Paused,
+            Status = StatusText,
+            Ptt = PttText,
+            Transmitting = PushToTalk,
+            Callsign = Callsign,
+            Frequency = Frequency,
+            TalkingTo = TalkingTo,
+            Hint = Hint,
+            HintWarning = HintIsWarning,
+            Calls = _recentCalls.ToList(),
+            Buttons = buttons,
+            Arrows = TaxiArrows,
+            ArrowsLabel = Loc.Get("Panel.Arrows"),
+            VoiceReadback = voiceReadback,
+        };
+    }
+
+    private void OnPanelCommand(PanelCommand command)
+    {
+        switch (command)
+        {
+            case PanelCommand.Intent { Id: var id, Key: var key } when id >= 0 && id < Intents.Count && PanelProtocol.Key(id, Intents[id].Intent) == key:
+                if (Intents[id].Intent is Readback { Items.Count: > 0 } && HardMode) return; // read back by voice
+                _host?.Send(Intents[id].Intent);
+                break;
+            case PanelCommand.Arrows a:
+                TaxiArrows = a.On;
+                break;
+        }
+        Refresh(force: false);
     }
 
     private string Label(PilotIntent intent) => intent switch

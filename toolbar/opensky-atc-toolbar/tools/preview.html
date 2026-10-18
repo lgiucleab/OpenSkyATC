@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!-- Developer preview of the toolbar panel in a normal browser: stubs the sim's TemplateElement and CommBus, and
+     feeds sample states. Open this file directly; buttons log their command below the panel. -->
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../PackageSources/html_ui/InGamePanels/OpenSkyATC/OpenSkyATC.css" />
+    <style>
+        body { background: #5b6b7d; font-family: "Segoe UI", sans-serif; margin: 16px; }
+        ingame-ui { display: block; width: 340px; height: 560px; }
+        #log { margin-top: 12px; font: 12px monospace; color: #fff; white-space: pre; }
+        #controls { margin-bottom: 8px; }
+        #controls button { margin-right: 6px; }
+    </style>
+    <script>
+        class TemplateElement extends HTMLElement { connectedCallback() {} disconnectedCallback() {} }
+        function checkAutoload() {}
+        const sent = [];
+        const handlers = {};
+        function RegisterCommBusListener(ready) {
+            setTimeout(ready, 0);
+            return {
+                on: (name, fn) => { handlers[name] = fn; },
+                callSimConnect: (name, json) => { sent.push(name + " " + json); document.getElementById("log").textContent = sent.slice(-8).join("\n"); },
+                unregister: () => {},
+            };
+        }
+        const sample = {
+            version: 1, flight: true, sim: true, paused: false, status: "MSFS connected", ptt: "PTT ready", transmitting: false,
+            callsign: "Iberia 1234", frequency: "121.630", talkingTo: "Barajas Ground", hint: "Next: Barajas Tower 118.080", hintWarning: true,
+            calls: [
+                { station: "Barajas Delivery", text: "Iberia 1234, cleared to LEBL via PINA4N departure, climb 6000 ft, squawk 4721" },
+                { station: "Barajas Ground", text: "Iberia 1234, taxi to holding point A1 runway 36L via EB, A, L" },
+                { station: "Barajas Ground", text: "Iberia 1234, contact Tower 118.080, bye bye" },
+            ],
+            buttons: [
+                { id: 0, key: "0:Readback", label: "Read back: 118.080 · 14 s", primary: true },
+                { id: 1, key: "1:ReadyForDeparture", label: "Ready for departure", primary: false },
+                { id: 2, key: "2:SayAgain", label: "Say again", primary: false },
+                { id: 3, key: "3:Mayday", label: "Mayday", primary: false },
+            ],
+            arrows: true, arrowsLabel: "Taxi arrows",
+        };
+        function feed(state) { if (handlers["OpenSkyATC.State"]) handlers["OpenSkyATC.State"](JSON.stringify(state)); }
+    </script>
+    <script src="../PackageSources/html_ui/InGamePanels/OpenSkyATC/OpenSkyATCView.js"></script>
+    <script src="../PackageSources/html_ui/InGamePanels/OpenSkyATC/OpenSkyATC.js"></script>
+</head>
+<body>
+    <div id="controls">
+        <button onclick="feed(sample)">Flight</button>
+        <button onclick="feed(Object.assign({}, sample, { transmitting: true, ptt: 'Listening' }))">PTT held</button>
+        <button onclick="feed(Object.assign({}, sample, { buttons: sample.buttons.slice(1), voiceReadback: 'Read back by voice: hold push-to-talk' }))">Hard mode</button>
+        <button onclick="location.reload()">No app</button>
+    </div>
+    <opensky-atc-panel>
+        <ingame-ui id="OpenSkyATCPanel">
+            <div id="osa">
+                <div id="osa-status" class="osa-row">
+                    <span id="osa-dot" class="osa-dot"></span>
+                    <span id="osa-status-text"></span>
+                    <span id="osa-ptt" class="osa-ptt"></span>
+                </div>
+                <div id="osa-radio" class="osa-block">
+                    <div class="osa-row">
+                        <span id="osa-frequency" class="osa-frequency"></span>
+                        <span id="osa-unit" class="osa-unit"></span>
+                    </div>
+                    <div id="osa-hint" class="osa-hint"></div>
+                </div>
+                <div id="osa-calls" class="osa-block"></div>
+                <div id="osa-voice-readback" class="osa-voice"></div>
+                <div id="osa-buttons"></div>
+                <div id="osa-arrows" class="osa-toggle"></div>
+            </div>
+        </ingame-ui>
+    </opensky-atc-panel>
+    <div id="log"></div>
+    <script>if (location.hash === "#flight") setTimeout(() => feed(sample), 50);</script>
+</body>
+</html>
