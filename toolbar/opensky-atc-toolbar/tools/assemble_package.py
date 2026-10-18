@@ -14,6 +14,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -53,8 +54,14 @@ def build_spb() -> None:
     """Compiles the panel definition with the SDK package tool (it starts MSFS 2024 to do it)."""
     tool = sdk_tool()
     print(f"Running {tool.name}; it starts MSFS 2024 to compile the panel definition...")
-    subprocess.run([str(tool), str(ROOT / f"{NAME}.xml"), "-nomirroring"], cwd=ROOT, check=True, timeout=1800)
-    if not BUILT_SPB.exists():
+    # -nopause: without it the tool waits for a key press at the end (it looked hung). Its exit code is not
+    # reliable with the Microsoft Store sim (0x87E50043 after a good build), so judge by the output and the report.
+    started = time.time()
+    subprocess.run([str(tool), str(ROOT / f"{NAME}.xml"), "-nopause"], cwd=ROOT, timeout=1800)
+    report = ROOT / "_PackageInt" / "_RPTErrors.xml"
+    if report.exists() and report.read_text(encoding="utf-8", errors="replace").strip() not in ("", "<RPTErrors/>"):
+        sys.exit(f"The package tool reported errors:\n{report.read_text(encoding='utf-8', errors='replace')}")
+    if not BUILT_SPB.exists() or BUILT_SPB.stat().st_mtime < started - 5:
         sys.exit(f"The package tool did not write {BUILT_SPB}.")
     SPB.parent.mkdir(exist_ok=True)
     shutil.copy2(BUILT_SPB, SPB)
