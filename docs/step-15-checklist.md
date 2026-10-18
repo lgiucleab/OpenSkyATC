@@ -16,7 +16,7 @@ python toolbar/opensky-atc-toolbar/tools/assemble_package.py --install "%LOCALAP
 
 Start MSFS 2024 and load a flight at a gate. Do not start the app yet.
 
-2. [ ] The toolbar has an OpenSkyATC button (a radio mast). If not: toolbar gear icon > enable OpenSkyATC.
+2. [ ] The toolbar has an OpenSkyATC button (the control tower). If not: toolbar gear icon > enable OpenSkyATC.
 3. [ ] Opening it shows a small dark panel with a red dot and "Not connected: start a flight in the OpenSkyATC app".
 4. [ ] Start the app and Import plan. Within a few seconds the panel shows a green dot, your callsign and status, COM1 and who you talk to, and the buttons the app shows.
 5. [ ] Press a button in the panel (Request clearance): ATC answers, the call appears in the panel's last calls and in the app's transcript.
