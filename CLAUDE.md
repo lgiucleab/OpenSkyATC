@@ -82,7 +82,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 
 - `OpenSkyAtc.Core` must stay pure: no SimConnect, audio, WPF or I/O. It takes `SimState` + `PilotIntent` and emits `AtcMessage`.
 - Namespaces are `OpenSkyAtc.*` (the design doc's `Atc.*` names are renamed).
-- SimConnect DLLs are never committed or shipped (GPL linking exception, `LICENSE-EXCEPTION.md`). They are referenced with `Private=false` and loaded at runtime by `SimConnectLibrary.EnsureLoaded`, which must run before any SimConnect type is touched.
+- SimConnect DLLs are never committed (git-ignored; GPL linking exception, `LICENSE-EXCEPTION.md`). They are referenced with `Private=false`; `installer/build.py` copies them from the SDK into the published app, so only the installer ships them (owner's decision). `SimConnectLibrary.EnsureLoaded` loads them from the app folder, else the SDK, and must run before any SimConnect type is touched.
 - Projects that touch SimConnect target `net10.0-windows` with `PlatformTarget` x64.
 - The brain's randomness goes through `IRandom` / `SeededRandom` (SplitMix64), never `System.Random`.
 - Brain flow: `AtcBrain` ticks the `EventEngine`, the current `IPhase` and the `ConversationManager`, then releases due transmissions from the `TransmissionQueue`. Phases return transitions; the brain applies and logs them. Phases send ATC messages only through `ctx.Conversation`, with a `ReadbackExpectation` when a readback is required, and update the `Clearance` in the `onSent` callback.

@@ -35,11 +35,11 @@ None yet.
 | --- | --- | --- |
 | [Inno Setup](https://jrsoftware.org/isinfo.php) 6.7.3 | Inno Setup License (permissive: use, including commercial, and redistribution with its notices kept) | Builds `OpenSkyATC-Setup-<version>.exe`; its setup and uninstall programs wrap the app. Copyright (C) 1997-2026 Jordan Russell, portions (C) 2000-2026 Martijn Laan. |
 
-## Required but not shipped (user supplies)
+## Shipped in the installer only (not in the source repository)
 
 | Component | Licence | Notes |
 | --- | --- | --- |
-| Microsoft.FlightSimulator.SimConnect.dll, SimConnect.dll (MSFS 2024 SDK) | Microsoft Flight Simulator SDK EULA (proprietary) | Not in the repo or releases. Loaded at runtime from the user's SDK install. Linking is allowed by `LICENSE-EXCEPTION.md`. |
+| Microsoft.FlightSimulator.SimConnect.dll, SimConnect.dll (MSFS 2024 SDK) | Microsoft Flight Simulator SDK EULA (proprietary, Microsoft) | Unmodified copies from the MSFS 2024 SDK, included in the Windows installer so the app works without the SDK (owner's decision, 2026-10-18; the EULA does not name them as distributable). Never committed; developers use their own SDK. Combining is allowed by `LICENSE-EXCEPTION.md`. |
 
 ## Libraries (shipped)
 

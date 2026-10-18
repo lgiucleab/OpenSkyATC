@@ -1,6 +1,7 @@
 """Builds the OpenSkyATC installer (step 17).
 
 1. Publishes the app self-contained for win-x64 into artifacts/publish/app.
+   and copies the SimConnect DLLs from the MSFS 2024 SDK next to it (shipped in the installer only, never committed).
 2. Assembles the two MSFS Community packages (toolbar panel, taxi arrows).
 3. Compiles installer/OpenSkyATC.iss with Inno Setup 6 into artifacts/installer/OpenSkyATC-Setup-<version>.exe.
 
@@ -29,6 +30,18 @@ def iscc() -> Path:
     sys.exit("Inno Setup 6 not found: winget install JRSoftware.InnoSetup")
 
 
+def simconnect_dlls() -> list[Path]:
+    """Both SimConnect DLLs from the MSFS 2024 SDK (MSFS2024_SDK, else the installer's default folder)."""
+    for root in (os.environ.get("MSFS2024_SDK"), r"C:\MSFS 2024 SDK"):
+        if not root:
+            continue
+        lib = Path(root) / "SimConnect SDK" / "lib"
+        dlls = [lib / "managed" / "Microsoft.FlightSimulator.SimConnect.dll", lib / "SimConnect.dll"]
+        if all(d.exists() for d in dlls):
+            return dlls
+    sys.exit("The MSFS 2024 SDK's SimConnect DLLs were not found (set MSFS2024_SDK).")
+
+
 def run(*args: str) -> None:
     print("> " + " ".join(args), flush=True)
     subprocess.run(args, cwd=ROOT, check=True)
@@ -36,7 +49,7 @@ def run(*args: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", default="0.1.0")
+    parser.add_argument("--version", default="0.1.1")
     version = parser.parse_args().version
 
     publish = ROOT / "artifacts" / "publish" / "app"
@@ -44,6 +57,9 @@ def main() -> None:
         shutil.rmtree(publish)
     run("dotnet", "publish", "src/OpenSkyAtc.App", "-c", "Release", "-r", "win-x64", "--self-contained", "true",
         f"-p:Version={version}", "-o", str(publish))
+    for dll in simconnect_dlls():
+        shutil.copy2(dll, publish / dll.name)
+        print(f"Copied {dll}")
     run(sys.executable, "toolbar/opensky-atc-toolbar/tools/assemble_package.py")
     run(sys.executable, "toolbar/opensky-atc-taxi-arrows/tools/assemble_package.py")
     run(str(iscc()), f"/DAppVersion={version}", "installer/OpenSkyATC.iss")

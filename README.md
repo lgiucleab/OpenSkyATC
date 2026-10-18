@@ -22,13 +22,12 @@ Everything runs on your PC. No accounts, no cloud services, no telemetry.
 
 ## Status
 
-**0.1.0 preview.** All planned features are built and tested with a simulated pilot; live testing in the sim is in progress (see the checklists in [docs](docs)). Expect rough edges and please report them in [Issues](https://github.com/lgiucleab/OpenSkyATC/issues).
+**0.1.1 preview.** All planned features are built and tested with a simulated pilot; live testing in the sim is in progress (see the checklists in [docs](docs)). Expect rough edges and please report them in [Issues](https://github.com/lgiucleab/OpenSkyATC/issues).
 
 ## Install
 
-1. Install the free **Microsoft Flight Simulator 2024 SDK**: OpenSkyATC needs its SimConnect library, which may not be redistributed. In the sim: Options > General > Developers > Developer Mode on, then Help > SDK Installer.
-2. Download `OpenSkyATC-Setup-<version>.exe` from [Releases](https://github.com/lgiucleab/OpenSkyATC/releases) and run it. It installs the app for your Windows user (no administrator rights, .NET included) and puts the toolbar panel and taxi-arrow packages in the sim's Community folder (found automatically for the Microsoft Store and Steam versions).
-3. Start OpenSkyATC, enter your SimBrief Pilot ID in Settings (or pick a .pln), load a flight in MSFS 2024 at a gate, and press **Import plan**. Voices (about 70 MB each) and the speech model (about 140 MB) download once, on first use.
+1. Download `OpenSkyATC-Setup-<version>.exe` from [Releases](https://github.com/lgiucleab/OpenSkyATC/releases) and run it. It installs the app for your Windows user (no administrator rights; .NET and Microsoft's SimConnect library included, no SDK needed) and puts the toolbar panel and taxi-arrow packages in the sim's Community folder (found automatically for the Microsoft Store and Steam versions).
+2. Start OpenSkyATC, enter your SimBrief Pilot ID in Settings (or pick a .pln), load a flight in MSFS 2024 at a gate, and press **Import plan**. Voices (about 70 MB each) and the speech model (about 140 MB) download once, on first use.
 
 To uninstall: Start menu > OpenSkyATC > Uninstall OpenSkyATC (or Windows Settings > Apps). It removes the app and both sim packages, and asks whether to delete the downloaded voices, your settings and debriefs.
 
@@ -49,6 +48,6 @@ Design and decisions: [docs/ATC-Brain-Design.md](docs/ATC-Brain-Design.md) (the 
 
 GPL-3.0, with an additional permission to link with Microsoft's SimConnect libraries. See [LICENSE](LICENSE), [LICENSE-EXCEPTION.md](LICENSE-EXCEPTION.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) (voices, speech model and libraries, with their licences).
 
-OpenSkyATC does not ship the SimConnect DLLs. You need them from your own MSFS 2024 SDK installation.
+The installer includes Microsoft's SimConnect DLLs (unmodified, from the MSFS 2024 SDK, under Microsoft's terms); the source repository does not, so building from source needs your own MSFS 2024 SDK.
 
 OpenSkyATC is not affiliated with Microsoft, Asobo Studio, SimBrief/Navigraph or BeyondATC.

@@ -502,3 +502,7 @@ tests/fixtures/audio/*.wav
 
 # The owner's own voice recordings for the speech tests: local only
 tests/fixtures/speech/owner/
+
+# Microsoft's SimConnect DLLs ship in the installer only, never in the source repository (LICENSE-EXCEPTION.md)
+Microsoft.FlightSimulator.SimConnect.dll
+SimConnect.dll

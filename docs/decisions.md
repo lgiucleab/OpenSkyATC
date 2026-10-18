@@ -367,3 +367,9 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **README screenshots:** the app's own sample renders (`--screenshot`) and the panel preview, so no personal data; in `docs/images`.
 - **Tested:** silent install into temporary folders (app, licences, uninstaller, both packages, Start menu entries), the installed app starts; silent uninstall removed the app folder, packages, shortcuts and the Apps entry, and kept the user data. The interactive wizard pages were not clicked through.
 
+## 2026-10-18 - Shipping SimConnect (owner's decision, replaces "users supply them")
+
+- **Owner's request:** ship the SimConnect DLLs so players do not need the MSFS 2024 SDK. The SDK EULA (11/2019, `C:\MSFS 2024 SDK\Licenses`) forbids distributing the SDK "except for any distributable code" but names none, and the SimConnect docs do not mention redistribution; many MSFS add-ons ship them in practice. The owner was told and accepted the risk, choosing: **in the installer only**, never in the source repository.
+- **How:** `installer/build.py` copies `Microsoft.FlightSimulator.SimConnect.dll` and `SimConnect.dll` (unmodified) from the SDK into the published app; `SimConnectLibrary` searches the app folder first, then the SDK; both names are git-ignored. The installer no longer warns about a missing SDK. `LICENSE-EXCEPTION.md`, `THIRD_PARTY_NOTICES.md` and the README say the installer includes Microsoft's copies under Microsoft's terms. If Microsoft objects, a release can go back to the SDK requirement without touching the source history.
+- **Version:** 0.1.1 (the installer contents change).
+

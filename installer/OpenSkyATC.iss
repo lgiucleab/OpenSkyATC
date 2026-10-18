@@ -4,7 +4,7 @@
 ; (unins000.exe, "Uninstall OpenSkyATC" in the Start menu and in Windows Settings > Apps).
 
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "0.1.1"
 #endif
 #define AppName "OpenSkyATC"
 #define Root ".."
@@ -49,8 +49,6 @@ english.CommunityDesc=Where should the OpenSkyATC packages go?
 spanish.CommunityDesc=¿Dónde se instalan los paquetes de OpenSkyATC?
 english.CommunityPrompt=The sim's Community folder (found from its settings; change it if you moved it):
 spanish.CommunityPrompt=La carpeta Community del simulador (encontrada en su configuración; cámbiala si la moviste):
-english.NoSdk=OpenSkyATC connects to MSFS 2024 through SimConnect, which comes with the free Microsoft Flight Simulator 2024 SDK. It was not found on this PC.%n%nInstall the SDK (in the sim: Options > General > Developers > Developer Mode, then Help > SDK Installer), then start OpenSkyATC. You can install OpenSkyATC now and the SDK later.
-spanish.NoSdk=OpenSkyATC se conecta con MSFS 2024 mediante SimConnect, que viene con el SDK gratuito de Microsoft Flight Simulator 2024. No se encontró en este PC.%n%nInstala el SDK (en el simulador: Opciones > General > Desarrolladores > Modo desarrollador, luego Ayuda > Instalador del SDK) y después inicia OpenSkyATC. Puedes instalar OpenSkyATC ahora y el SDK más tarde.
 english.SimRunning=MSFS 2024 is running: the panel and arrows appear after you restart the sim.
 spanish.SimRunning=MSFS 2024 está en marcha: el panel y las flechas aparecerán al reiniciar el simulador.
 english.DeleteData=Also delete OpenSkyATC's downloaded voices and speech models, its settings and your flight debriefs?
@@ -63,7 +61,8 @@ Name: "packages"; Description: "{cm:PackagesTask}"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-; The app, .NET included (self-contained); only the x64 natives are needed.
+; The app, .NET included (self-contained); only the x64 natives are needed. build.py has put Microsoft's SimConnect
+; DLLs next to it (shipped in the installer only, under Microsoft's terms; see LICENSE-EXCEPTION.md).
 Source: "{#Root}\artifacts\publish\app\*"; DestDir: "{app}"; Excludes: "*.pdb,\runtimes\win-arm64,\runtimes\win-x86"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#Root}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Root}\LICENSE-EXCEPTION.md"; DestDir: "{app}"; Flags: ignoreversion
@@ -129,17 +128,6 @@ begin
   Result := CommunityPage.Values[0];
 end;
 
-function SdkInstalled(): Boolean;
-var
-  Root: String;
-begin
-  Root := GetEnv('MSFS2024_SDK');
-  if (Root = '') and not RegQueryStringValue(HKCU, 'Environment', 'MSFS2024_SDK', Root) then
-    RegQueryStringValue(HKLM, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'MSFS2024_SDK', Root);
-  Result := ((Root <> '') and FileExists(AddBackslash(Root) + 'SimConnect SDK\lib\managed\Microsoft.FlightSimulator.SimConnect.dll'))
-    or FileExists('C:\MSFS 2024 SDK\SimConnect SDK\lib\managed\Microsoft.FlightSimulator.SimConnect.dll');
-end;
-
 procedure InitializeWizard();
 begin
   CommunityPage := CreateInputDirPage(wpSelectTasks, CustomMessage('CommunityTitle'), CustomMessage('CommunityDesc'),
@@ -169,8 +157,6 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    if not WizardSilent() and not SdkInstalled() then
-      MsgBox(CustomMessage('NoSdk'), mbInformation, MB_OK);
     if not WizardSilent() and WizardIsTaskSelected('packages') and (FindWindowByClassName('AceApp') <> 0) then
       MsgBox(CustomMessage('SimRunning'), mbInformation, MB_OK);
   end;

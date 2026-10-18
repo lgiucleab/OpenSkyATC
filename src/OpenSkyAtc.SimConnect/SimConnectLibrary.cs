@@ -5,8 +5,9 @@ using System.Runtime.Loader;
 namespace OpenSkyAtc.SimConnect;
 
 /// <summary>
-/// Finds and loads the SimConnect DLLs from the user's MSFS 2024 SDK. OpenSkyATC does not ship them
-/// (see LICENSE-EXCEPTION.md), so this must run before any SimConnect type is used.
+/// Finds and loads the SimConnect DLLs: the copies the installer puts next to the app, else the user's MSFS 2024 SDK
+/// (developer builds reference them with Private=false, so they are never in the build output). The source
+/// repository never contains them (see LICENSE-EXCEPTION.md). Must run before any SimConnect type is used.
 /// </summary>
 public static class SimConnectLibrary
 {
@@ -20,13 +21,13 @@ public static class SimConnectLibrary
 
     /// <summary>
     /// Locates both DLLs. <paramref name="directory"/> may be the SDK root, its "SimConnect SDK\lib"
-    /// folder, or any folder holding both files. When null, the SDK folders from <see cref="SdkCandidates"/> are tried.
+    /// folder, or any folder holding both files. When null, the folders from <see cref="Candidates"/> are tried.
     /// </summary>
     public static (string Managed, string Native)? Locate(string? directory = null)
     {
         if (directory is null)
         {
-            foreach (var candidate in SdkCandidates())
+            foreach (var candidate in Candidates())
                 if (Locate(candidate) is { } hit) return hit;
             return null;
         }
@@ -48,6 +49,9 @@ public static class SimConnectLibrary
         }
         return null;
     }
+
+    /// <summary>The app's own folder (an installed copy ships both DLLs there), then the SDK folders.</summary>
+    public static IEnumerable<string> Candidates() => SdkCandidates().Prepend(AppContext.BaseDirectory);
 
     /// <summary>
     /// The MSFS2024_SDK variable of this process, then the machine and user values the SDK installer wrote (a process
@@ -71,9 +75,8 @@ public static class SimConnectLibrary
         if (IsLoaded) return;
 
         var found = Locate(directory) ?? throw new FileNotFoundException(
-            "Could not find the SimConnect DLLs. Install the Microsoft Flight Simulator 2024 SDK " +
-            $"(it sets the {SdkEnvironmentVariable} environment variable), or point OpenSkyATC to a folder " +
-            $"containing {ManagedFileName} and {NativeFileName}.");
+            $"Could not find the SimConnect DLLs ({ManagedFileName} and {NativeFileName}). Reinstall OpenSkyATC, " +
+            $"or install the Microsoft Flight Simulator 2024 SDK (it sets the {SdkEnvironmentVariable} environment variable).");
 
         // The managed assembly imports the native DLL by name; once loaded, Windows reuses it.
         NativeLibrary.Load(found.Native);
