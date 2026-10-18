@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../PackageSources/html_ui/InGamePanels/OpenSkyATC/OpenSkyATC.css" />
     <style>
         body { background: #5b6b7d; font-family: "Segoe UI", sans-serif; margin: 16px; }
-        ingame-ui { display: block; width: 340px; height: 560px; }
+        ingame-ui { display: block; width: 340px; height: 600px; background: #3d4b5c; }
         #log { margin-top: 12px; font: 12px monospace; color: #fff; white-space: pre; }
         #controls { margin-bottom: 8px; }
         #controls button { margin-right: 6px; }
@@ -43,8 +43,6 @@
         };
         function feed(state) { if (handlers["OpenSkyATC.State"]) handlers["OpenSkyATC.State"](JSON.stringify(state)); }
     </script>
-    <script src="../PackageSources/html_ui/InGamePanels/OpenSkyATC/OpenSkyATCView.js"></script>
-    <script src="../PackageSources/html_ui/InGamePanels/OpenSkyATC/OpenSkyATC.js"></script>
 </head>
 <body>
     <div id="controls">
@@ -53,29 +51,19 @@
         <button onclick="feed(Object.assign({}, sample, { buttons: sample.buttons.slice(1), voiceReadback: 'Read back by voice: hold push-to-talk' }))">Hard mode</button>
         <button onclick="location.reload()">No app</button>
     </div>
-    <opensky-atc-panel>
-        <ingame-ui id="OpenSkyATCPanel">
-            <div id="osa">
-                <div id="osa-status" class="osa-row">
-                    <span id="osa-dot" class="osa-dot"></span>
-                    <span id="osa-status-text"></span>
-                    <span id="osa-ptt" class="osa-ptt"></span>
-                </div>
-                <div id="osa-radio" class="osa-block">
-                    <div class="osa-row">
-                        <span id="osa-frequency" class="osa-frequency"></span>
-                        <span id="osa-unit" class="osa-unit"></span>
-                    </div>
-                    <div id="osa-hint" class="osa-hint"></div>
-                </div>
-                <div id="osa-calls" class="osa-block"></div>
-                <div id="osa-voice-readback" class="osa-voice"></div>
-                <div id="osa-buttons"></div>
-                <div id="osa-arrows" class="osa-toggle"></div>
-            </div>
-        </ingame-ui>
-    </opensky-atc-panel>
+    <div id="host"></div>
     <div id="log"></div>
-    <script>if (location.hash === "#flight") setTimeout(() => feed(sample), 50);</script>
+    <script>
+        // The panel's own markup, so the preview never drifts from it; then the panel's scripts.
+        (async () => {
+            const base = "../PackageSources/html_ui/InGamePanels/OpenSkyATC/";
+            const html = await (await fetch(base + "OpenSkyATC.html")).text();
+            document.getElementById("host").innerHTML = html.slice(html.indexOf("<opensky-atc-panel>"), html.indexOf("</opensky-atc-panel>") + 20);
+            for (const file of ["OpenSkyATCView.js", "OpenSkyATC.js"]) {
+                await new Promise((done) => { const s = document.createElement("script"); s.src = base + file; s.onload = done; document.head.appendChild(s); });
+            }
+            if (location.hash === "#flight") setTimeout(() => feed(sample), 50);
+        })();
+    </script>
 </body>
 </html>

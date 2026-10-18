@@ -24,7 +24,7 @@ function test(name, fn) {
 test("no state: not connected", () => {
     const v = View.build(null, null, 1000);
     assert.strictEqual(v.connected, false);
-    assert.strictEqual(v.statusText, View.NOT_CONNECTED);
+    assert.strictEqual(v.title, View.NOT_CONNECTED);
     assert.deepStrictEqual(v.buttons, []);
     assert.strictEqual(v.arrows, null);
 });
@@ -32,7 +32,9 @@ test("no state: not connected", () => {
 test("fresh state: shown", () => {
     const v = View.build(state, 1000, 2000);
     assert.strictEqual(v.connected, true);
-    assert.strictEqual(v.statusText, "Iberia 1234 · MSFS connected");
+    assert.strictEqual(v.title, "IBERIA 1234");
+    assert.strictEqual(v.subtitle, "MSFS connected");
+    assert.strictEqual(v.ptt, "PTT READY");
     assert.strictEqual(v.frequency, "121.630");
     assert.strictEqual(v.unit, "Barajas Ground");
 });
@@ -44,7 +46,8 @@ test("silent for more than 12 s: not connected", () => {
 
 test("last three calls, newest first", () => {
     const v = View.build(state, 1000, 1000);
-    assert.deepStrictEqual(v.calls.map((c) => c.station), ["D", "C", "B"]);
+    assert.deepStrictEqual(v.calls.map((c) => c.who), ["D", "C", "B"]);
+    assert.deepStrictEqual(v.calls.map((c) => c.latest), [true, false, false]);
 });
 
 test("buttons carry their command; mayday is marked", () => {
@@ -53,6 +56,7 @@ test("buttons carry their command; mayday is marked", () => {
     assert.strictEqual(v.buttons[0].primary, true);
     assert.strictEqual(v.buttons[1].danger, true);
     assert.strictEqual(v.buttons[0].danger, false);
+    assert.deepStrictEqual(v.buttons.map((b) => b.number), ["1", "2"]);
 });
 
 test("arrows toggle sends the opposite", () => {
@@ -63,6 +67,12 @@ test("arrows toggle sends the opposite", () => {
 
 test("another protocol version: not connected", () => {
     assert.strictEqual(View.build(Object.assign({}, state, { version: 2 }), 1000, 1000).connected, false);
+});
+
+test("short station labels", () => {
+    assert.strictEqual(View.shortStation("Barajas Ground"), "GROUND");
+    assert.strictEqual(View.shortStation("Madrid Control"), "CONTROL");
+    assert.strictEqual(View.shortStation(""), "ATC");
 });
 
 console.log(passed + " passed");

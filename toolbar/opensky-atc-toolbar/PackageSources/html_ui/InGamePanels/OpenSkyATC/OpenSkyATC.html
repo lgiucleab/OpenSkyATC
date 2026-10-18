@@ -19,22 +19,26 @@
     <opensky-atc-panel>
         <ingame-ui id="OpenSkyATCPanel" panel-id="PANEL_OPENSKYATC" title="OpenSkyATC" class="ingameUiFrame panelInvisible" min-width="220" min-height="200">
             <div id="osa">
-                <div id="osa-status" class="osa-row">
+                <div class="osa-head">
                     <span id="osa-dot" class="osa-dot"></span>
-                    <span id="osa-status-text"></span>
+                    <div class="osa-titles">
+                        <div id="osa-title" class="osa-title"></div>
+                        <div id="osa-subtitle" class="osa-subtitle"></div>
+                    </div>
                     <span id="osa-ptt" class="osa-ptt"></span>
                 </div>
-                <div id="osa-radio" class="osa-block">
-                    <div class="osa-row">
+                <div id="osa-radio" class="osa-section">
+                    <div class="osa-com">
+                        <span class="osa-label">COM1</span>
                         <span id="osa-frequency" class="osa-frequency"></span>
-                        <span id="osa-unit" class="osa-unit"></span>
                     </div>
+                    <div id="osa-unit" class="osa-unit"></div>
                     <div id="osa-hint" class="osa-hint"></div>
                 </div>
-                <div id="osa-calls" class="osa-block"></div>
+                <div id="osa-calls" class="osa-section"></div>
                 <div id="osa-voice-readback" class="osa-voice"></div>
-                <div id="osa-buttons"></div>
-                <div id="osa-arrows" class="osa-toggle"></div>
+                <div id="osa-buttons" class="osa-section osa-list"></div>
+                <div id="osa-arrows" class="osa-section osa-toggle"></div>
             </div>
         </ingame-ui>
     </opensky-atc-panel>

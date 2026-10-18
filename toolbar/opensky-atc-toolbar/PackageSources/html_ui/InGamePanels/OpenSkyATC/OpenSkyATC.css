@@ -1,162 +1,186 @@
-/* OpenSkyATC toolbar panel: the app's compact strip, readable in VR (large text, high contrast). */
+/* OpenSkyATC toolbar panel, in the style of the sim's own panels (owner's choice): a dark translucent sheet,
+   white text in the sim's font, thin separators, flat numbered rows, one accent colour. */
 
 #OpenSkyATCPanel #osa {
+    --osa-accent: #00b4ff;
+    --osa-text: #ffffff;
+    --osa-dim: rgba(255, 255, 255, 0.6);
+    --osa-line: rgba(255, 255, 255, 0.14);
+    --osa-hover: rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 10px;
     height: 100%;
     overflow-y: auto;
+    padding: 0 0 8px 0;
+    color: var(--osa-text);
     font-size: 16px;
-    color: #f2f4f7;
-    background-color: rgba(20, 24, 31, 0.92);
+    background-color: rgba(0, 0, 0, 0.72);
+}
+
+.osa-section {
+    border-top: 1px solid var(--osa-line);
+    padding: 8px 14px;
+}
+
+.osa-label {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--osa-dim);
+}
+
+/* Header: connection dot, callsign, status, push-to-talk */
+.osa-head {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+}
+
+.osa-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    background-color: var(--osa-dim);
+}
+
+.osa-dot.on {
+    background-color: var(--osa-accent);
+}
+
+.osa-titles {
+    flex-grow: 1;
+}
+
+.osa-title {
+    font-size: 17px;
+    letter-spacing: 1px;
+}
+
+.osa-subtitle {
+    font-size: 13px;
+    color: var(--osa-dim);
+}
+
+.osa-ptt {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--osa-dim);
+}
+
+.osa-ptt.live {
+    color: var(--osa-accent);
+}
+
+/* Radio */
+.osa-com {
+    display: flex;
+    align-items: baseline;
+}
+
+.osa-com .osa-label {
+    width: 52px;
+}
+
+.osa-frequency {
+    font-size: 26px;
+    letter-spacing: 1px;
+}
+
+.osa-unit {
+    margin-left: 52px;
+    color: var(--osa-dim);
+}
+
+.osa-hint {
+    margin-top: 6px;
+    color: var(--osa-accent);
+}
+
+.osa-hint::before {
+    content: "\25B8  ";
+}
+
+/* Last calls: newest first, older ones dimmed */
+.osa-call {
+    display: flex;
+    margin: 3px 0;
+    font-size: 14px;
+    color: var(--osa-dim);
+}
+
+.osa-call.latest {
+    font-size: 15px;
+    color: var(--osa-text);
+}
+
+.osa-who {
+    flex-shrink: 0;
+    width: 76px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding-top: 2px;
+    color: var(--osa-dim);
+}
+
+.osa-voice {
+    border-top: 1px solid var(--osa-line);
+    padding: 8px 14px;
+    color: var(--osa-accent);
+}
+
+/* Buttons: flat rows with a number, like the sim's ATC menu */
+.osa-list {
+    padding: 4px 0;
 }
 
 .osa-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-}
-
-.osa-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 5px;
-    background-color: #e5484d;
-    flex-shrink: 0;
-}
-
-.osa-dot.on {
-    background-color: #30a46c;
-}
-
-#osa-status-text {
-    flex-grow: 1;
-}
-
-.osa-ptt {
-    font-size: 13px;
-    color: #9aa4b2;
-}
-
-.osa-ptt.live {
-    color: #ffffff;
-    background-color: #e5484d;
-    border-radius: 4px;
-    padding: 1px 6px;
-}
-
-.osa-block {
-    background-color: rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
-    padding: 8px;
-}
-
-.osa-frequency {
-    font-size: 26px;
-    font-weight: bold;
-    letter-spacing: 1px;
-}
-
-.osa-unit {
-    color: #b8c2d0;
-}
-
-.osa-hint {
-    margin-top: 6px;
-    font-size: 14px;
-}
-
-.osa-hint.warn {
-    color: #1c1500;
-    background-color: #f5c84c;
-    border-radius: 6px;
-    padding: 4px 6px;
-}
-
-.osa-call {
-    font-size: 14px;
-    margin: 2px 0;
-}
-
-.osa-call:first-child {
-    font-size: 15px;
-}
-
-.osa-who {
-    color: #7cc4fa;
-    font-weight: bold;
-}
-
-.osa-voice {
-    font-size: 14px;
-    color: #7cc4fa;
-    border: 1px solid #3b82f6;
-    border-radius: 8px;
-    padding: 6px 8px;
-}
-
-#osa-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.osa-button {
-    padding: 8px 12px;
-    border-radius: 8px;
-    background-color: #2b323d;
+    padding: 7px 14px;
     cursor: pointer;
 }
 
-.osa-button:hover {
-    background-color: #39424f;
+.osa-row:hover {
+    background-color: var(--osa-hover);
 }
 
-.osa-button.primary {
-    background-color: #2563eb;
-    flex-basis: 100%;
+.osa-num {
+    width: 24px;
+    flex-shrink: 0;
+    color: var(--osa-dim);
 }
 
-.osa-button.primary:hover {
-    background-color: #3b74f0;
+.osa-row.primary .osa-num,
+.osa-row.primary .osa-text {
+    color: var(--osa-accent);
 }
 
-.osa-button.danger {
-    background-color: #8f1d22;
+.osa-row.danger .osa-text {
+    color: #ff5a5a;
 }
 
+/* Taxi arrows switch */
 .osa-toggle {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
     cursor: pointer;
-    font-size: 14px;
 }
 
-.osa-switch {
-    width: 32px;
-    height: 18px;
-    border-radius: 9px;
-    background-color: #4b5563;
-    position: relative;
+.osa-toggle:hover {
+    background-color: var(--osa-hover);
 }
 
-.osa-switch::after {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 14px;
-    height: 14px;
-    border-radius: 7px;
-    background-color: #ffffff;
+.osa-state {
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border: 1px solid var(--osa-dim);
+    color: var(--osa-dim);
 }
 
-.osa-switch.on {
-    background-color: #2563eb;
-}
-
-.osa-switch.on::after {
-    left: 16px;
+.osa-state.on {
+    border-color: var(--osa-accent);
+    color: var(--osa-accent);
 }

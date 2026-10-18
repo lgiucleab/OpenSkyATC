@@ -9,13 +9,12 @@ class OpenSkyAtcPanel extends TemplateElement {
         this.state = null;
         this.lastStateMs = null;
         this.timer = null;
+        this.el = null;
     }
 
     connectedCallback() {
         super.connectedCallback();
         this.ingameUi = this.querySelector("ingame-ui");
-        this.el = null;
-
         this.listener = RegisterCommBusListener(() => this.send({ cmd: "hello" }));
         this.listener.on("OpenSkyATC.State", (json) => this.onState(json));
         if (this.ingameUi) {
@@ -48,8 +47,8 @@ class OpenSkyAtcPanel extends TemplateElement {
     /// The panel's elements, once the page has them (the element can connect before its children are parsed).
     elements() {
         if (this.el) return this.el;
-        const ids = ["osa-dot", "osa-status-text", "osa-ptt", "osa-frequency", "osa-unit", "osa-hint", "osa-calls",
-                     "osa-voice-readback", "osa-buttons", "osa-arrows", "osa-radio"];
+        const ids = ["osa-dot", "osa-title", "osa-subtitle", "osa-ptt", "osa-radio", "osa-frequency", "osa-unit", "osa-hint",
+                     "osa-calls", "osa-voice-readback", "osa-buttons", "osa-arrows"];
         const found = {};
         for (const id of ids) {
             found[id] = document.getElementById(id);
@@ -59,64 +58,70 @@ class OpenSkyAtcPanel extends TemplateElement {
         return found;
     }
 
-    render() {
-        if (!this.elements()) return;
-        const v = OpenSkyAtcView.build(this.state, this.lastStateMs, Date.now());
-        this.el["osa-dot"].className = "osa-dot" + (v.connected ? " on" : "");
-        this.el["osa-status-text"].textContent = v.statusText;
-        this.el["osa-ptt"].textContent = v.ptt;
-        this.el["osa-ptt"].className = "osa-ptt" + (v.transmitting ? " live" : "");
-        this.el["osa-frequency"].textContent = v.frequency;
-        this.el["osa-unit"].textContent = v.unit;
-        this.el["osa-radio"].style.display = v.frequency ? "" : "none";
-        this.el["osa-hint"].textContent = v.hint;
-        this.el["osa-hint"].className = "osa-hint" + (v.hintWarning ? " warn" : "");
-        this.el["osa-hint"].style.display = v.hint ? "" : "none";
-        this.el["osa-voice-readback"].textContent = v.voiceReadback;
-        this.el["osa-voice-readback"].style.display = v.voiceReadback ? "" : "none";
+    static show(element, visible) {
+        element.style.display = visible ? "" : "none";
+    }
 
-        const calls = this.el["osa-calls"];
+    static add(parent, tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        parent.appendChild(node);
+        return node;
+    }
+
+    render() {
+        const el = this.elements();
+        if (!el) return;
+        const v = OpenSkyAtcView.build(this.state, this.lastStateMs, Date.now());
+        const add = OpenSkyAtcPanel.add, show = OpenSkyAtcPanel.show;
+
+        el["osa-dot"].className = "osa-dot" + (v.connected ? " on" : "");
+        el["osa-title"].textContent = v.title;
+        el["osa-subtitle"].textContent = v.subtitle;
+        el["osa-ptt"].textContent = v.ptt;
+        el["osa-ptt"].className = "osa-ptt" + (v.transmitting ? " live" : "");
+
+        show(el["osa-radio"], !!v.frequency);
+        el["osa-frequency"].textContent = v.frequency;
+        el["osa-unit"].textContent = v.unit;
+        show(el["osa-unit"], !!v.unit);
+        el["osa-hint"].textContent = v.hint;
+        show(el["osa-hint"], !!v.hint);
+
+        const calls = el["osa-calls"];
         calls.innerHTML = "";
         v.calls.forEach((c) => {
-            const line = document.createElement("div");
-            line.className = "osa-call";
-            const who = document.createElement("span");
-            who.className = "osa-who";
-            who.textContent = c.station;
-            const text = document.createElement("span");
-            text.textContent = " " + c.text;
-            line.appendChild(who);
-            line.appendChild(text);
-            calls.appendChild(line);
+            const line = add(calls, "div", "osa-call" + (c.latest ? " latest" : ""));
+            add(line, "span", "osa-who", c.who);
+            add(line, "span", "osa-said", c.text);
         });
-        calls.style.display = v.calls.length ? "" : "none";
+        show(calls, v.calls.length > 0);
 
-        const buttons = this.el["osa-buttons"];
+        el["osa-voice-readback"].textContent = v.voiceReadback;
+        show(el["osa-voice-readback"], !!v.voiceReadback);
+
+        const buttons = el["osa-buttons"];
         buttons.innerHTML = "";
         v.buttons.forEach((b) => {
-            const button = document.createElement("div");
-            button.className = "osa-button" + (b.primary ? " primary" : "") + (b.danger ? " danger" : "");
-            button.textContent = b.label;
-            button.addEventListener("click", () => this.send(b.command));
-            buttons.appendChild(button);
+            const row = add(buttons, "div", "osa-row" + (b.primary ? " primary" : "") + (b.danger ? " danger" : ""));
+            add(row, "span", "osa-num", b.number);
+            add(row, "span", "osa-text", b.label);
+            row.addEventListener("click", () => this.send(b.command));
         });
+        show(buttons, v.buttons.length > 0);
 
-        const arrows = this.el["osa-arrows"];
+        const arrows = el["osa-arrows"];
         arrows.innerHTML = "";
         if (v.arrows) {
-            const toggle = document.createElement("div");
-            toggle.className = "osa-switch" + (v.arrows.on ? " on" : "");
-            const label = document.createElement("span");
-            label.textContent = v.arrows.label;
-            arrows.appendChild(toggle);
-            arrows.appendChild(label);
+            add(arrows, "span", "", v.arrows.label);
+            add(arrows, "span", "osa-state" + (v.arrows.on ? " on" : ""), v.arrows.on ? "ON" : "OFF");
             const command = v.arrows.command;
             arrows.onclick = () => this.send(command);
-            arrows.style.display = "";
         } else {
             arrows.onclick = null;
-            arrows.style.display = "none";
         }
+        show(arrows, !!v.arrows);
     }
 }
 
