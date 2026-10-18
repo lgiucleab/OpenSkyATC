@@ -30,6 +30,8 @@ dotnet run --project src/OpenSkyAtc.App
 
 Debrief (step 16, checklist `docs/step-16-checklist.md`): built from the session log by `Core/Debrief/DebriefBuilder` when a flight ends, saved by `Host/DebriefStore` to `%LOCALAPPDATA%\OpenSkyATC\debriefs\*.json`, shown by the app's debrief window (Gear > Past flights for older ones). The done-when test is `tests/OpenSkyAtc.Replay.Tests/DebriefTests.cs` (simulated pilot with fault options).
 
+Installer (step 17): `python installer/build.py [--version 0.1.0]` publishes the app self-contained, assembles both MSFS packages and compiles `installer/OpenSkyATC.iss` with Inno Setup 6 into `artifacts/installer/OpenSkyATC-Setup-<version>.exe` (git-ignored). Silent test install: `Setup.exe /VERYSILENT /DIR=... /COMMUNITY=... /TASKS=packages` (run it from PowerShell: Git Bash rewrites `/X` switches as paths). Releases: GitHub `lgiucleab/OpenSkyATC`, pre-releases while 0.x.
+
 Record a flight (the sim must be running or the recorder waits for it):
 
 ```

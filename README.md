@@ -2,35 +2,53 @@
 
 A free, open-source (GPL-3.0) replacement ATC add-on for **Microsoft Flight Simulator 2024**.
 
-OpenSkyATC is a Windows desktop app that connects to the sim through SimConnect and replaces the default ATC for one IFR flight, gate to gate. It uses ICAO/European phraseology and will have:
+OpenSkyATC is a Windows app that connects to the sim through SimConnect and plays ATC for one IFR flight, gate to gate, with ICAO/European phraseology:
 
-- a local voice (Piper TTS) with a radio filter,
-- local voice input (Whisper) and click-to-respond buttons,
-- conformance monitoring (altitude, heading, speed, squawk, runway safety),
-- an in-sim toolbar panel and taxi-route arrows,
-- an end-of-flight debrief.
+- clearance delivery, push and start (it drives the sim's tug), taxi with in-sim route arrows, tower, departure, centre sectors along your route, approach with vectors, landing and taxi to the stand;
+- controller voices (Piper, local) with a radio effect, a fixed voice per controller;
+- talk back by voice (Whisper, local, push-to-talk) or with click-to-respond buttons, and a hard mode where you type your readbacks;
+- conformance monitoring: altitude, heading, route, speed, squawk, handoffs and runway safety, with warnings that escalate;
+- an in-sim toolbar panel (status, frequency, last calls, buttons, taxi-arrows switch);
+- an end-of-flight debrief with a score;
+- flight plans from SimBrief or an MSFS .pln file; English or Spanish interface (the radio is always English).
 
-Everything runs locally. No accounts, no cloud services, no telemetry.
+Everything runs on your PC. No accounts, no cloud services, no telemetry.
+
+![Main window](docs/images/main-window.png)
+
+| Toolbar panel in the sim | Debrief |
+| --- | --- |
+| ![Toolbar panel](docs/images/toolbar-panel.jpg) | ![Debrief](docs/images/debrief.png) |
 
 ## Status
 
-Early development. Only the solution skeleton exists (build step 0). Nothing is usable yet.
+**0.1.0 preview.** All planned features are built and tested with a simulated pilot; live testing in the sim is in progress (see the checklists in [docs](docs)). Expect rough edges and please report them in [Issues](https://github.com/lgiucleab/OpenSkyATC/issues).
 
-The ATC logic is specified in [docs/ATC-Brain-Design.md](docs/ATC-Brain-Design.md).
+## Install
+
+1. Install the free **Microsoft Flight Simulator 2024 SDK**: OpenSkyATC needs its SimConnect library, which may not be redistributed. In the sim: Options > General > Developers > Developer Mode on, then Help > SDK Installer.
+2. Download `OpenSkyATC-Setup-<version>.exe` from [Releases](https://github.com/lgiucleab/OpenSkyATC/releases) and run it. It installs the app for your Windows user (no administrator rights, .NET included) and puts the toolbar panel and taxi-arrow packages in the sim's Community folder (found automatically for the Microsoft Store and Steam versions).
+3. Start OpenSkyATC, enter your SimBrief Pilot ID in Settings (or pick a .pln), load a flight in MSFS 2024 at a gate, and press **Import plan**. Voices (about 70 MB each) and the speech model (about 140 MB) download once, on first use.
+
+To uninstall: Start menu > OpenSkyATC > Uninstall OpenSkyATC (or Windows Settings > Apps). It removes the app and both sim packages, and asks whether to delete the downloaded voices, your settings and debriefs.
 
 ## Building
 
-Requirements: Windows 10/11 x64, the .NET 10 SDK, and the Microsoft Flight Simulator 2024 SDK (for the SimConnect libraries; the build finds them through the `MSFS2024_SDK` environment variable).
+Requirements: Windows 10/11 x64, the .NET 10 SDK, and the MSFS 2024 SDK (the build reads the managed SimConnect DLL from it; see [CLAUDE.md](CLAUDE.md) for how it is found).
 
 ```
 dotnet build
 dotnet test
 ```
 
+Installer: `python installer/build.py` (needs Inno Setup 6: `winget install JRSoftware.InnoSetup`) writes `artifacts/installer/OpenSkyATC-Setup-<version>.exe`.
+
+Design and decisions: [docs/ATC-Brain-Design.md](docs/ATC-Brain-Design.md) (the ATC behaviour) and [docs/decisions.md](docs/decisions.md).
+
 ## Licence
 
-GPL-3.0, with an additional permission to link with Microsoft's SimConnect libraries. See [LICENSE](LICENSE), [LICENSE-EXCEPTION.md](LICENSE-EXCEPTION.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+GPL-3.0, with an additional permission to link with Microsoft's SimConnect libraries. See [LICENSE](LICENSE), [LICENSE-EXCEPTION.md](LICENSE-EXCEPTION.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) (voices, speech model and libraries, with their licences).
 
 OpenSkyATC does not ship the SimConnect DLLs. You need them from your own MSFS 2024 SDK installation.
 
-OpenSkyATC is not affiliated with Microsoft, Asobo Studio or BeyondATC.
+OpenSkyATC is not affiliated with Microsoft, Asobo Studio, SimBrief/Navigraph or BeyondATC.

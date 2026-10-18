@@ -29,6 +29,12 @@ None yet.
 | --- | --- |
 | UK CAA CAP 413 Radiotelephony Manual, edition 24 | Checked phraseology wording and number rules. No text is copied into the project. |
 
+## Tools used to build the installer (not part of the program)
+
+| Component | Licence | Notes |
+| --- | --- | --- |
+| [Inno Setup](https://jrsoftware.org/isinfo.php) 6.7.3 | Inno Setup License (permissive: use, including commercial, and redistribution with its notices kept) | Builds `OpenSkyATC-Setup-<version>.exe`; its setup and uninstall programs wrap the app. Copyright (C) 1997-2026 Jordan Russell, portions (C) 2000-2026 Martijn Laan. |
+
 ## Required but not shipped (user supplies)
 
 | Component | Licence | Notes |

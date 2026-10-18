@@ -6,6 +6,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Company>OpenSkyATC contributors</Company>
     <Product>OpenSkyATC</Product>
+    <!-- Release version (step 17): 0.x.y until the live checklists are done. installer/build.py passes it on. -->
+    <Version>0.1.0</Version>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
   </PropertyGroup>
 </Project>
