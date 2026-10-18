@@ -26,6 +26,20 @@ public sealed record SimulatedPilotOptions
     /// <summary>The destination; defaults to <see cref="SyntheticRoute.Destination"/>.</summary>
     public AirportData? Destination { get; init; }
     public PhraseologyOptions? Phraseology { get; init; }
+
+    // ---- Known errors, for the debrief (step 16). Each happens once.
+
+    /// <summary>Reads back the first squawk wrongly.</summary>
+    public bool WrongSquawkReadback { get; init; }
+
+    /// <summary>Reads back the first frequency change this late (past the missed-readback time).</summary>
+    public TimeSpan? LateFrequencyReadback { get; init; }
+
+    /// <summary>Changes to the first airborne handoff frequency this late.</summary>
+    public TimeSpan? LateAirborneHandoff { get; init; }
+
+    /// <summary>Climbs this far past the first level-off and stays there for 45 s.</summary>
+    public double AltitudeOvershootFt { get; init; }
 }
 
 /// <summary>
@@ -58,6 +72,8 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
     private bool _requestedClearance, _requestedPush, _requestedTaxi, _calledGround;
     private int _waypoint;
     private bool _onFinal, _passedIntermediate, _didGoAround, _goAroundClimbing, _waitingNewApproach;
+    private bool _wrongSquawkDone, _lateReadbackDone, _lateHandoffDone, _overshootDone;
+    private TimeSpan _overshootUntil;
 
     public AtcBrain Brain => _brain;
 
@@ -122,10 +138,23 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
         if (key != _readbackKey)
         {
             _readbackKey = key;
-            _readbackAt = key is null ? null : _t + _o.ReadbackDelay;
+            var delay = _o.ReadbackDelay;
+            if (_o.LateFrequencyReadback is { } late && !_lateReadbackDone && readback?.Items.ContainsKey(ReadbackItem.Frequency) == true)
+            {
+                _lateReadbackDone = true;
+                delay = late;
+            }
+            _readbackAt = key is null ? null : _t + delay;
         }
         else if (_readbackAt is { } at && at <= _t && readback is not null)
         {
+            if (_o.WrongSquawkReadback && !_wrongSquawkDone && readback.Items.TryGetValue(ReadbackItem.Squawk, out var squawk))
+            {
+                _wrongSquawkDone = true;
+                var items = readback.Items.ToDictionary(kv => kv.Key, kv => kv.Value);
+                items[ReadbackItem.Squawk] = squawk == "1234" ? "4321" : "1234";
+                readback = readback with { Items = items };
+            }
             _brain.HandlePilotIntent(readback);
             _readbackAt = null;
         }
@@ -159,6 +188,11 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
         {
             _tuneTo = to;
             _tuneAt = _t + _o.TuneDelay;
+            if (_o.LateAirborneHandoff is { } late && !_lateHandoffDone && !_onGround)
+            {
+                _lateHandoffDone = true;
+                _tuneAt = _t + late;
+            }
         }
         if (_tuneAt is { } tune && tune <= _t && _tuneTo is not null)
         {
@@ -300,6 +334,13 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
 
         // Vertical.
         double targetFt = _goAroundClimbing ? 5000 : C.ClearedAltitude?.NominalFeet ?? _altFt;
+        if (_o.AltitudeOvershootFt > 0 && !_overshootDone && Phase >= FlightPhase.Departure && C.ClearedAltitude is { } cleared
+            && _vs > 0 && Math.Abs(_altFt - cleared.NominalFeet) < 50)
+        {
+            _overshootDone = true;
+            _overshootUntil = _t + TimeSpan.FromSeconds(45);
+        }
+        if (_t < _overshootUntil && C.ClearedAltitude is { } bust) targetFt = bust.NominalFeet + _o.AltitudeOvershootFt;
         if (_onFinal && !_goAroundClimbing) targetFt = Math.Min(targetFt, alongFinalNm * GlideFtPerNm - 50); // aim just past the threshold
         double rate = targetFt > _altFt ? 2000 : 2500; // fpm
         double step = Math.Clamp(targetFt - _altFt, -rate / 60 * dt, rate / 60 * dt);

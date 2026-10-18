@@ -170,6 +170,222 @@
   <data name="Panel.Arrows" xml:space="preserve">
     <value>Taxi arrows</value>
   </data>
+  <data name="Main.PastFlights" xml:space="preserve">
+    <value>Past flights</value>
+  </data>
+  <data name="Debrief.Title" xml:space="preserve">
+    <value>Flight debrief</value>
+  </data>
+  <data name="Debrief.Score" xml:space="preserve">
+    <value>Score</value>
+  </data>
+  <data name="Debrief.Completed" xml:space="preserve">
+    <value>flown to the stand</value>
+  </data>
+  <data name="Debrief.EndedEarly" xml:space="preserve">
+    <value>ended early ({0})</value>
+  </data>
+  <data name="Debrief.HoursMinutes" xml:space="preserve">
+    <value>{0} h {1:00} min</value>
+  </data>
+  <data name="Debrief.Minutes" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="Debrief.ReadbackSummary" xml:space="preserve">
+    <value>Readbacks: {0} of {1} right the first time</value>
+  </data>
+  <data name="Debrief.HandoffSummary" xml:space="preserve">
+    <value>Handoffs: {0}, average {1} s to call the next unit</value>
+  </data>
+  <data name="Debrief.NoHandoffs" xml:space="preserve">
+    <value>No handoffs</value>
+  </data>
+  <data name="Debrief.HandoffTimes" xml:space="preserve">
+    <value>Handoff times</value>
+  </data>
+  <data name="Debrief.Clean" xml:space="preserve">
+    <value>No findings: a clean flight.</value>
+  </data>
+  <data name="Debrief.Serious" xml:space="preserve">
+    <value>Serious</value>
+  </data>
+  <data name="Debrief.Deviations" xml:space="preserve">
+    <value>Deviations</value>
+  </data>
+  <data name="Debrief.Warnings" xml:space="preserve">
+    <value>Warnings</value>
+  </data>
+  <data name="Debrief.Readbacks" xml:space="preserve">
+    <value>Readbacks</value>
+  </data>
+  <data name="Debrief.Handoffs" xml:space="preserve">
+    <value>Handoffs</value>
+  </data>
+  <data name="Debrief.Info" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="Debrief.UpTo" xml:space="preserve">
+    <value>: up to {0}{1}</value>
+  </data>
+  <data name="Debrief.For" xml:space="preserve">
+    <value> for {0}{1}</value>
+  </data>
+  <data name="Debrief.Level1" xml:space="preserve">
+    <value>reminded</value>
+  </data>
+  <data name="Debrief.Level2" xml:space="preserve">
+    <value>instructed</value>
+  </data>
+  <data name="Debrief.Level3" xml:space="preserve">
+    <value>logged</value>
+  </data>
+  <data name="Debrief.ReadbackWrong" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="Debrief.Wrong" xml:space="preserve">
+    <value>{0} wrong</value>
+  </data>
+  <data name="Debrief.Missing" xml:space="preserve">
+    <value>{0} missing</value>
+  </data>
+  <data name="Debrief.ReadbackMissed" xml:space="preserve">
+    <value>{0}: not read back</value>
+  </data>
+  <data name="Debrief.HandoffLate" xml:space="preserve">
+    <value>Called {0} after {1} s</value>
+  </data>
+  <data name="Debrief.HandoffMissed" xml:space="preserve">
+    <value>Never called {0}</value>
+  </data>
+  <data name="Debrief.HandoffSkipped" xml:space="preserve">
+    <value>Called {0} instead of {1}</value>
+  </data>
+  <data name="Debrief.GoAround" xml:space="preserve">
+    <value>Go-around</value>
+  </data>
+  <data name="Debrief.Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Debrief.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Debrief.Exported" xml:space="preserve">
+    <value>Saved to {0}</value>
+  </data>
+  <data name="Past.None" xml:space="preserve">
+    <value>No debriefs yet: they are saved when a flight ends.</value>
+  </data>
+  <data name="Past.Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Past.Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Past.Route" xml:space="preserve">
+    <value>Route</value>
+  </data>
+  <data name="Past.Callsign" xml:space="preserve">
+    <value>Callsign</value>
+  </data>
+  <data name="Past.Score" xml:space="preserve">
+    <value>Score</value>
+  </data>
+  <data name="Check.AltitudeBust" xml:space="preserve">
+    <value>Off the cleared altitude</value>
+  </data>
+  <data name="Check.AltitudeNotComplying" xml:space="preserve">
+    <value>Not climbing or descending as cleared</value>
+  </data>
+  <data name="Check.Heading" xml:space="preserve">
+    <value>Off the assigned heading</value>
+  </data>
+  <data name="Check.OffRoute" xml:space="preserve">
+    <value>Off the cleared route</value>
+  </data>
+  <data name="Check.Speed" xml:space="preserve">
+    <value>Over the speed limit or assigned speed</value>
+  </data>
+  <data name="Check.Squawk" xml:space="preserve">
+    <value>Wrong squawk</value>
+  </data>
+  <data name="Check.MissedHandoff" xml:space="preserve">
+    <value>Not on the new frequency</value>
+  </data>
+  <data name="Check.RunwayIncursion" xml:space="preserve">
+    <value>Runway incursion</value>
+  </data>
+  <data name="Check.TakeoffWithoutClearance" xml:space="preserve">
+    <value>Takeoff without clearance</value>
+  </data>
+  <data name="Check.LandingWithoutClearance" xml:space="preserve">
+    <value>Landing without clearance</value>
+  </data>
+  <data name="Check.TaxiOffRoute" xml:space="preserve">
+    <value>Off the cleared taxi route</value>
+  </data>
+  <data name="Tag.ifr-clearance" xml:space="preserve">
+    <value>IFR clearance</value>
+  </data>
+  <data name="Tag.push-start" xml:space="preserve">
+    <value>Push and start</value>
+  </data>
+  <data name="Tag.taxi" xml:space="preserve">
+    <value>Taxi</value>
+  </data>
+  <data name="Tag.cross" xml:space="preserve">
+    <value>Runway crossing</value>
+  </data>
+  <data name="Tag.line-up" xml:space="preserve">
+    <value>Line up</value>
+  </data>
+  <data name="Tag.takeoff" xml:space="preserve">
+    <value>Takeoff clearance</value>
+  </data>
+  <data name="Tag.climb" xml:space="preserve">
+    <value>Climb</value>
+  </data>
+  <data name="Tag.step-climb" xml:space="preserve">
+    <value>Step climb</value>
+  </data>
+  <data name="Tag.descent" xml:space="preserve">
+    <value>Descent</value>
+  </data>
+  <data name="Tag.direct" xml:space="preserve">
+    <value>Direct</value>
+  </data>
+  <data name="Tag.established" xml:space="preserve">
+    <value>Approach</value>
+  </data>
+  <data name="Tag.landing" xml:space="preserve">
+    <value>Landing clearance</value>
+  </data>
+  <data name="Tag.missed-approach" xml:space="preserve">
+    <value>Missed approach</value>
+  </data>
+  <data name="Tag.taxi-in" xml:space="preserve">
+    <value>Taxi to the stand</value>
+  </data>
+  <data name="Tag.conformance" xml:space="preserve">
+    <value>Correction from ATC</value>
+  </data>
+  <data name="Tag.contact-ground" xml:space="preserve">
+    <value>Contact Ground</value>
+  </data>
+  <data name="Tag.contact-tower" xml:space="preserve">
+    <value>Contact Tower</value>
+  </data>
+  <data name="Tag.contact-departure" xml:space="preserve">
+    <value>Contact Departure</value>
+  </data>
+  <data name="Tag.contact-ctr" xml:space="preserve">
+    <value>Contact Control</value>
+  </data>
+  <data name="Tag.contact-approach" xml:space="preserve">
+    <value>Contact Approach</value>
+  </data>
+  <data name="Tag.other" xml:space="preserve">
+    <value>Instruction</value>
+  </data>
   <data name="Panel.ReadbackByVoice" xml:space="preserve">
     <value>Read back by voice: hold push-to-talk</value>
   </data>

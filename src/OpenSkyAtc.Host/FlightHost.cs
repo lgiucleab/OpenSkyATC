@@ -107,6 +107,7 @@ public sealed class FlightHost : IDisposable
     /// <summary>A call longer than this is cut and worked out as it is (a release that never came).</summary>
     public static readonly TimeSpan MaxCall = TimeSpan.FromSeconds(30);
     private readonly PanelLink _panel = new();
+    private bool _debriefDone;
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private SimState? _state;
     private int _arrowCount;
@@ -128,6 +129,12 @@ public sealed class FlightHost : IDisposable
 
     /// <summary>The snapshot may have changed (raised at most 4 times a second, and after each pilot call).</summary>
     public event Action? Updated;
+
+    /// <summary>
+    /// The flight's debrief was saved (step 16): once per flight, when it ends parked with the engines off or when it
+    /// is ended early. Raised on a background thread.
+    /// </summary>
+    public event Action<SavedDebrief>? DebriefSaved;
 
     /// <summary>A button or toggle pressed in the in-sim toolbar panel (step 15); raised on the bridge thread.</summary>
     public event Action<PanelCommand>? PanelCommand;
@@ -329,6 +336,7 @@ public sealed class FlightHost : IDisposable
             }
             if (lines.Count > 0) Transcript?.Invoke(lines);
             if (lines.Count > 0 || ++ticks % 2 == 0) Updated?.Invoke();
+            if (_brain.Session.Ended) SaveDebrief();
         };
         _loop = new Thread(() => bridge.Run(_cancel.Token)) { IsBackground = true, Name = "SimBridge" };
         _loop.Start();
@@ -595,10 +603,36 @@ public sealed class FlightHost : IDisposable
         Updated?.Invoke();
     }
 
-    /// <summary>Ends the flight: removes the arrows, stops the voice and the bridge.</summary>
+    /// <summary>
+    /// Builds and saves the debrief once per flight. A flight ended before anything happened on the radio (no ATC
+    /// call yet) has nothing to debrief.
+    /// </summary>
+    private void SaveDebrief()
+    {
+        Core.Debrief.FlightDebrief debrief;
+        lock (_gate)
+        {
+            if (_debriefDone || _brain is null || _plan is null) return;
+            _debriefDone = true;
+            if (!_brain.Session.Log.Entries.OfType<AtcTransmissionLogged>().Any()) return;
+            debrief = Core.Debrief.DebriefBuilder.Build(_brain.Session, _plan) with { EndedAt = DateTimeOffset.Now };
+        }
+        try
+        {
+            var store = new DebriefStore();
+            DebriefSaved?.Invoke(new SavedDebrief(store.Save(debrief), debrief));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Notice?.Invoke($"Could not save the debrief: {e.Message}");
+        }
+    }
+
+    /// <summary>Ends the flight: saves the debrief, removes the arrows, stops the voice and the bridge.</summary>
     public void Stop()
     {
         if (_cancel.IsCancellationRequested) return;
+        SaveDebrief();
         lock (_gate) _pushback?.Finish();
         _bridge?.ShowArrows([]);
         Thread.Sleep(300); // let the bridge remove the arrows (the sim also removes them on disconnect)

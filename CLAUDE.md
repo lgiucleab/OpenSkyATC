@@ -26,7 +26,9 @@ Run the app (step 13; checklist `docs/step-13-checklist.md`):
 dotnet run --project src/OpenSkyAtc.App
 ```
 
-`OpenSkyATC.exe --screenshot FILE.png [main|compact|settings|readback] [en|es]` renders a window with sample content to a PNG and exits (developer check of the layout, uses a throwaway settings file).
+`OpenSkyATC.exe --screenshot FILE.png [main|compact|settings[:TAB]|readback|debrief|past] [en|es]` renders a window with sample content to a PNG and exits (developer check of the layout, uses a throwaway settings file); `--debrief-html FILE [en|es]` writes the sample debrief's HTML export.
+
+Debrief (step 16, checklist `docs/step-16-checklist.md`): built from the session log by `Core/Debrief/DebriefBuilder` when a flight ends, saved by `Host/DebriefStore` to `%LOCALAPPDATA%\OpenSkyATC\debriefs\*.json`, shown by the app's debrief window (Gear > Past flights for older ones). The done-when test is `tests/OpenSkyAtc.Replay.Tests/DebriefTests.cs` (simulated pilot with fault options).
 
 Record a flight (the sim must be running or the recorder waits for it):
 
@@ -62,7 +64,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 
 ## Layout
 
-- `src/OpenSkyAtc.Core` - the brain (phases, events, clearance, conformance, airspace, planning, taxi routing). No project or package references.
+- `src/OpenSkyAtc.Core` - the brain (phases, events, clearance, conformance, airspace, planning, taxi routing, end-of-flight debrief in `Debrief/`). No project or package references.
 - `src/OpenSkyAtc.Phraseology` - ICAO renderer (display + speech text). References Core.
 - `src/OpenSkyAtc.SimConnect` - sim bridge: `SimBridge` (SimState at 4 Hz, push-to-talk, reconnect every 5 s; its `SimState.Time` only advances while connected), `SimConnectAirportProvider` (airports from the sim, reopens its connection after the sim restarts), `FacilityExporter`. References Core.
 - `src/OpenSkyAtc.Voice` - voice out (net10.0-windows, x64): `VoiceCatalog`/`VoiceAssigner` (a fixed voice per unit per session), `VoiceStore` (download on first use to %LOCALAPPDATA%\OpenSkyATC\voices), `PiperSynthesizer` (sherpa-onnx), `RadioFilter`, `RadioChannel` (queue rules, pure), `AtcRadio` (glue + NAudio playback). Voice in (`Input/`, step 14): `SpokenText` + `IntentParser` (transcript to `PilotIntent`, pure), `SpeechRecognizer` (Whisper.net), `WhisperModels`/`WhisperModelStore` (%LOCALAPPDATA%\OpenSkyATC\whisper), `Microphone`, `SpeechPrompt`, `SpeechPhrases`. References Core and Phraseology.

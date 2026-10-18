@@ -17,6 +17,9 @@ public interface IMainView
     string? PickPlnFile();
     void OpenSettings();
     void ShowError(string title, string message);
+
+    /// <summary>Shows a flight's debrief (step 16).</summary>
+    void ShowDebrief(SavedDebrief debrief);
 }
 
 public sealed record TranscriptLine(string Time, string Who, string Text, TranscriptKind Kind);
@@ -145,6 +148,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         host.Notice += n => _ui.InvokeAsync(() => Notice = n);
         host.Transcript += lines => _ui.InvokeAsync(() => AddTranscript(lines));
         host.PanelCommand += c => _ui.InvokeAsync(() => OnPanelCommand(c));
+        host.DebriefSaved += d => _ui.InvokeAsync(() => View?.ShowDebrief(d));
         _host = host;
         FlightActive = true;
         try

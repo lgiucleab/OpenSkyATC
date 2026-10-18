@@ -62,6 +62,16 @@ public partial class MainWindow : Window, IMainView
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
+    private void PastFlights_Click(object sender, RoutedEventArgs e) =>
+        new PastFlightsWindow(new DebriefStore().List()) { Owner = IsVisible ? this : _compact }.Show();
+
+    public void ShowDebrief(SavedDebrief debrief)
+    {
+        var window = new DebriefWindow(new DebriefViewModel(debrief)) { Owner = IsVisible ? this : _compact };
+        window.Show();
+        window.Activate();
+    }
+
     /// <summary>The gear button opens its menu (settings, compact mode, end flight) on a normal click.</summary>
     private void Menu_Click(object sender, RoutedEventArgs e)
     {

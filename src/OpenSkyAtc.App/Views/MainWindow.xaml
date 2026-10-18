@@ -55,6 +55,7 @@
                                 <ContextMenu>
                                     <MenuItem Header="{Binding [Main.Settings], Source={x:Static app:Loc.Instance}}" Click="Settings_Click" />
                                     <MenuItem Header="{Binding [Main.Compact], Source={x:Static app:Loc.Instance}}" Click="Compact_Click" />
+                                    <MenuItem Header="{Binding [Main.PastFlights], Source={x:Static app:Loc.Instance}}" Click="PastFlights_Click" />
                                     <Separator />
                                     <MenuItem Header="{Binding [Main.EndFlight], Source={x:Static app:Loc.Instance}}" Command="{Binding EndFlightCommand}"
                                               IsEnabled="{Binding FlightActive}" />

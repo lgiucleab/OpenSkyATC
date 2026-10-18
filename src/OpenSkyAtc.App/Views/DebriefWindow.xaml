@@ -1,0 +1,88 @@
+<Window x:Class="OpenSkyAtc.App.Views.DebriefWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:OpenSkyAtc.App"
+        Title="{Binding [Debrief.Title], Source={x:Static app:Loc.Instance}}"
+        Width="560" Height="640" MinWidth="420" MinHeight="360" WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <Style x:Key="ToneDot" TargetType="Ellipse">
+            <Setter Property="Width" Value="9" />
+            <Setter Property="Height" Value="9" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Fill" Value="{DynamicResource Brush.Info}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Tone}" Value="Critical">
+                    <Setter Property="Fill" Value="{DynamicResource Brush.Critical}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Caution">
+                    <Setter Property="Fill" Value="{DynamicResource Brush.Caution}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <DockPanel Margin="18,16">
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="{Binding Heading}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding Details}" Opacity="0.7" Margin="0,2,0,10" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Score}" FontSize="44" FontWeight="SemiBold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Critical}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ScoreTone}" Value="Success">
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Success}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ScoreTone}" Value="Caution">
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Caution}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="/ 100" FontSize="18" Opacity="0.6" VerticalAlignment="Bottom" Margin="6,0,0,10" />
+            </StackPanel>
+            <TextBlock Text="{Binding ReadbackSummary}" Margin="0,2" />
+            <TextBlock Text="{Binding HandoffSummary}" Margin="0,2,0,8" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <StackPanel.Resources>
+                <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+            </StackPanel.Resources>
+            <TextBlock x:Name="ExportStatus" VerticalAlignment="Center" Opacity="0.7" Margin="0,0,10,0" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+            <Button Content="{Binding [Debrief.Export], Source={x:Static app:Loc.Instance}}" Click="Export_Click" MinWidth="90" Margin="0,0,6,0" />
+            <Button Content="{Binding [Debrief.Close], Source={x:Static app:Loc.Instance}}" IsCancel="True" IsDefault="True" Click="Close_Click"
+                    Style="{DynamicResource AccentButtonStyle}" MinWidth="90" />
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="{Binding [Debrief.Clean], Source={x:Static app:Loc.Instance}}" FontSize="15" Margin="0,8"
+                           Visibility="{Binding Clean, Converter={StaticResource Visible}}" />
+                <ItemsControl ItemsSource="{Binding Sections}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,10,0,0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Ellipse Style="{StaticResource ToneDot}" />
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                </StackPanel>
+                                <ItemsControl ItemsSource="{Binding Lines}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="17,2,0,2">
+                                                <TextBlock DockPanel.Dock="Left" Text="{Binding Time}" Opacity="0.6" Width="70" FontFamily="Consolas" />
+                                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

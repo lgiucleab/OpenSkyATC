@@ -345,3 +345,16 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **Owner's request: the microphone is closed when not pushing.** The sim's ATC key is a toggle (the sim sends no release), so one press kept recording, and kept ATC silent, until a second press. Now the microphone records only while a key or button is physically held (the sim binding or the keyboard key); the ATC key still makes ATC wait, but switches itself off after 15 s and never opens the microphone; and a recording stops by itself after 30 s (a lost release), then is worked out as a call.
 - **VR left out for now (owner, 2026-10-18).** The owner does not want VR work now: step 15 is done when the panel works in the sim on a monitor; the VR checks are removed from the checklist. The panel itself is unchanged (nothing VR-specific was built), so VR can be checked later.
 
+## 2026-10-18 - Answers before step 16
+
+- **Score:** a score out of 100 plus the findings (owner's choice); the weights are in `DebriefOptions` and listed below once built.
+- **Display:** a debrief window opens when the flight ends (parked with engines off, or End flight), and Gear > Past flights lists the saved debriefs.
+- **Saving:** JSON per flight in `%LOCALAPPDATA%\OpenSkyATC\debriefs` (what the app reads), plus an Export button writing a standalone HTML report.
+
+## 2026-10-18 - Step 16
+
+- **Model.** `Core/Debrief`: `DebriefBuilder.Build(session, plan)` reads the session log into a `FlightDebrief` (structured findings only; the app words them), `DebriefFormat` converts it to and from JSON. The host builds it once per flight, when the session ends (parked, engines off) or when the flight is ended early, unless no ATC call was made yet; it saves it with `DebriefStore` and the app opens the debrief window.
+- **Findings and weights (`DebriefOptions`).** Conformance episodes: serious (incursion, takeoff or landing without clearance) -20; logged deviation (level 3) -10; warning the pilot then followed: level 2 -4, level 1 -2. Readbacks, each instruction judged by its first readback: wrong or missing items -2, missed -3. Handoffs: the first "contact X" to each unit (not "when ready for push and start"), timed to the pilot's first call to X; only airborne ones (initial climb to final) count: later than 45 s (the conformance grace) -3, never called -8, a third unit called instead -5. Missed-handoff conformance episodes are not counted twice. Go-arounds are listed as notes, no penalty. Score = 100 minus the penalties, never below 0; colour green from 85, amber from 60.
+- **Done-when test.** The simulated pilot got fault options (wrong first squawk readback, late first frequency readback, late first airborne handoff, altitude overshoot); a flight with all four gives the approved debrief (`debrief-known-errors.approved.txt`, score 82). A clean flight scores 100 with no findings.
+- **App.** Debrief window (score, readback and handoff summary, findings grouped by severity, Export to a standalone HTML page with no scripts), Gear > Past flights (newest first). Wording in English and Spanish (`Debrief.*`, `Check.*`, `Tag.*` strings). Developer checks: `--screenshot FILE debrief|past`, `--debrief-html FILE [en|es]`.
+

@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "callsign": "VLG1234",
+  "origin": "XORG",
+  "destination": "XDES",
+  "aircraftType": "A320",
+  "duration": "01:19:25.2500000",
+  "completed": true,
+  "lastPhase": "Parked",
+  "score": 82,
+  "findings": [
+    {
+      "time": "00:09:02.5000000",
+      "kind": "Conformance",
+      "severity": "Deviation",
+      "penalty": 10,
+      "check": "AltitudeBust",
+      "level": 3,
+      "worst": 700,
+      "unit": "ft",
+      "phase": "Departure"
+    },
+    {
+      "time": "00:00:17.2500000",
+      "kind": "ReadbackWrong",
+      "severity": "Readback",
+      "penalty": 2,
+      "tag": "ifr-clearance",
+      "wrong": [
+        "Squawk"
+      ],
+      "missing": []
+    },
+    {
+      "time": "00:00:44.5000000",
+      "kind": "ReadbackMissed",
+      "severity": "Readback",
+      "penalty": 3,
+      "tag": "contact-ground"
+    },
+    {
+      "time": "00:04:53.2500000",
+      "kind": "HandoffLate",
+      "severity": "Handoff",
+      "penalty": 3,
+      "station": "Originville Departure",
+      "seconds": 77.25
+    }
+  ],
+  "readbacks": 23,
+  "readbacksCorrect": 21,
+  "handoffs": [
+    {
+      "time": "00:03:25.7500000",
+      "from": "Originville Ground",
+      "to": "Originville Tower",
+      "frequencyKhz": 118100,
+      "seconds": 10.25,
+      "timed": false
+    },
+    {
+      "time": "00:04:53.2500000",
+      "from": "Originville Tower",
+      "to": "Originville Departure",
+      "frequencyKhz": 124700,
+      "seconds": 77.25,
+      "timed": true
+    },
+    {
+      "time": "00:12:57.7500000",
+      "from": "Originville Departure",
+      "to": "Alpha Control",
+      "frequencyKhz": 132350,
+      "seconds": 10.25,
+      "timed": true
+    },
+    {
+      "time": "00:42:20",
+      "from": "Alpha Control",
+      "to": "Bravo Control",
+      "frequencyKhz": 128500,
+      "seconds": 10.25,
+      "timed": true
+    },
+    {
+      "time": "01:02:46",
+      "from": "Bravo Control",
+      "to": "Destville Approach",
+      "frequencyKhz": 120800,
+      "seconds": 10.25,
+      "timed": true
+    },
+    {
+      "time": "01:13:00.2500000",
+      "from": "Destville Approach",
+      "to": "Destville Tower",
+      "frequencyKhz": 118300,
+      "seconds": 10.25,
+      "timed": true
+    },
+    {
+      "time": "01:16:53",
+      "from": "Destville Tower",
+      "to": "Destville Ground",
+      "frequencyKhz": 121900,
+      "seconds": 37.5,
+      "timed": false
+    }
+  ]
+}
