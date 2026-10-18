@@ -386,3 +386,10 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 
 - **Owner's request:** publish "the official 1.0.0 version alpha" with what exists now (this replaces "0.x.y until the live checklists are done"). Version `1.0.0-alpha` (SemVer pre-release), tag `v1.0.0-alpha`, marked pre-release on GitHub because it is an alpha; the installer's numeric file version is 1.0.0. The live checklists (steps 13, 14, 16) are still open and listed as known limits.
 
+## 2026-10-18 - After 1.0.0 alpha (owner's choices)
+
+- **Releases page:** the 0.1.0-0.1.2 preview releases were deleted so only 1.0.0 Alpha shows; their git tags stay.
+- **Toolbar icon:** the in-sim toolbar button is now the control tower (the bold small-size logo in one colour, windows cut out, drawn 3 units lower so the outer wave fits), from `toolbar/opensky-atc-toolbar/tools/generate_icon.py`; only the SVG changed, so the panel's .spb did not need rebuilding.
+- **CI:** GitHub Actions (`.github/workflows/tests.yml`) on every push and pull request: the five test projects that build without the MSFS SDK (419 tests) on windows-latest in Release, and the panel's Node tests on ubuntu-latest. Tests that need local files (facility dumps, real OFPs, voices, Whisper models) skip there by design.
+- **Next:** a fix-it pass from the owner's flight with 1.0.0 Alpha (for 1.0.0-alpha.2).
+

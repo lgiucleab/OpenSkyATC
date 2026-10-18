@@ -1,0 +1,47 @@
+# Tests on every push and pull request, for the parts that build without the MSFS 2024 SDK (its SimConnect DLLs
+# are not in the repository, so OpenSkyAtc.SimConnect, Host, Voice and the app cannot build here; their tests run
+# locally with `dotnet test`).
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    name: .NET tests (brain, phraseology, replays, flight plans, taxi arrows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Test
+        shell: pwsh
+        run: |
+          $projects = @(
+            'tests/OpenSkyAtc.Core.Tests',
+            'tests/OpenSkyAtc.Phraseology.Tests',
+            'tests/OpenSkyAtc.Replay.Tests',
+            'tests/OpenSkyAtc.SimBrief.Tests',
+            'tests/OpenSkyAtc.TaxiArrows.Tests'
+          )
+          foreach ($p in $projects) {
+            dotnet test $p -c Release --logger "console;verbosity=normal"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+  panel:
+    name: Toolbar panel view tests (Node)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node toolbar/opensky-atc-toolbar/tools/test_panel.js

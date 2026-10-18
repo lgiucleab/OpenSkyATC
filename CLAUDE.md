@@ -18,6 +18,8 @@ dotnet test             # all test projects
 
 SDK is pinned in `global.json` (10.0.301, rollForward latestFeature).
 
+CI: `.github/workflows/tests.yml` runs on every push to main and every pull request: the SDK-free test projects (Core, Phraseology, Replay, SimBrief, TaxiArrows) on windows-latest in Release, and the panel's Node tests. Host, Voice and the app need the MSFS SDK (SimConnect is not in the repo) or audio, so their tests run only locally.
+
 `OpenSkyAtc.SimConnect`, the recorder and the app need the MSFS 2024 SDK. The build and `SimConnectLibrary` look for it in the shell's `MSFS2024_SDK`, then the machine/user value the SDK installer wrote (so a shell opened before the install still works), then `C:\MSFS 2024 SDK\`; the build fails with a clear error if the managed SimConnect DLL is not there.
 
 Run the app (step 13; checklist `docs/step-13-checklist.md`):

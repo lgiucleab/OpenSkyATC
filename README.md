@@ -2,6 +2,8 @@
 
 # OpenSkyATC
 
+[![tests](https://github.com/lgiucleab/OpenSkyATC/actions/workflows/tests.yml/badge.svg)](https://github.com/lgiucleab/OpenSkyATC/actions/workflows/tests.yml)
+
 A free, open-source (GPL-3.0) replacement ATC add-on for **Microsoft Flight Simulator 2024**.
 
 OpenSkyATC is a Windows app that connects to the sim through SimConnect and plays ATC for one IFR flight, gate to gate, with ICAO/European phraseology:
@@ -41,6 +43,8 @@ Requirements: Windows 10/11 x64, the .NET 10 SDK, and the MSFS 2024 SDK (the bui
 dotnet build
 dotnet test
 ```
+
+GitHub runs the tests that need no MSFS SDK (brain, phraseology, replays, flight plans, taxi arrows, the panel's view logic) on every push: [.github/workflows/tests.yml](.github/workflows/tests.yml).
 
 Installer: `python installer/build.py` (needs Inno Setup 6: `winget install JRSoftware.InnoSetup`) writes `artifacts/installer/OpenSkyATC-Setup-<version>.exe`.
 
