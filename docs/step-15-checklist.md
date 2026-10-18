@@ -1,6 +1,6 @@
 # Step 15 checklist (in-sim toolbar panel)
 
-Done when: the panel works in the sim and in VR.
+Done when: the panel works in the sim (VR is left out for now, owner's decision 2026-10-18).
 
 ## Install the panel (once, MSFS closed)
 
@@ -29,8 +29,3 @@ Start MSFS 2024 and load a flight at a gate. Do not start the app yet.
 12. [ ] Gear > End flight in the app (or close it): within about 12 s the panel says "Not connected".
 13. [ ] App language Spanish: the panel's texts follow (the "Not connected" line stays English).
 14. [ ] The panel can be moved, resized and undocked like the sim's own panels.
-
-## In VR
-
-15. [ ] The panel opens from the VR toolbar and is readable at its default size.
-16. [ ] Buttons and the arrows switch work with the controller pointer.
