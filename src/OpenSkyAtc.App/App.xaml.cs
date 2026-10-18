@@ -15,6 +15,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        CrashLog.Install(this);
         Palette.Apply(this);
         if (e.Args.Length >= 2 && e.Args[0] == "--screenshot")
         {

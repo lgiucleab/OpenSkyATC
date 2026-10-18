@@ -24,21 +24,38 @@ public sealed class Microphone : IDisposable
     public static IReadOnlyList<(int Number, string Name)> Devices() =>
         Enumerable.Range(0, WaveInEvent.DeviceCount).Select(i => (i, WaveInEvent.GetCapabilities(i).ProductName)).ToList();
 
-    public void Start()
+    /// <summary>
+    /// Starts recording; false when the microphone cannot be opened (unplugged, asleep, used exclusively by another
+    /// program, or no input device), with the reason in <paramref name="error"/>.
+    /// </summary>
+    public bool Start(out string? error)
     {
         lock (_lock)
         {
-            if (IsRecording) return;
+            error = null;
+            if (IsRecording) return true;
             _samples = new List<float>(SpeechRecognizer.SampleRate * 10);
-            _wave = new WaveInEvent
+            var wave = new WaveInEvent
             {
                 DeviceNumber = _device,
                 WaveFormat = new WaveFormat(SpeechRecognizer.SampleRate, 16, 1),
                 BufferMilliseconds = 50,
             };
-            _wave.DataAvailable += OnData;
-            _wave.StartRecording();
+            wave.DataAvailable += OnData;
+            try
+            {
+                wave.StartRecording();
+            }
+            catch (NAudio.MmException e)
+            {
+                wave.DataAvailable -= OnData;
+                wave.Dispose();
+                error = e.Result == NAudio.MmResult.BadDeviceId ? "no microphone found (is the headset connected?)" : e.Message;
+                return false;
+            }
+            _wave = wave;
             IsRecording = true;
+            return true;
         }
     }
 

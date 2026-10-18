@@ -336,17 +336,27 @@ public sealed class FlightHost : IDisposable
     /// </summary>
     private void PushToTalkChanged()
     {
-        bool held = (_bridge?.PushToTalkHeld ?? false) || (_keyboard?.Held ?? false);
-        VoiceInput? voice;
-        lock (_gate)
+        // Runs on the keyboard hook thread or the bridge thread: an exception here would end the app.
+        try
         {
-            if (held == _pttHeld) return;
-            _pttHeld = held;
-            voice = _status == HostStatus.Running ? _voiceIn : null;
-            if (voice is not null && held) voice.Begin();
+            bool held = (_bridge?.PushToTalkHeld ?? false) || (_keyboard?.Held ?? false);
+            VoiceInput? voice;
+            string? micError = null;
+            lock (_gate)
+            {
+                if (held == _pttHeld) return;
+                _pttHeld = held;
+                voice = _status == HostStatus.Running ? _voiceIn : null;
+                if (voice is not null && held && !voice.Begin(out micError)) voice = null;
+            }
+            if (micError is not null) Notice?.Invoke($"Voice input: {micError}. Use the buttons, or check the microphone in Settings.");
+            if (voice is not null && !held && voice.IsListening) _ = UnderstandAsync(voice);
+            Updated?.Invoke();
         }
-        if (voice is not null && !held && voice.IsListening) _ = UnderstandAsync(voice);
-        Updated?.Invoke();
+        catch (Exception e)
+        {
+            Notice?.Invoke($"Push-to-talk failed: {e.Message}");
+        }
     }
 
     private async Task UnderstandAsync(VoiceInput voice)

@@ -159,7 +159,7 @@ internal static class SttCommands
             string? answer = Console.ReadLine()?.Trim();
             if (answer == "q") break;
             if (answer == "s") continue;
-            microphone.Start();
+            if (!microphone.Start(out var error)) { Console.WriteLine($"  microphone: {error}"); continue; }
             Console.Write("  recording... Enter to stop ");
             Console.ReadLine();
             var samples = microphone.StopAsync().GetAwaiter().GetResult();
@@ -231,7 +231,7 @@ internal static class SttCommands
         while (true)
         {
             if (Console.ReadLine()?.Trim() == "q") return 0;
-            microphone.Start();
+            if (!microphone.Start(out var error)) { Console.WriteLine($"  microphone: {error}"); continue; }
             Console.Write("  talking... ");
             Console.ReadLine();
             var samples = microphone.StopAsync().GetAwaiter().GetResult();

@@ -100,7 +100,14 @@ public sealed class KeyboardPushToTalk : IDisposable
             if (held != Held)
             {
                 Held = held;
-                Changed?.Invoke(held);
+                try
+                {
+                    Changed?.Invoke(held);
+                }
+                catch (Exception)
+                {
+                    // Never let a handler's error escape into the hook: Windows would end the app.
+                }
             }
         }
         return CallNextHookEx(_hook, code, wParam, lParam);

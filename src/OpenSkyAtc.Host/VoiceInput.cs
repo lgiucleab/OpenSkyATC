@@ -47,7 +47,8 @@ public sealed class VoiceInput : IDisposable
 
     public bool IsListening => _microphone.IsRecording;
 
-    public void Begin() => _microphone.Start();
+    /// <summary>Starts recording; false (with the reason) when the microphone cannot be opened.</summary>
+    public bool Begin(out string? error) => _microphone.Start(out error);
 
     /// <summary>Stops recording and works out the call; null when there was no call (too short or silent).</summary>
     public async Task<HeardCall?> EndAsync(Func<ParseContext> context, CancellationToken cancel = default)
