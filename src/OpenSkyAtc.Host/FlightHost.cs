@@ -101,7 +101,11 @@ public sealed class FlightHost : IDisposable
     private PushbackDriver? _pushback;
     private VoiceInput? _voiceIn;
     private KeyboardPushToTalk? _keyboard;
-    private bool _pttHeld, _transcribing;
+    private bool _pttHeld, _micHeld, _transcribing;
+    private int _recording;
+
+    /// <summary>A call longer than this is cut and worked out as it is (a release that never came).</summary>
+    public static readonly TimeSpan MaxCall = TimeSpan.FromSeconds(30);
     private readonly PanelLink _panel = new();
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private SimState? _state;
@@ -339,24 +343,55 @@ public sealed class FlightHost : IDisposable
         // Runs on the keyboard hook thread or the bridge thread: an exception here would end the app.
         try
         {
+            // ATC waits for any push-to-talk (the ATC key's toggle too); the microphone records only while a key or
+            // button is physically held (owner's request: the mic is closed when not pushing).
             bool held = (_bridge?.PushToTalkHeld ?? false) || (_keyboard?.Held ?? false);
+            bool mic = (_bridge?.PushToTalkKeyHeld ?? false) || (_keyboard?.Held ?? false);
             VoiceInput? voice;
             string? micError = null;
+            int recording = 0;
             lock (_gate)
             {
-                if (held == _pttHeld) return;
+                if (held == _pttHeld && mic == _micHeld) return;
                 _pttHeld = held;
+                bool pressed = mic && !_micHeld;
+                if (!mic && _micHeld) _recording++; // released: the 30 s cut no longer applies to this call
+                _micHeld = mic;
                 voice = _status == HostStatus.Running ? _voiceIn : null;
-                if (voice is not null && held && !voice.Begin(out micError)) voice = null;
+                if (voice is not null && pressed)
+                {
+                    if (voice.Begin(out micError)) recording = ++_recording;
+                    else voice = null;
+                }
             }
             if (micError is not null) Notice?.Invoke($"Voice input: {micError}. Use the buttons, or check the microphone in Settings.");
-            if (voice is not null && !held && voice.IsListening) _ = UnderstandAsync(voice);
+            if (recording > 0) _ = CutLongCallAsync(voice!, recording);
+            if (voice is not null && !mic && voice.IsListening) _ = UnderstandAsync(voice);
             Updated?.Invoke();
         }
         catch (Exception e)
         {
             Notice?.Invoke($"Push-to-talk failed: {e.Message}");
         }
+    }
+
+    /// <summary>Ends a recording still running after <see cref="MaxCall"/> (a lost key release).</summary>
+    private async Task CutLongCallAsync(VoiceInput voice, int recording)
+    {
+        try
+        {
+            await Task.Delay(MaxCall, _cancel.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+        lock (_gate)
+        {
+            if (recording != _recording || !voice.IsListening) return;
+            _recording++;
+        }
+        await UnderstandAsync(voice);
     }
 
     private async Task UnderstandAsync(VoiceInput voice)

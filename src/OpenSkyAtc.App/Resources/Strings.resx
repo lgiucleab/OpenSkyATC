@@ -357,7 +357,7 @@
     <value>Examples: F12, Ctrl+Space, RCtrl, NumPad0. The key still reaches the sim, so pick one it does not use.</value>
   </data>
   <data name="Settings.AtcKey" xml:space="preserve">
-    <value>Use the sim's ATC key (Scroll Lock) as push-to-talk</value>
+    <value>Sim's ATC key (Scroll Lock): one press makes ATC wait up to 15 s (it does not open the microphone)</value>
   </data>
   <data name="Settings.Speech" xml:space="preserve">
     <value>Speech recognition</value>

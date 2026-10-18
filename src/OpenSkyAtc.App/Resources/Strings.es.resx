@@ -357,7 +357,7 @@
     <value>Ejemplos: F12, Ctrl+Space, RCtrl, NumPad0. La tecla también llega al simulador: elige una que no use.</value>
   </data>
   <data name="Settings.AtcKey" xml:space="preserve">
-    <value>Usar la tecla ATC del simulador (Bloq Despl) como pulsar para hablar</value>
+    <value>Tecla ATC del simulador (Bloq Despl): una pulsación hace esperar al ATC hasta 15 s (no abre el micrófono)</value>
   </data>
   <data name="Settings.Speech" xml:space="preserve">
     <value>Reconocimiento de voz</value>

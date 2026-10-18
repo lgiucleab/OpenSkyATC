@@ -129,7 +129,7 @@ STRINGS = {
     "Settings.PttHelp": ("Examples: VK_LCONTROL+T, joystick:0:button:3 (yoke and joystick buttons work here). Works while the sim has focus.", "Ejemplos: VK_LCONTROL+T, joystick:0:button:3 (aquí funcionan los botones del yugo y del joystick). Funciona con el simulador en primer plano."),
     "Settings.PttKeyboard": ("Keyboard key in any window", "Tecla del teclado en cualquier ventana"),
     "Settings.PttKeyboardHelp": ("Examples: F12, Ctrl+Space, RCtrl, NumPad0. The key still reaches the sim, so pick one it does not use.", "Ejemplos: F12, Ctrl+Space, RCtrl, NumPad0. La tecla también llega al simulador: elige una que no use."),
-    "Settings.AtcKey": ("Use the sim's ATC key (Scroll Lock) as push-to-talk", "Usar la tecla ATC del simulador (Bloq Despl) como pulsar para hablar"),
+    "Settings.AtcKey": ("Sim's ATC key (Scroll Lock): one press makes ATC wait up to 15 s (it does not open the microphone)", "Tecla ATC del simulador (Bloq Despl): una pulsación hace esperar al ATC hasta 15 s (no abre el micrófono)"),
     "Settings.Speech": ("Speech recognition", "Reconocimiento de voz"),
     "Settings.WhisperModel": ("Whisper model", "Modelo de Whisper"),
     "Settings.VoiceInput": ("Talk to ATC with your voice (hold push-to-talk)", "Hablar con el ATC con tu voz (mantén pulsar para hablar)"),

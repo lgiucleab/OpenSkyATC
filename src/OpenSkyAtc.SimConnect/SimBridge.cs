@@ -123,6 +123,17 @@ public sealed class SimBridge
     }
     public bool PushToTalkHeld => _holdDown || _toggleOn;
 
+    /// <summary>
+    /// Push-to-talk from a key or button that is physically held (the sim binding). The ATC key only toggles (the sim
+    /// sends no release), so it never counts here: the microphone records only while something is held.
+    /// </summary>
+    public bool PushToTalkKeyHeld => _holdDown;
+
+    /// <summary>The ATC key's toggle switches itself off after this, so a forgotten press cannot silence ATC.</summary>
+    public static readonly TimeSpan AtcKeyTimeout = TimeSpan.FromSeconds(15);
+
+    private TimeSpan _toggledAt;
+
     /// <summary>Connects, polls and reconnects until <paramref name="cancel"/> fires.</summary>
     public void Run(CancellationToken cancel)
     {
@@ -207,10 +218,15 @@ public sealed class SimBridge
                 if (next < _connected.Elapsed) next = _connected.Elapsed + _o.Interval; // fell behind: do not burst
             }
             ApplyArrows();
+            if (_toggleOn && _connected.Elapsed - _toggledAt > AtcKeyTimeout)
+            {
+                bool before = PushToTalkHeld;
+                _toggleOn = false;
+                if (PushToTalkHeld != before) PushToTalkChanged?.Invoke(false, PushToTalkSource.AtcKey);
+            }
             while (_commands.TryDequeue(out var command))
                 sim.TransmitClientEvent(SC.SIMCONNECT_OBJECT_ID_USER, command.Event, command.Data, EventPriority.Highest, SIMCONNECT_EVENT_FLAG.GROUPID_IS_PRIORITY);
-            if (Interlocked.Exchange(ref _panelOut, null) is { } panel)
-                sim.CallCommBusEvent(PanelStateEvent, SIMCONNECT_COMM_BUS_BROADCAST_TO.JS, panel);
+            if (Interlocked.Exchange(ref _panelOut, null) is { } panel) SendPanel(sim, panel);
             var wait = next - _connected.Elapsed;
             signal.WaitOne(wait > TimeSpan.Zero ? wait : TimeSpan.Zero);
             try
@@ -258,6 +274,26 @@ public sealed class SimBridge
         }
     }
 
+    private bool _panelUnavailableReported;
+
+    private void SendPanel(SC sim, string json)
+    {
+        if (!CommBus.Available)
+        {
+            if (!_panelUnavailableReported) Warning?.Invoke("This SimConnect version cannot talk to the toolbar panel.");
+            _panelUnavailableReported = true;
+            return;
+        }
+        try
+        {
+            CommBus.Call(sim, PanelStateEvent, CommBus.ToJs, json);
+        }
+        catch (COMException e)
+        {
+            Warning?.Invoke($"The toolbar panel update was refused: {e.Message}");
+        }
+    }
+
     /// <summary>A panel command, possibly in several parts (entry n of "out of").</summary>
     private void OnCommBus(SC sender, SIMCONNECT_RECV_COMM_BUS e)
     {
@@ -289,6 +325,7 @@ public sealed class SimBridge
             case Events.Atc:
                 bool before = PushToTalkHeld;
                 _toggleOn = !_toggleOn;
+                _toggledAt = _connected.Elapsed;
                 if (PushToTalkHeld != before) PushToTalkChanged?.Invoke(PushToTalkHeld, PushToTalkSource.AtcKey);
                 break;
         }
