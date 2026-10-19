@@ -281,6 +281,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Hint = Loc.Format("Main.Tune", expected.Callsign, Mhz(expected.FrequencyKhz), Mhz(s.TunedKhz));
             HintIsWarning = true;
         }
+        else if (s is { ReleaseBrakeToPush: true })
+        {
+            Hint = Loc.Get("Main.ReleaseBrake");
+            HintIsWarning = false;
+        }
         else
         {
             Hint = null;

@@ -73,6 +73,9 @@ public sealed record PhaseInferred(TimeSpan Time, FlightPhase Phase, string Reas
 /// <summary>A pilot request the current phase does not handle, with how ATC answered.</summary>
 public sealed record RequestRejected(TimeSpan Time, PilotIntent Intent, string Reason) : LogEntry(Time);
 
+/// <summary>The pilot asked for something ATC had already given; ATC repeated the exchange tagged <paramref name="Tag"/>.</summary>
+public sealed record RequestRepeated(TimeSpan Time, PilotIntent Intent, string Tag) : LogEntry(Time);
+
 /// <summary>Append-only log of the session. It is the debugging tool and the replay record.</summary>
 public sealed class EventLog
 {

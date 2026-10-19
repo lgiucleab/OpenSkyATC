@@ -87,6 +87,7 @@ public static class ReplayRunner
                 ReadbackChecked r => $"READBACK #{r.ExchangeId} {r.Tag}: wrong [{string.Join(",", r.Verdict.Wrong)}] missing [{string.Join(",", r.Verdict.Missing)}]",
                 ReadbackMissed m => $"READBACK #{m.ExchangeId} {m.Tag}: missed",
                 TransmissionDropped d => $"DROPPED {d.Unit.Callsign}: {string.Join(", ", d.Parts.Select(x => droppedRenderer.RenderPart(x).Display))}",
+                RequestRepeated r => $"REPEATED {IntentFactory.Describe(r.Intent)}: {r.Tag}",
                 RequestRejected r => $"REJECTED {IntentFactory.Describe(r.Intent)}: {r.Reason}",
                 HandoffSkipped h => $"HANDOFF SKIPPED: expected {h.Expected.Callsign}, called {h.Called.Callsign}",
                 ConformanceWarning w => $"CONFORMANCE {w.Check} level {w.Level}{(w.Serious ? " (serious)" : "")}",

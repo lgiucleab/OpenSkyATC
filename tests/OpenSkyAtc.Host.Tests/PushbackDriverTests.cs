@@ -113,7 +113,33 @@ public class PushbackDriverTests
     public void OutsideThePushPhases_NothingHappens()
     {
         var (driver, tug, c) = Approved();
-        driver.Update(c, FlightPhase.TaxiOut, At(0, 0, 0));
+        driver.Update(c, FlightPhase.Holding, At(0, 0, 0));
+        Assert.Empty(tug.Calls);
+    }
+
+    [Fact]
+    public void TaxiAskedBeforeThePush_ThePushStillRunsWhenTheBrakeIsReleased()
+    {
+        // The 1.0.0 Alpha flight: push read back, brake still set, taxi asked for at the stand.
+        var (driver, tug, c) = Approved();
+        driver.Update(c, FlightPhase.Pushback, At(0, 0, 0, brake: true));
+        Assert.True(driver.WaitingForBrake(c, FlightPhase.Pushback, At(0, 0, 0, brake: true)));
+        driver.Update(c, FlightPhase.TaxiOut, At(10, 0, 0, brake: true));
+        Assert.True(driver.WaitingForBrake(c, FlightPhase.TaxiOut, At(10, 0, 0, brake: true)));
+        Assert.Empty(tug.Calls);
+
+        driver.Update(c, FlightPhase.TaxiOut, At(40, 0, 0, pushback: 3));
+        Assert.Equal(["start", "steer Straight"], tug.Calls);
+        Assert.False(driver.WaitingForBrake(c, FlightPhase.TaxiOut, At(40, 0, 0)));
+    }
+
+    [Fact]
+    public void LeavingTheStandUnderOwnPower_CancelsAPushNotStarted()
+    {
+        var (driver, tug, c) = Approved();
+        driver.Update(c, FlightPhase.Pushback, At(0, 0, 0, brake: true));
+        driver.Update(c, FlightPhase.TaxiOut, At(30, -20, 0)); // 20 m forward of the stand
+        Assert.Equal(PushbackStage.Done, driver.Stage);
         Assert.Empty(tug.Calls);
     }
 

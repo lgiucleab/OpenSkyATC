@@ -58,7 +58,9 @@ public enum PushbackStage
 /// steers the tug with three fixed states (straight, left, right), checked in the owner's sim; "left" turns the nose
 /// clockwise. The tug takes up to half a minute to attach and the sim ignores steering before that (and starts its
 /// own turn otherwise), so the wanted state is sent again every 2 s until PUSHBACK STATE shows it. Gives up (and stops the tug) after 3 minutes, when the parking brake is set during the push, or when
-/// the sim ends the pushback itself.
+/// the sim ends the pushback itself. Asking for taxi before the push has started does not cancel it (owner's choice,
+/// after the 1.0.0 Alpha flight): the push still runs once the brake is released, unless the aircraft has already
+/// left the stand under its own power.
 /// </summary>
 public sealed class PushbackDriver(IPushbackTug tug)
 {
@@ -68,6 +70,9 @@ public sealed class PushbackDriver(IPushbackTug tug)
     public const double StopEarlyDeg = 2;
 
     private const double TurnLeadM = 3;
+
+    /// <summary>Taxiing this far from the stand before the tug started means the pilot left without the push.</summary>
+    private const double LeftStandM = 15;
     private static readonly TimeSpan AttachGrace = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan ResendAfter = TimeSpan.FromSeconds(2);
 
@@ -87,12 +92,17 @@ public sealed class PushbackDriver(IPushbackTug tug)
             Stage = PushbackStage.Waiting;
         }
         if (_plan is null || Stage == PushbackStage.Done) return;
-        if (!clearance.PushbackReadBack || phase is not (FlightPhase.Cleared or FlightPhase.Pushback)) return;
+        if (!clearance.PushbackReadBack || !PushPhase(phase)) return;
         var now = s.Time;
 
         switch (Stage)
         {
             case PushbackStage.Waiting:
+                if (phase == FlightPhase.TaxiOut && GeoMath.DistanceM(_plan.Start, new GeoPoint(s.Latitude, s.Longitude)) > LeftStandM)
+                {
+                    Stage = PushbackStage.Done;
+                    return;
+                }
                 if (s.ParkingBrakeSet || !s.OnGround) return;
                 tug.Start();
                 _tugRunning = true;
@@ -123,6 +133,12 @@ public sealed class PushbackDriver(IPushbackTug tug)
                 return;
         }
     }
+
+    /// <summary>The push is approved and read back, and only the parking brake holds it (the app says so).</summary>
+    public bool WaitingForBrake(Clearance clearance, FlightPhase phase, SimState s) =>
+        Stage == PushbackStage.Waiting && clearance.PushbackReadBack && PushPhase(phase) && s.ParkingBrakeSet && s.OnGround;
+
+    private static bool PushPhase(FlightPhase phase) => phase is FlightPhase.Cleared or FlightPhase.Pushback or FlightPhase.TaxiOut;
 
     /// <summary>Forgets the push without touching the tug (the sim connection is gone, and with it the pushback).</summary>
     public void Abandon()

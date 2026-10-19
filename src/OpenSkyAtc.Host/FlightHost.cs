@@ -72,6 +72,9 @@ public sealed record HostSnapshot
     public ControllerUnit? Expected { get; init; }
     public ControllerUnit? HandoffTo { get; init; }
     public IReadOnlyList<PilotIntent> Intents { get; init; } = [];
+
+    /// <summary>Push approved and read back, waiting for the pilot to release the parking brake.</summary>
+    public bool ReleaseBrakeToPush { get; init; }
     public int Arrows { get; init; }
     public bool Paused { get; init; }
     public TimeSpan SimTime { get; init; }
@@ -171,6 +174,7 @@ public sealed class FlightHost : IDisposable
                 Expected = _brain?.ExpectedUnit,
                 HandoffTo = c?.HandoffTo,
                 Intents = _brain?.AvailableIntents ?? [],
+                ReleaseBrakeToPush = _brain is not null && _state is { } st && (_pushback?.WaitingForBrake(c!, _brain.Session.Phase, st) ?? false),
                 Arrows = _arrowCount,
                 Paused = _state?.IsPaused ?? false,
                 SimTime = _brain?.Session.SimTime ?? TimeSpan.Zero,

@@ -51,6 +51,7 @@ public sealed class TranscriptWriter(FlightSession session, IcaoRenderer rendere
                 ReadbackChecked r => new(e.Time, TranscriptKind.Warning, null, null,
                     "Readback: " + string.Join(", ", r.Verdict.Wrong.Select(w => $"{PilotPhrase.Item(w)} wrong").Concat(r.Verdict.Missing.Select(m => $"{PilotPhrase.Item(m)} missing")))),
                 ReadbackMissed => new(e.Time, TranscriptKind.Warning, null, null, "Readback missed"),
+                RequestRepeated r => new(e.Time, TranscriptKind.Event, null, null, $"Already given: {PilotPhrase.Of(r.Intent)}"),
                 RequestRejected r => new(e.Time, TranscriptKind.Warning, null, null, $"Not now: {PilotPhrase.Of(r.Intent)} ({r.Reason})"),
                 HandoffSkipped h => new(e.Time, TranscriptKind.Warning, null, null, $"Skipped {h.Expected.Callsign}, called {h.Called.Callsign}"),
                 TaxiFallback t => new(e.Time, TranscriptKind.Event, null, null, $"No taxi route at {t.Icao}: {t.Reason}"),

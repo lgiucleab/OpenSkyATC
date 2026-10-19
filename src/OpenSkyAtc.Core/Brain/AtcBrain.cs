@@ -208,6 +208,15 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
                 return;
         }
 
+        // Asked again for something already given: repeat it (before "stand by", since it may be the very exchange
+        // that keeps the frequency busy).
+        if (GrantedRequests.Tags(intent, _phase.Id) is { } tags
+            && _conversation.RepeatGrant(unit, tags, anyUnit: _phase.Unit(Context([])) == unit, now) is { } granted)
+        {
+            Session.Log.Add(new RequestRepeated(Session.SimTime, intent, granted.Tag!));
+            return;
+        }
+
         if (_conversation.IsBusy(unit))
         {
             if (allowDefer)

@@ -176,6 +176,9 @@
   <data name="Main.FlightLogs" xml:space="preserve">
     <value>Flight logs</value>
   </data>
+  <data name="Main.ReleaseBrake" xml:space="preserve">
+    <value>Release the parking brake to start the push</value>
+  </data>
   <data name="Main.GettingStarted" xml:space="preserve">
     <value>Getting started</value>
   </data>

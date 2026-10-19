@@ -176,6 +176,9 @@
   <data name="Main.FlightLogs" xml:space="preserve">
     <value>Registros de vuelo</value>
   </data>
+  <data name="Main.ReleaseBrake" xml:space="preserve">
+    <value>Suelta el freno de estacionamiento para empezar el remolque</value>
+  </data>
   <data name="Main.GettingStarted" xml:space="preserve">
     <value>Primeros pasos</value>
   </data>

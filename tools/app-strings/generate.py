@@ -66,6 +66,7 @@ STRINGS = {
     "Panel.Arrows": ("Taxi arrows", "Flechas de rodaje"),
     "Main.PastFlights": ("Past flights", "Vuelos anteriores"),
     "Main.FlightLogs": ("Flight logs", "Registros de vuelo"),
+    "Main.ReleaseBrake": ("Release the parking brake to start the push", "Suelta el freno de estacionamiento para empezar el remolque"),
     "Main.GettingStarted": ("Getting started", "Primeros pasos"),
     "Welcome.Title": ("Getting started", "Primeros pasos"),
     "Welcome.Heading": ("Welcome to OpenSkyATC", "Bienvenido a OpenSkyATC"),

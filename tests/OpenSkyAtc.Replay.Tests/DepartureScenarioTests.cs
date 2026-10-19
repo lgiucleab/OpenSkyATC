@@ -69,6 +69,43 @@ public class DepartureScenarioTests
     }
 
     [Fact]
+    public void AskingAgainForWhatWasGiven_ATCRepeatsIt_WithoutANewReadback()
+    {
+        // Owner's request after the 1.0.0 Alpha flight: "pushback approved" asked for again got "say again".
+        var t = RunScenario("""
+            00:10 RequestClearance
+            00:45 RequestPushStart
+            01:00 RequestPushStart
+            01:10 RequestClearance
+            01:40 RequestTaxi
+            02:00 RequestTaxi
+            02:10 RequestPushStart
+            """, seed: 1, AutoFixed);
+        Fixtures.VerifyTranscript("already-given", t);
+        Assert.DoesNotContain(t, l => l.Contains("REJECTED") || l.EndsWith("say again"));
+        Assert.Equal(3, t.Count(l => l.Contains("ATC Testville Ground") && l.Contains("push and start approved")));
+        Assert.Single(t, l => l.Contains("ATC Testville Ground") && l.Contains("cleared to")); // Ground repeats what Delivery gave
+        Assert.Equal(2, t.Count(l => l.Contains("ATC Testville Ground") && l.Contains("taxi to")));
+        Assert.Single(t, l => l.Contains("READBACK") && l.Contains("push-start: correct"));
+        Assert.Equal(4, t.Count(l => l.Contains("REPEATED")));
+    }
+
+    [Fact]
+    public void ReadyAgainAfterTheTakeoffClearance_TowerRepeatsIt()
+    {
+        var t = RunScenario("""
+            00:10 RequestClearance
+            00:45 RequestPushStart
+            01:40 RequestTaxi
+            05:15 ReadyForDeparture
+            05:40 ReadyForDeparture
+            08:15 CheckIn
+            """, seed: 1, AutoFixed);
+        Assert.Contains(t, l => l.Contains("REPEATED ReadyForDeparture: takeoff"));
+        Assert.Equal(2, t.Count(l => l.StartsWith("[") && l.Contains("ATC ") && l.Contains("cleared for takeoff")));
+    }
+
+    [Fact]
     public void AnUnreadableCall_GetsSayAgain_ThenTheRequestIsServed()
     {
         var t = RunScenario("""

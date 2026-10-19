@@ -98,6 +98,32 @@ public sealed class ConversationManager(TransmissionQueue queue, IRandom rng, Ev
         return true;
     }
 
+    /// <summary>
+    /// A request the pilot already got (owner's choice): repeats the latest sent exchange with one of these tags, as
+    /// first given. One already read back is repeated without a new readback; one still waiting for its readback is
+    /// sent again as that exchange. <paramref name="anyUnit"/> also takes an exchange another unit gave and the pilot
+    /// read back (the controller now working the flight repeats it). Returns the exchange, or null when there is none.
+    /// </summary>
+    internal Exchange? RepeatGrant(ControllerUnit unit, IReadOnlyCollection<string> tags, bool anyUnit, TimeSpan now)
+    {
+        var ex = _exchanges.LastOrDefault(e => e.Tag is { } t && tags.Contains(t) && e.SentAt is not null
+                                               && (e.Unit == unit || (anyUnit && e.State is ExchangeState.Done or ExchangeState.Correct)));
+        switch (ex?.State)
+        {
+            case ExchangeState.Done or ExchangeState.Correct:
+                queue.Enqueue(unit, ex.Parts, TransmissionPriority.Reply, now + ReplyDelay());
+                return ex;
+            case ExchangeState.AwaitingReadback or ExchangeState.Missed:
+                ex.State = ExchangeState.Queued;
+                ex.Repeats = 0;
+                ex.LastParts = ex.Parts;
+                queue.Enqueue(unit, ex.Parts, TransmissionPriority.Reply, now + ReplyDelay(), ex);
+                return ex;
+            default:
+                return null; // not sent yet, a correction on its way, or never heard
+        }
+    }
+
     /// <summary>Called by the brain when a queued transmission goes out.</summary>
     internal void OnSent(QueuedTransmission t, TimeSpan now)
     {
