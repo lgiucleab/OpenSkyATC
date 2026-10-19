@@ -113,6 +113,7 @@ public sealed class FlightHost : IDisposable
     private bool _debriefDone;
     private FlightLogWriter? _logFile;
     private Core.Recording.FlightRecorder? _recorder;
+    private VoiceClipWriter? _clips;
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private SimState? _state;
     private int _arrowCount;
@@ -442,6 +443,7 @@ public sealed class FlightHost : IDisposable
                 lock (_gate) return new ParseContext(_brain?.AvailableIntents ?? [], voice.Context?.Aliases);
             }, _cancel.Token);
             if (call is null) return;
+            SaveClip(call, voice.ModelId);
             Transcript?.Invoke([new TranscriptEntry(Snapshot().SimTime, TranscriptKind.Event, null, null,
                 $"Heard: \"{call.Text}\" ({call.Confidence:P0}, {call.Took.TotalSeconds:0.0} s)")]);
             Send(call.Intent);
@@ -460,12 +462,32 @@ public sealed class FlightHost : IDisposable
         }
     }
 
+    /// <summary>Keeps the call's audio with the flight log; a clip that cannot be written is not worth a notice.</summary>
+    private void SaveClip(HeardCall call, string model)
+    {
+        VoiceClipWriter? clips;
+        int after;
+        lock (_gate)
+        {
+            clips = _clips;
+            after = _recorder?.States ?? 0;
+        }
+        try
+        {
+            clips?.Save(after, call, model);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            HostErrors.Record("voice clip", e);
+        }
+    }
+
     /// <summary>Loads Whisper (downloading the model once) and primes it with this flight's words.</summary>
     private async Task StartVoiceInAsync(FlightPlan plan, AirportData origin, AirportData destination, AtcBrain brain)
     {
         try
         {
-            var model = WhisperModels.Find(_settings.WhisperModel) ?? WhisperModels.Base;
+            var model = WhisperModels.Find(_settings.WhisperModel) ?? WhisperModels.Default;
             SetStatus(HostStatus.LoadingSpeech, $"Loading speech recognition ({model.Id})");
             var voice = await VoiceInput.StartAsync(_settings, (mb, total) =>
             {
@@ -479,6 +501,7 @@ public sealed class FlightHost : IDisposable
             names.AddRange(origin.Runways.Concat(destination.Runways).SelectMany(r => new[] { r.First.Designator, r.Second.Designator }).Select(d => $"runway {d}"));
             names.AddRange(plan.Route.Select(w => w.Ident));
             voice.Prompt = SpeechPrompt.Build(_spokenCallsign, brain.Units.Select(u => u.Callsign).Distinct(), names.OfType<string>());
+            voice.Callsign = _spokenCallsign;
             voice.Context = new ParseContext([], aliases);
             lock (_gate) _voiceIn = voice;
         }
@@ -630,6 +653,7 @@ public sealed class FlightHost : IDisposable
             {
                 _logFile = file;
                 _recorder = recorder;
+                _clips = _settings.RecordVoiceClips ? new VoiceClipWriter(file.VoiceFolder) : null;
             }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
@@ -705,6 +729,7 @@ public sealed class FlightHost : IDisposable
         lock (_gate)
         {
             _recorder = null;
+            _clips = null;
             _logFile?.Dispose();
             _logFile = null;
         }

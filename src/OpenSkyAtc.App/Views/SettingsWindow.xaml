@@ -28,6 +28,9 @@
                     </DockPanel>
                     <CheckBox Content="{Binding [Settings.RecordFlights], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding RecordFlights}" Margin="0,16,0,4" />
                     <TextBlock Text="{Binding [Settings.RecordFlightsHelp], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" />
+                    <CheckBox Content="{Binding [Settings.RecordVoiceClips], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding RecordVoiceClips}"
+                              IsEnabled="{Binding RecordFlights}" Margin="0,10,0,4" />
+                    <TextBlock Text="{Binding [Settings.RecordVoiceClipsHelp], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" />
                 </StackPanel>
             </TabItem>
             <TabItem Header="{Binding [Settings.Voice], Source={x:Static app:Loc.Instance}}">

@@ -35,7 +35,7 @@ public sealed record AppSettings
 
     // Speech recognition (step 14)
     public bool VoiceInput { get; init; } = true;
-    public string WhisperModel { get; init; } = "base.en";
+    public string WhisperModel { get; init; } = OpenSkyAtc.Voice.Input.WhisperModels.Default.Id;
 
     /// <summary>WinMM input device number; -1 is the Windows default microphone.</summary>
     public int MicrophoneDevice { get; init; } = -1;
@@ -45,6 +45,9 @@ public sealed record AppSettings
 
     /// <summary>Write a flight log for each flight (kept on this PC, newest 20), to report and replay problems.</summary>
     public bool RecordFlights { get; init; } = true;
+
+    /// <summary>With the flight log, keep the audio of each voice call (owner's choice), to test recognition on real voices.</summary>
+    public bool RecordVoiceClips { get; init; } = true;
 
     // Taxi arrows (step 10)
     public bool TaxiArrows { get; init; } = true;

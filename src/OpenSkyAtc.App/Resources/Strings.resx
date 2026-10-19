@@ -254,6 +254,12 @@
   <data name="Settings.RecordFlights" xml:space="preserve">
     <value>Record each flight (flight log)</value>
   </data>
+  <data name="Settings.RecordVoiceClips" xml:space="preserve">
+    <value>Keep the audio of my voice calls with the log</value>
+  </data>
+  <data name="Settings.RecordVoiceClipsHelp" xml:space="preserve">
+    <value>A short recording of each call you speak, to check and improve speech recognition with your own voice. On this PC only, deleted with the log.</value>
+  </data>
   <data name="Settings.RecordFlightsHelp" xml:space="preserve">
     <value>Keeps the last 20 flights on this PC (Gear &gt; Flight logs). Nothing is sent anywhere; to report a problem, send the flight's log file.</value>
   </data>

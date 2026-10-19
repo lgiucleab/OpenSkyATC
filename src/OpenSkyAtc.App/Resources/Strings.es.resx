@@ -254,6 +254,12 @@
   <data name="Settings.RecordFlights" xml:space="preserve">
     <value>Grabar cada vuelo (registro de vuelo)</value>
   </data>
+  <data name="Settings.RecordVoiceClips" xml:space="preserve">
+    <value>Guardar el audio de mis llamadas de voz con el registro</value>
+  </data>
+  <data name="Settings.RecordVoiceClipsHelp" xml:space="preserve">
+    <value>Una grabación corta de cada llamada que dices, para comprobar y mejorar el reconocimiento de voz con tu propia voz. Solo en este PC; se borra con el registro.</value>
+  </data>
   <data name="Settings.RecordFlightsHelp" xml:space="preserve">
     <value>Guarda los últimos 20 vuelos en este PC (Engranaje &gt; Registros de vuelo). No se envía nada; para informar de un problema, envía el archivo de registro del vuelo.</value>
   </data>

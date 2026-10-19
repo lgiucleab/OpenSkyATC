@@ -73,14 +73,28 @@ public static class FlightLogFormat
         return node.ToJsonString();
     }
 
-    public static string IntentLine(int afterStates, PilotIntent intent) =>
-        new JsonObject
-        {
-            ["k"] = "intent",
-            ["after"] = afterStates,
-            ["type"] = intent.GetType().Name,
-            ["data"] = JsonSerializer.SerializeToNode(intent, intent.GetType(), Options),
-        }.ToJsonString();
+    public static string IntentLine(int afterStates, PilotIntent intent)
+    {
+        var node = IntentJson(intent);
+        node.Insert(0, "k", "intent");
+        node.Insert(1, "after", afterStates);
+        return node.ToJsonString();
+    }
+
+    /// <summary>A pilot call as JSON, {"type": ..., "data": ...} (also used by the voice clip index).</summary>
+    public static JsonObject IntentJson(PilotIntent intent) => new()
+    {
+        ["type"] = intent.GetType().Name,
+        ["data"] = JsonSerializer.SerializeToNode(intent, intent.GetType(), Options),
+    };
+
+    /// <summary>The pilot call in an <see cref="IntentJson"/> object.</summary>
+    public static PilotIntent IntentFromJson(JsonNode node)
+    {
+        string type = node["type"]?.GetValue<string>() ?? "";
+        if (!IntentTypes.TryGetValue(type, out var t)) throw new FormatException($"unknown pilot call '{type}'.");
+        return (PilotIntent?)node["data"].Deserialize(t, Options) ?? throw new FormatException("a pilot call has no data.");
+    }
 
     public static string HeardLine(int afterStates, int atcIndex) =>
         new JsonObject { ["k"] = "heard", ["after"] = afterStates, ["atc"] = atcIndex }.ToJsonString();
@@ -116,9 +130,15 @@ public static class FlightLogFormat
                     states.Add(node.Deserialize<SimState>(Options) ?? throw new FormatException($"Line {i + 1} is not a state."));
                     break;
                 case "intent":
-                    string type = node["type"]?.GetValue<string>() ?? "";
-                    if (!IntentTypes.TryGetValue(type, out var t)) throw new FormatException($"Line {i + 1}: unknown pilot call '{type}'.");
-                    var intent = (PilotIntent?)node["data"].Deserialize(t, Options) ?? throw new FormatException($"Line {i + 1} has no data.");
+                    PilotIntent intent;
+                    try
+                    {
+                        intent = IntentFromJson(node);
+                    }
+                    catch (FormatException e)
+                    {
+                        throw new FormatException($"Line {i + 1}: {e.Message}", e);
+                    }
                     events.Add(new LoggedIntent(node["after"]!.GetValue<int>(), intent));
                     break;
                 case "heard":
@@ -185,6 +205,15 @@ public sealed class FlightRecorder(Action<string> writeLine)
     private readonly object _lock = new();
     private readonly List<Messages.AtcMessage> _atc = [];
     private int _states;
+
+    /// <summary>States ticked so far (a pilot call made now is logged "after" this many).</summary>
+    public int States
+    {
+        get
+        {
+            lock (_lock) return _states;
+        }
+    }
 
     public void Begin(FlightLogStart start, AtcBrain brain)
     {

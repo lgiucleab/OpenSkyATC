@@ -21,6 +21,11 @@ public sealed class FlightLogWriter : IDisposable
 
     public string Path { get; }
 
+    /// <summary>The flight's voice clips: "&lt;log name&gt;.voice" next to the log, deleted with it.</summary>
+    public string VoiceFolder => VoiceFolderOf(Path);
+
+    public static string VoiceFolderOf(string logPath) => logPath[..^Extension.Length] + ".voice";
+
     private FlightLogWriter(string path)
     {
         Path = path;
@@ -35,7 +40,13 @@ public sealed class FlightLogWriter : IDisposable
         var old = Directory.GetFiles(dir, "*" + Extension).OrderByDescending(File.GetLastWriteTimeUtc).Skip(Keep - 1);
         foreach (var f in old)
         {
-            try { File.Delete(f); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            try
+            {
+                File.Delete(f);
+                if (Directory.Exists(VoiceFolderOf(f))) Directory.Delete(VoiceFolderOf(f), recursive: true);
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
         string name = $"{DateTime.Now:yyyyMMdd-HHmmss} {Safe(origin)}-{Safe(destination)} {Safe(callsign)}{Extension}";
         return new FlightLogWriter(System.IO.Path.Combine(dir, name));

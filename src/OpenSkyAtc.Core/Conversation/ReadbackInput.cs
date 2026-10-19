@@ -51,6 +51,8 @@ public static partial class ReadbackInput
         {
             if (v is >= 118 and < 137) return ((int)Math.Round(v * 1000)).ToString(CultureInfo.InvariantCulture);
             if (v is >= 118_000 and < 137_000) return ((int)v).ToString(CultureInfo.InvariantCulture);
+            // Five digits without the decimal ("one two four two three"): the last one, a zero, is often left out.
+            if (s.Length == 5 && s.All(char.IsAsciiDigit) && v is >= 11_800 and < 13_700) return ((int)v * 10).ToString(CultureInfo.InvariantCulture);
         }
         return t;
     }

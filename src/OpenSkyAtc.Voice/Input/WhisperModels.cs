@@ -19,6 +19,12 @@ public static class WhisperModels
 
     public static readonly IReadOnlyList<WhisperModel> All = [Tiny, BaseQ5, Base, SmallQ5, Small];
 
+    /// <summary>
+    /// The default (owner's choice after the first flight, 2026-10-19): base.en misheard most spoken numbers in the
+    /// owner's voice; small.en makes about half the mistakes and the compressed file answers in a few seconds on CPU.
+    /// </summary>
+    public static readonly WhisperModel Default = SmallQ5;
+
     public static WhisperModel? Find(string? id) => All.FirstOrDefault(m => string.Equals(m.Id, id, StringComparison.OrdinalIgnoreCase));
 }
 

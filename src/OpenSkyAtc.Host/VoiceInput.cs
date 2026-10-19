@@ -3,8 +3,13 @@ using OpenSkyAtc.Voice.Input;
 
 namespace OpenSkyAtc.Host;
 
-/// <summary>What the pilot said, as heard and as understood.</summary>
-public sealed record HeardCall(string Text, double Confidence, PilotIntent Intent, TimeSpan Took);
+/// <summary>What the pilot said, as heard and as understood (with the audio, prompt and context, for the voice clips).</summary>
+public sealed record HeardCall(string Text, double Confidence, PilotIntent Intent, TimeSpan Took)
+{
+    public float[] Audio { get; init; } = [];
+    public string Prompt { get; init; } = "";
+    public ParseContext? Context { get; init; }
+}
 
 /// <summary>
 /// Voice in for one flight (step 14): records while push-to-talk is held, then Whisper and the intent parser turn the
@@ -29,12 +34,15 @@ public sealed class VoiceInput : IDisposable
     }
 
     public string Prompt { get; set; } = "";
+
+    /// <summary>The spoken callsign, ending the readback added to the prompt of a call that answers ATC.</summary>
+    public string? Callsign { get; set; }
     public ParseContext? Context { get; set; }
 
     /// <summary>Downloads the model on first use (reporting progress in MB) and loads it.</summary>
     public static async Task<VoiceInput> StartAsync(AppSettings settings, Action<int, int>? downloaded, CancellationToken cancel)
     {
-        var model = WhisperModels.Find(settings.WhisperModel) ?? WhisperModels.Base;
+        var model = WhisperModels.Find(settings.WhisperModel) ?? WhisperModels.Default;
         var store = new WhisperModelStore();
         if (!store.IsInstalled(model))
         {
@@ -42,8 +50,11 @@ public sealed class VoiceInput : IDisposable
             await store.InstallAsync(model, http, new Progress<(long Received, long? Total)>(p => downloaded?.Invoke((int)(p.Received >> 20), model.SizeMb)), cancel);
         }
         var recognizer = await Task.Run(() => new SpeechRecognizer(store.PathOf(model)), cancel);
-        return new VoiceInput(new Microphone(settings.MicrophoneDevice), recognizer, Math.Clamp(settings.MinSpeechConfidence, 0, 1));
+        return new VoiceInput(new Microphone(settings.MicrophoneDevice), recognizer, Math.Clamp(settings.MinSpeechConfidence, 0, 1)) { ModelId = model.Id };
     }
+
+    /// <summary>The Whisper model in use ("small.en-q5_1").</summary>
+    public string ModelId { get; private init; } = "";
 
     public bool IsListening => _microphone.IsRecording;
 
@@ -55,9 +66,16 @@ public sealed class VoiceInput : IDisposable
     {
         var samples = await _microphone.StopAsync();
         if (samples.Length < MinimumCall.TotalSeconds * SpeechRecognizer.SampleRate || Microphone.Peak(samples) < SilencePeak) return null;
-        var heard = await _recognizer.RecognizeAsync(samples, Prompt, cancel);
+        string prompt = SpeechPrompt.ForCall(Prompt, context().PendingReadback, Callsign);
+        var heard = await _recognizer.RecognizeAsync(samples, prompt, cancel);
         if (heard.Text.Length == 0) return null;
-        return new HeardCall(heard.Text, heard.Confidence, Understand(heard.Text, heard.Confidence, context(), _minConfidence), heard.Elapsed);
+        var now = context();
+        return new HeardCall(heard.Text, heard.Confidence, Understand(heard.Text, heard.Confidence, now, _minConfidence), heard.Elapsed)
+        {
+            Audio = samples,
+            Prompt = prompt,
+            Context = now,
+        };
     }
 
     /// <summary>The intent for a transcript, or <see cref="Unreadable"/> when unsure or not understood.</summary>

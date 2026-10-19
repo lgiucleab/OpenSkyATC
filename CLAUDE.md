@@ -62,7 +62,7 @@ Voices: `voices list | install [ids|all] | say "text" [--voice vctk:12] [--out f
 
 With a flight plan: `live --simbrief PILOT_ID` (latest SimBrief OFP) or `live --pln FILE` (MSFS .pln; callsign from the sim aircraft, waypoint positions from the sim's navdata).
 
-Speech (step 14, checklist `docs/step-14-checklist.md`): `stt list | install [models] | synth | record | bench [--models a,b] [--set piper|owner|both] | listen`. The phrase list is `tests/fixtures/speech/phrases.txt` (expectations in `tests/OpenSkyAtc.Voice.Tests/SpeechSamples.cs`); Piper renderings in `tests/fixtures/speech/piper/` are committed, the owner's recordings in `owner/` are not. The Whisper tests run only where a model is installed.
+Speech (step 14, checklist `docs/step-14-checklist.md`): `stt list | install [models] | synth | record | bench [--models a,b] [--set piper|owner|both] | listen | rerun FOLDER [--models a,b]`. Default model `small.en-q5_1` (`WhisperModels.Default`). Each spoken call is kept with its flight log in `<log>.voice/` (WAV + `calls.jsonl`, setting `RecordVoiceClips`); `rerun` replays a flight's clips through other models. The phrase list is `tests/fixtures/speech/phrases.txt` (expectations in `tests/OpenSkyAtc.Voice.Tests/SpeechSamples.cs`); Piper renderings in `tests/fixtures/speech/piper/` are committed, the owner's recordings in `owner/` are not. The Whisper tests run only where a model is installed.
 
 `taxi ICAO` loads the airport live through `SimConnectAirportProvider` (the same path the app uses) and prints its units and a routed taxi from a gate to every runway end.
 

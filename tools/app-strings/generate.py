@@ -92,6 +92,8 @@ STRINGS = {
     "Welcome.Fly4": ("4. Read back each instruction and follow it. Taxi arrows show your route on the ground; a debrief opens when the flight ends.", "4. Colaciona cada instrucción y síguela. Las flechas de rodaje muestran tu ruta en tierra; al terminar el vuelo se abre un resumen."),
     "Welcome.FlyNote": ("You can open this guide again from the gear menu > Getting started.", "Puedes volver a abrir esta guía desde el menú del engranaje > Primeros pasos."),
     "Settings.RecordFlights": ("Record each flight (flight log)", "Grabar cada vuelo (registro de vuelo)"),
+    "Settings.RecordVoiceClips": ("Keep the audio of my voice calls with the log", "Guardar el audio de mis llamadas de voz con el registro"),
+    "Settings.RecordVoiceClipsHelp": ("A short recording of each call you speak, to check and improve speech recognition with your own voice. On this PC only, deleted with the log.", "Una grabación corta de cada llamada que dices, para comprobar y mejorar el reconocimiento de voz con tu propia voz. Solo en este PC; se borra con el registro."),
     "Settings.RecordFlightsHelp": ("Keeps the last 20 flights on this PC (Gear > Flight logs). Nothing is sent anywhere; to report a problem, send the flight's log file.", "Guarda los últimos 20 vuelos en este PC (Engranaje > Registros de vuelo). No se envía nada; para informar de un problema, envía el archivo de registro del vuelo."),
     "Debrief.Title": ("Flight debrief", "Resumen del vuelo"),
     "Debrief.Score": ("Score", "Puntuación"),

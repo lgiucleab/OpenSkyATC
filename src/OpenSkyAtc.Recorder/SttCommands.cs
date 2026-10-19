@@ -18,7 +18,8 @@ internal static class SttCommands
         "stt synth                 render the phrase list with Piper (tests/fixtures/speech/piper)\n" +
         "stt record [--redo] [--only ID] [--mic N]   record yourself saying the phrase list (tests/fixtures/speech/owner)\n" +
         "stt bench [--models tiny.en,base.en,small.en] [--set piper|owner|both]\n" +
-        "stt listen [--model base.en] [--mic N]      say something, see what Whisper heard";
+        "stt listen [--model small.en-q5_1] [--mic N]  say something, see what Whisper heard\n" +
+        "stt rerun FOLDER [--models a,b] [--no-prompt]   rerun a flight's voice clips (<log>.voice) through other models";
 
     public static int Run(string[] args)
     {
@@ -33,7 +34,8 @@ internal static class SttCommands
                 "synth" => Synth(),
                 "record" => Record(args.Contains("--redo"), Option(args, "--only"), int.Parse(Option(args, "--mic") ?? "-1")),
                 "bench" => Bench(store, (Option(args, "--models") ?? "tiny.en,base.en,small.en").Split(','), Option(args, "--set") ?? "both"),
-                "listen" => Listen(store, Option(args, "--model") ?? "base.en", int.Parse(Option(args, "--mic") ?? "-1")),
+                "rerun" when args.Length > 2 => Rerun(store, args[2], (Option(args, "--models") ?? $"base.en,{WhisperModels.Default.Id}").Split(','), args.Contains("--no-prompt")),
+                "listen" => Listen(store, Option(args, "--model") ?? WhisperModels.Default.Id, int.Parse(Option(args, "--mic") ?? "-1")),
                 _ => Help(),
             };
         }
@@ -218,6 +220,52 @@ internal static class SttCommands
         }
         return 0;
     }
+
+    /// <summary>
+    /// A flight's voice clips (kept with its log) through each model, with the prompt and calls available at the
+    /// time: what was heard then, and what each model hears and the parser makes of it now.
+    /// </summary>
+    private static int Rerun(WhisperModelStore store, string folder, string[] modelIds, bool noPrompt)
+    {
+        var calls = Host.VoiceClipWriter.ReadIndex(folder).ToList();
+        Console.WriteLine($"{calls.Count} calls in {folder}\n");
+        var results = calls.Select(_ => new List<string>()).ToList();
+        foreach (var id in modelIds)
+        {
+            var model = Model(id.Trim());
+            Ensure(store, model);
+            using var recognizer = new SpeechRecognizer(store.PathOf(model));
+            int understood = 0;
+            double seconds = 0;
+            for (int i = 0; i < calls.Count; i++)
+            {
+                var c = calls[i];
+                var samples = SpeechRecognizer.LoadWav(Path.Combine(folder, c["clip"]!.GetValue<string>()));
+                var available = c["available"]!.AsArray().Select(n => Core.Recording.FlightLogFormat.IntentFromJson(n!)).ToList();
+                var r = recognizer.RecognizeAsync(samples, noPrompt ? null : c["prompt"]?.GetValue<string>()).GetAwaiter().GetResult();
+                var intent = Host.VoiceInput.Understand(r.Text, r.Confidence, new ParseContext(available), 0.4);
+                if (intent is not Core.Conversation.Unreadable) understood++;
+                seconds += r.Elapsed.TotalSeconds;
+                results[i].Add($"  {model.Id,-14} {r.Elapsed.TotalSeconds,4:0.0} s p={r.Confidence:0.00} \"{r.Text}\" -> {Describe(intent)}");
+            }
+            Console.WriteLine($"{model.Id}: {understood}/{calls.Count} understood, {seconds / Math.Max(1, calls.Count):0.0} s per call");
+        }
+        Console.WriteLine();
+        for (int i = 0; i < calls.Count; i++)
+        {
+            var c = calls[i];
+            Console.WriteLine($"{c["clip"]} (then {c["model"]}: \"{c["text"]}\")");
+            foreach (var line in results[i]) Console.WriteLine(line);
+        }
+        return 0;
+    }
+
+    private static string Describe(Core.Conversation.PilotIntent intent) => intent switch
+    {
+        Core.Conversation.Readback r => "Readback " + string.Join(" ", r.Items.Select(kv => $"{kv.Key}={kv.Value}")),
+        Core.Conversation.Unreadable => "say again",
+        _ => intent.GetType().Name,
+    };
 
     /// <summary>Microphone check: Enter to start, Enter to stop, prints what Whisper heard and how the parser reads it.</summary>
     private static int Listen(WhisperModelStore store, string modelId, int mic)

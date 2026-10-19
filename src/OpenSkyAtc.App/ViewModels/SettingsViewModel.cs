@@ -38,6 +38,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _microphone = Microphones.FirstOrDefault(m => m.Number == s.MicrophoneDevice) ?? Microphones[0];
         _taxiArrows = s.TaxiArrows;
         _recordFlights = s.RecordFlights;
+        _recordVoiceClips = s.RecordVoiceClips;
         _arrowLookAheadM = s.ArrowLookAheadM;
         _arrowSpacingM = s.ArrowSpacingM;
         _language = Languages.FirstOrDefault(l => l.Code == s.Language) ?? Languages[0];
@@ -64,6 +65,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _whisperModel;
     [ObservableProperty] private bool _taxiArrows;
     [ObservableProperty] private bool _recordFlights;
+
+    [ObservableProperty]
+    private bool _recordVoiceClips;
     [ObservableProperty] private double _arrowLookAheadM;
     [ObservableProperty] private double _arrowSpacingM;
     [ObservableProperty] private LanguageChoice _language;
@@ -94,6 +98,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         WhisperModel = WhisperModel,
         TaxiArrows = TaxiArrows,
         RecordFlights = RecordFlights,
+        RecordVoiceClips = RecordVoiceClips,
         ArrowLookAheadM = Math.Clamp(ArrowLookAheadM, 50, 1000),
         ArrowSpacingM = Math.Clamp(ArrowSpacingM, 3, 50),
         Language = Language.Code,

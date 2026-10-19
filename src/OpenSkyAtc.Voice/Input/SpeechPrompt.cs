@@ -1,3 +1,5 @@
+using OpenSkyAtc.Core.Conversation;
+
 namespace OpenSkyAtc.Voice.Input;
 
 /// <summary>
@@ -25,4 +27,48 @@ public static class SpeechPrompt
         if (!string.IsNullOrWhiteSpace(callsign)) parts.Add(callsign);
         return string.Join(", ", parts) + ".";
     }
+
+    /// <summary>
+    /// The flight's prompt for one call: when ATC waits for a readback, the prompt ends with that readback written the
+    /// way the parser reads it ("124.230, D-KR"), since Whisper leans most on the end of its prompt. Added after the
+    /// owner's first flight, where base.en turned spoken frequencies and levels into other words.
+    /// </summary>
+    public static string ForCall(string flightPrompt, Readback? pending, string? callsign)
+    {
+        if (pending is null || pending.Items.Count == 0) return flightPrompt;
+        var said = pending.Items.Select(i => Written(i.Key, i.Value)).Where(s => s.Length > 0).ToList();
+        if (said.Count == 0) return flightPrompt;
+        if (!string.IsNullOrWhiteSpace(callsign)) said.Add(callsign);
+        return $"{flightPrompt} {string.Join(", ", said)}.";
+    }
+
+    /// <summary>A readback value as Whisper should write it.</summary>
+    internal static string Written(ReadbackItem item, string value) => item switch
+    {
+        ReadbackItem.Frequency when value.Length == 6 => $"{value[..3]}.{value[3..]}",
+        ReadbackItem.Altitude or ReadbackItem.InitialClimb when value.StartsWith("FL", StringComparison.Ordinal) => $"flight level {value[2..].TrimStart('0')}",
+        ReadbackItem.Altitude or ReadbackItem.InitialClimb when value.EndsWith("FT", StringComparison.Ordinal) => $"{value[..^2]} feet",
+        ReadbackItem.Squawk => $"squawk {value}",
+        ReadbackItem.Runway => $"runway {value}",
+        ReadbackItem.HoldShorts => string.Join(", ", value.Split(',').Select(r => $"hold short runway {r}")),
+        ReadbackItem.Heading => $"heading {value}",
+        ReadbackItem.Speed => $"speed {value} knots",
+        ReadbackItem.Qnh => $"QNH {value}",
+        ReadbackItem.HoldingPoint => $"holding point {value}",
+        ReadbackItem.DirectTo => $"direct {value}",
+        ReadbackItem.Destination => $"cleared to {value}",
+        ReadbackItem.Route => value == ReadbackValues.FlightPlannedRoute ? "flight planned route" : value,
+        ReadbackItem.Clearance => value switch
+        {
+            ReadbackValues.Push => "push and start approved",
+            ReadbackValues.LineUp => "line up and wait",
+            ReadbackValues.Takeoff => "cleared for takeoff",
+            ReadbackValues.Land => "cleared to land",
+            ReadbackValues.Cross => "cross",
+            ReadbackValues.Approach => "cleared approach",
+            _ => "",
+        },
+        ReadbackItem.Facing => $"facing {value.ToLowerInvariant()}",
+        _ => value,
+    };
 }
