@@ -54,7 +54,12 @@ ShowLanguageDialog=auto
 
 ; ---- Look: the brand, light or dark like Windows.
 SetupIconFile={#Brand}\OpenSkyATC.ico
+#ifdef ForceLight
+; test builds only (ISCC /DForceLight): light appearance whatever Windows uses
+WizardStyle=modern
+#else
 WizardStyle=modern dynamic
+#endif
 WizardSizePercent=110
 WizardImageFile={#Brand}\installer\wizard-large-100.png,{#Brand}\installer\wizard-large-125.png,{#Brand}\installer\wizard-large-150.png,{#Brand}\installer\wizard-large-175.png,{#Brand}\installer\wizard-large-200.png,{#Brand}\installer\wizard-large-250.png
 WizardSmallImageFile={#Brand}\installer\wizard-small-100.png,{#Brand}\installer\wizard-small-125.png,{#Brand}\installer\wizard-small-150.png,{#Brand}\installer\wizard-small-175.png,{#Brand}\installer\wizard-small-200.png,{#Brand}\installer\wizard-small-250.png
