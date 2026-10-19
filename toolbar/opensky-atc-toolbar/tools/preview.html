@@ -27,15 +27,14 @@
         }
         const sample = {
             version: 1, flight: true, sim: true, paused: false, status: "MSFS connected", ptt: "PTT ready", transmitting: false,
-            callsign: "Iberia 1234", frequency: "121.630", talkingTo: "Barajas Ground", hint: "Next: Barajas Tower 118.080", hintWarning: true,
+            callsign: "D-AIKR", frequency: "121.630", com: "COM1", standby: "130.080", talkingTo: "Barajas Ground", hint: null, hintWarning: false,
             calls: [
                 { station: "Barajas Delivery", text: "Iberia 1234, cleared to LEBL via PINA4N departure, climb 6000 ft, squawk 4721" },
                 { station: "Barajas Ground", text: "Iberia 1234, taxi to holding point A1 runway 36L via EB, A, L" },
-                { station: "Barajas Ground", text: "Iberia 1234, contact Tower 118.080, bye bye" },
+                { station: "Barajas Ground", text: "D-KR, taxi holding point runway 36L via A, B, Z" },
             ],
             buttons: [
-                { id: 0, key: "0:Readback", label: "Read back: 118.080 · 14 s", primary: true },
-                { id: 1, key: "1:ReadyForDeparture", label: "Ready for departure", primary: false },
+                { id: 0, key: "0:Readback", label: "Read back: runway 36L · 14 s", primary: true },
                 { id: 2, key: "2:SayAgain", label: "Say again", primary: false },
                 { id: 3, key: "3:Mayday", label: "Mayday", primary: false },
             ],
@@ -48,6 +47,8 @@
     <div id="controls">
         <button onclick="feed(sample)">Flight</button>
         <button onclick="feed(Object.assign({}, sample, { transmitting: true, ptt: 'Listening' }))">PTT held</button>
+        <button onclick="feed(Object.assign({}, sample, { hint: 'Release the parking brake to start the push', buttons: sample.buttons.slice(1) }))">Hint</button>
+        <button onclick="feed(Object.assign({}, sample, { hint: 'Next: contact Barajas Tower 118.080', hintWarning: true }))">Handoff</button>
         <button onclick="feed(Object.assign({}, sample, { buttons: sample.buttons.slice(1), voiceReadback: 'Read back by voice: hold push-to-talk' }))">Hard mode</button>
         <button onclick="location.reload()">No app</button>
     </div>
@@ -57,10 +58,10 @@
         // The panel's own markup, so the preview never drifts from it; then the panel's scripts.
         (async () => {
             const base = "../PackageSources/html_ui/InGamePanels/OpenSkyATC/";
-            const html = await (await fetch(base + "OpenSkyATC.html")).text();
+            const html = await (await fetch(base + "OpenSkyATC.html", { cache: "no-store" })).text();
             document.getElementById("host").innerHTML = html.slice(html.indexOf("<opensky-atc-panel>"), html.indexOf("</opensky-atc-panel>") + 20);
             for (const file of ["OpenSkyATCView.js", "OpenSkyATC.js"]) {
-                await new Promise((done) => { const s = document.createElement("script"); s.src = base + file; s.onload = done; document.head.appendChild(s); });
+                await new Promise((done) => { const s = document.createElement("script"); s.src = base + file + "?v=" + Date.now(); s.onload = done; document.head.appendChild(s); });
             }
             if (location.hash === "#flight") setTimeout(() => feed(sample), 50);
         })();

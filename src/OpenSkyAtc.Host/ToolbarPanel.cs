@@ -23,6 +23,10 @@ public sealed record PanelState
     public bool Transmitting { get; init; }
     public string Callsign { get; init; } = "";
     public string Frequency { get; init; } = "";
+
+    /// <summary>"COM1" or "COM2", and that radio's standby frequency ("" when unknown): the radio head of the panel.</summary>
+    public string Com { get; init; } = "COM1";
+    public string Standby { get; init; } = "";
     public string TalkingTo { get; init; } = "";
     public string? Hint { get; init; }
     public bool HintWarning { get; init; }

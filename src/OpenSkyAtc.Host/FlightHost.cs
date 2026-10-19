@@ -69,6 +69,10 @@ public sealed record HostSnapshot
     public int? Squawk { get; init; }
     public string? Runway { get; init; }
     public int TunedKhz { get; init; }
+
+    /// <summary>The radio the pilot transmits on (1 or 2) and its standby frequency (0 when unknown).</summary>
+    public int Com { get; init; } = 1;
+    public int StandbyKhz { get; init; }
     public ControllerUnit? Expected { get; init; }
     public ControllerUnit? HandoffTo { get; init; }
     public IReadOnlyList<PilotIntent> Intents { get; init; } = [];
@@ -172,6 +176,8 @@ public sealed class FlightHost : IDisposable
                 Squawk = c?.Squawk,
                 Runway = c?.Runway,
                 TunedKhz = _state?.TransmitFrequencyKhz ?? 0,
+                Com = _state is { Com2Transmit: true, Com1Transmit: false } ? 2 : 1,
+                StandbyKhz = _state is { Com2Transmit: true, Com1Transmit: false } ? _state.Com2StandbyKhz : _state?.Com1StandbyKhz ?? 0,
                 Expected = _brain?.ExpectedUnit,
                 HandoffTo = c?.HandoffTo,
                 Intents = _brain?.AvailableIntents ?? [],

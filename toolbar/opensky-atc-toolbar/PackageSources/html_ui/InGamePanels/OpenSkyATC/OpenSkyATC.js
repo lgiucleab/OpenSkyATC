@@ -10,6 +10,7 @@ class OpenSkyAtcPanel extends TemplateElement {
         this.lastStateMs = null;
         this.timer = null;
         this.el = null;
+        this.actionCommand = null;
     }
 
     connectedCallback() {
@@ -47,13 +48,15 @@ class OpenSkyAtcPanel extends TemplateElement {
     /// The panel's elements, once the page has them (the element can connect before its children are parsed).
     elements() {
         if (this.el) return this.el;
-        const ids = ["osa-dot", "osa-title", "osa-subtitle", "osa-ptt", "osa-radio", "osa-frequency", "osa-unit", "osa-hint",
-                     "osa-calls", "osa-voice-readback", "osa-buttons", "osa-arrows"];
+        const ids = ["osa-com", "osa-frequency", "osa-swap", "osa-standby", "osa-unit", "osa-ptt", "osa-title", "osa-dot", "osa-subtitle",
+                     "osa-hint", "osa-message", "osa-who", "osa-said", "osa-action", "osa-action-title", "osa-action-detail",
+                     "osa-action-timer", "osa-voice-readback", "osa-buttons", "osa-arrows"];
         const found = {};
         for (const id of ids) {
             found[id] = document.getElementById(id);
             if (!found[id]) return null;
         }
+        found["osa-action"].addEventListener("click", () => { if (this.actionCommand) this.send(this.actionCommand); });
         this.el = found;
         return found;
     }
@@ -76,27 +79,31 @@ class OpenSkyAtcPanel extends TemplateElement {
         const v = OpenSkyAtcView.build(this.state, this.lastStateMs, Date.now());
         const add = OpenSkyAtcPanel.add, show = OpenSkyAtcPanel.show;
 
-        el["osa-dot"].className = "osa-dot" + (v.connected ? " on" : "");
-        el["osa-title"].textContent = v.title;
-        el["osa-subtitle"].textContent = v.subtitle;
-        el["osa-ptt"].textContent = v.ptt;
-        el["osa-ptt"].className = "osa-ptt" + (v.transmitting ? " live" : "");
-
-        show(el["osa-radio"], !!v.frequency);
-        el["osa-frequency"].textContent = v.frequency;
+        // Radio head ("---.---" while there is no frequency, like a radio without power)
+        el["osa-com"].textContent = v.com;
+        el["osa-frequency"].textContent = v.frequency || "---.---";
+        el["osa-standby"].textContent = v.standby;
+        show(el["osa-swap"], !!v.standby);
         el["osa-unit"].textContent = v.unit;
-        show(el["osa-unit"], !!v.unit);
+        el["osa-ptt"].className = "osa-tx" + (v.transmitting ? " live" : "");
+        show(el["osa-ptt"], v.live);
+        el["osa-title"].textContent = v.title;
+        el["osa-dot"].className = "osa-dot" + (v.connected ? " on" : "");
+        el["osa-subtitle"].textContent = v.subtitle;
+
         el["osa-hint"].textContent = v.hint;
+        el["osa-hint"].className = "osa-hint" + (v.hintWarning ? " warning" : "");
         show(el["osa-hint"], !!v.hint);
 
-        const calls = el["osa-calls"];
-        calls.innerHTML = "";
-        v.calls.forEach((c) => {
-            const line = add(calls, "div", "osa-call" + (c.latest ? " latest" : ""));
-            add(line, "span", "osa-who", c.who);
-            add(line, "span", "osa-said", c.text);
-        });
-        show(calls, v.calls.length > 0);
+        show(el["osa-message"], !!v.message);
+        el["osa-who"].textContent = v.message ? v.message.who : "";
+        el["osa-said"].textContent = v.message ? v.message.text : "";
+
+        this.actionCommand = v.action ? v.action.command : null;
+        show(el["osa-action"], !!v.action);
+        el["osa-action-title"].textContent = v.action ? v.action.title : "";
+        el["osa-action-detail"].textContent = v.action ? v.action.detail : "";
+        el["osa-action-timer"].textContent = v.action ? v.action.timer : "";
 
         el["osa-voice-readback"].textContent = v.voiceReadback;
         show(el["osa-voice-readback"], !!v.voiceReadback);
@@ -104,9 +111,7 @@ class OpenSkyAtcPanel extends TemplateElement {
         const buttons = el["osa-buttons"];
         buttons.innerHTML = "";
         v.buttons.forEach((b) => {
-            const row = add(buttons, "div", "osa-row" + (b.primary ? " primary" : "") + (b.danger ? " danger" : ""));
-            add(row, "span", "osa-num", b.number);
-            add(row, "span", "osa-text", b.label);
+            const row = add(buttons, "div", "osa-row" + (b.danger ? " danger" : ""), b.label);
             row.addEventListener("click", () => this.send(b.command));
         });
         show(buttons, v.buttons.length > 0);

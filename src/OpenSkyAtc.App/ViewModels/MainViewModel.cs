@@ -330,6 +330,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Transmitting = PushToTalk,
             Callsign = Callsign,
             Frequency = Frequency,
+            Com = $"COM{s.Com}",
+            Standby = s.StandbyKhz > 0 ? Mhz(s.StandbyKhz) : "",
             TalkingTo = TalkingTo,
             Hint = Hint,
             HintWarning = HintIsWarning,

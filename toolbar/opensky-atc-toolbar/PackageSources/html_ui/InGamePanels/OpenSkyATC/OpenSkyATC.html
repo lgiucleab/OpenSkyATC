@@ -17,28 +17,42 @@
 
 <body class="border-box">
     <opensky-atc-panel>
-        <ingame-ui id="OpenSkyATCPanel" panel-id="PANEL_OPENSKYATC" title="OpenSkyATC" class="ingameUiFrame panelInvisible" min-width="220" min-height="200">
+        <ingame-ui id="OpenSkyATCPanel" panel-id="PANEL_OPENSKYATC" title="OpenSkyATC" class="ingameUiFrame panelInvisible" min-width="260" min-height="200">
             <div id="osa">
+                <!-- Radio head: callsign and link above a display with COM, active and standby frequency, station, transmit lamp -->
                 <div class="osa-head">
-                    <span id="osa-dot" class="osa-dot"></span>
-                    <div class="osa-titles">
-                        <div id="osa-title" class="osa-title"></div>
-                        <div id="osa-subtitle" class="osa-subtitle"></div>
+                    <div class="osa-ident">
+                        <span id="osa-title" class="osa-callsign"></span>
+                        <span class="osa-status"><span id="osa-dot" class="osa-dot"></span><span id="osa-subtitle"></span></span>
                     </div>
-                    <span id="osa-ptt" class="osa-ptt"></span>
-                </div>
-                <div id="osa-radio" class="osa-section">
-                    <div class="osa-com">
-                        <span class="osa-label">COM1</span>
-                        <span id="osa-frequency" class="osa-frequency"></span>
+                    <div class="osa-display">
+                        <div class="osa-line">
+                            <span id="osa-com" class="osa-com">COM1</span>
+                            <span id="osa-frequency" class="osa-active"></span>
+                            <span id="osa-swap" class="osa-swap">&#x25C2;&#x25B8;</span>
+                            <span id="osa-standby" class="osa-standby"></span>
+                        </div>
+                        <div class="osa-line osa-sub">
+                            <span id="osa-unit" class="osa-unit"></span>
+                            <span id="osa-ptt" class="osa-tx">TX</span>
+                        </div>
                     </div>
-                    <div id="osa-unit" class="osa-unit"></div>
-                    <div id="osa-hint" class="osa-hint"></div>
                 </div>
-                <div id="osa-calls" class="osa-section"></div>
+                <div id="osa-hint" class="osa-hint"></div>
+                <!-- The latest call -->
+                <div id="osa-message" class="osa-message">
+                    <span id="osa-who" class="osa-who"></span>
+                    <span id="osa-said" class="osa-said"></span>
+                </div>
+                <!-- One large action, then the others -->
+                <div id="osa-action" class="osa-action">
+                    <span id="osa-action-title" class="osa-action-title"></span>
+                    <span id="osa-action-detail" class="osa-action-detail"></span>
+                    <span id="osa-action-timer" class="osa-action-timer"></span>
+                </div>
                 <div id="osa-voice-readback" class="osa-voice"></div>
-                <div id="osa-buttons" class="osa-section osa-list"></div>
-                <div id="osa-arrows" class="osa-section osa-toggle"></div>
+                <div id="osa-buttons" class="osa-buttons"></div>
+                <div id="osa-arrows" class="osa-toggle"></div>
             </div>
         </ingame-ui>
     </opensky-atc-panel>
