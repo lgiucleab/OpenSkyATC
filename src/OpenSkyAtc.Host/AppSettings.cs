@@ -43,6 +43,9 @@ public sealed record AppSettings
     /// <summary>Below this Whisper confidence (0-1) ATC says "say again" instead of acting on the call.</summary>
     public double MinSpeechConfidence { get; init; } = 0.4;
 
+    /// <summary>Write a flight log for each flight (kept on this PC, newest 20), to report and replay problems.</summary>
+    public bool RecordFlights { get; init; } = true;
+
     // Taxi arrows (step 10)
     public bool TaxiArrows { get; init; } = true;
     public double ArrowLookAheadM { get; init; } = 300;

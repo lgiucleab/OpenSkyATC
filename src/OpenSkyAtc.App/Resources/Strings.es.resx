@@ -173,6 +173,15 @@
   <data name="Main.PastFlights" xml:space="preserve">
     <value>Vuelos anteriores</value>
   </data>
+  <data name="Main.FlightLogs" xml:space="preserve">
+    <value>Registros de vuelo</value>
+  </data>
+  <data name="Settings.RecordFlights" xml:space="preserve">
+    <value>Grabar cada vuelo (registro de vuelo)</value>
+  </data>
+  <data name="Settings.RecordFlightsHelp" xml:space="preserve">
+    <value>Guarda los últimos 20 vuelos en este PC (Engranaje &gt; Registros de vuelo). No se envía nada; para informar de un problema, envía el archivo de registro del vuelo.</value>
+  </data>
   <data name="Debrief.Title" xml:space="preserve">
     <value>Resumen del vuelo</value>
   </data>

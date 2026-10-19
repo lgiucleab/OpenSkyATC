@@ -23,9 +23,12 @@ public sealed class SimConnectAirportProvider : IAirportDataProvider, IDisposabl
 
     public async Task<AirportData?> LoadAsync(string icao)
     {
-        var dump = await Locked(e => e.Export(icao, Timeout));
+        var dump = await LoadDumpAsync(icao);
         return dump is null ? null : FacilityConverter.ToAirportData(dump);
     }
+
+    /// <summary>The airport's facility data as the sim gives it (kept in the flight log so a flight can be replayed).</summary>
+    public Task<FacilityDump?> LoadDumpAsync(string icao) => Locked(e => e.Export(icao, Timeout));
 
     /// <summary>Route points looked up in the sim's navdata; null for each point the sim does not know.</summary>
     /// <param name="points">Ident, region and kind ('W' waypoint, 'V' VOR, 'N' NDB).</param>

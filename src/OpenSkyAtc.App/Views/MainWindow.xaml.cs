@@ -62,6 +62,13 @@ public partial class MainWindow : Window, IMainView
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
+    /// <summary>Opens the flight logs folder in Explorer (to send one when reporting a problem).</summary>
+    private void FlightLogs_Click(object sender, RoutedEventArgs e)
+    {
+        Directory.CreateDirectory(FlightLogWriter.Folder);
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{FlightLogWriter.Folder}\"") { UseShellExecute = true });
+    }
+
     private void PastFlights_Click(object sender, RoutedEventArgs e) =>
         new PastFlightsWindow(new DebriefStore().List()) { Owner = IsVisible ? this : _compact }.Show();
 

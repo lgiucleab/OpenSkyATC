@@ -18,6 +18,7 @@ internal static class Program
         if (args.Length > 0 && args[0] == "live") return Live(args);
         if (args.Length > 0 && args[0] == "voices") return VoiceCommands.Run(args);
         if (args.Length > 0 && args[0] == "stt") return SttCommands.Run(args);
+        if (args.Length > 0 && args[0] == "replay-log") return ReplayLogCommand.Run(args);
 
         string? output = null;
         string? simConnectDir = null;

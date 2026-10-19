@@ -40,6 +40,12 @@ public sealed record SimulatedPilotOptions
 
     /// <summary>Climbs this far past the first level-off and stays there for 45 s.</summary>
     public double AltitudeOvershootFt { get; init; }
+
+    /// <summary>Records the flight as the app does (flight log), when set.</summary>
+    public Core.Recording.FlightRecorder? Recorder { get; init; }
+
+    /// <summary>The start line for <see cref="Recorder"/>: the airports given here stand in for the sim's data.</summary>
+    public Func<Core.Model.FlightPlan, int, Core.Recording.FlightLogStart>? RecorderStart { get; init; }
 }
 
 /// <summary>
@@ -82,15 +88,25 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
     {
         _brain = new AtcBrain((brainOptions ?? new AtcBrainOptions()) with { CenterFrequencies = SyntheticRoute.Centers });
         _brain.Start(PlanToFly, SyntheticRoute.Origin, DestinationToFly, seed);
+        if (_o.Recorder is { } recorder && _o.RecorderStart is { } start) recorder.Begin(start(PlanToFly, seed), _brain);
 
         while (!_brain.Session.Ended && _t < _o.MaxDuration)
         {
-            _brain.Tick(State(), _t);
+            var state = State();
+            _brain.Tick(state, _t);
+            _o.Recorder?.Ticked(state);
             Radio();
             Move();
             _t += Dt;
         }
         return ReplayRunner.Transcript(_brain.Session, new IcaoRenderer(seed, _o.Phraseology));
+    }
+
+    /// <summary>A pilot call to the brain (and the flight log).</summary>
+    private void Call(PilotIntent intent)
+    {
+        _o.Recorder?.Intent(intent);
+        _brain.HandlePilotIntent(intent);
     }
 
     private Clearance C => _brain.Session.Clearance;
@@ -155,7 +171,7 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
                 items[ReadbackItem.Squawk] = squawk == "1234" ? "4321" : "1234";
                 readback = readback with { Items = items };
             }
-            _brain.HandlePilotIntent(readback);
+            Call(readback);
             _readbackAt = null;
         }
 
@@ -165,22 +181,22 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
         {
             case FlightPhase.Preflight when !_requestedClearance && _t >= TimeSpan.FromSeconds(10):
                 _requestedClearance = true;
-                _brain.HandlePilotIntent(new RequestClearance());
+                Call(new RequestClearance());
                 break;
             case FlightPhase.Cleared when !_requestedPush && _com1 == SyntheticRoute.OriginGroundKhz && readback is null:
                 _requestedPush = true;
-                _brain.HandlePilotIntent(new RequestPushStart());
+                Call(new RequestPushStart());
                 break;
             case FlightPhase.Pushback when !_requestedTaxi && _mode == Mode.WaitTaxi:
                 _requestedTaxi = true;
-                _brain.HandlePilotIntent(new RequestTaxi());
+                Call(new RequestTaxi());
                 break;
         }
 
         if (_mode == Mode.WaitTaxiIn && !_calledGround && _com1 == SyntheticRoute.DestGroundKhz && readback is null)
         {
             _calledGround = true;
-            _brain.HandlePilotIntent(new CheckIn());
+            Call(new CheckIn());
         }
 
         // Change frequency last, so every call above goes out on the frequency the brain saw this tick.
@@ -211,10 +227,10 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
             case FlightPhase.LandingRoll or FlightPhase.TaxiIn or FlightPhase.Parked:
                 break; // Ground is called once vacated (see Radio)
             case FlightPhase.TaxiOut:
-                _brain.HandlePilotIntent(new ReadyForDeparture());
+                Call(new ReadyForDeparture());
                 break;
             default:
-                _brain.HandlePilotIntent(available.OfType<CheckIn>().FirstOrDefault()
+                Call(available.OfType<CheckIn>().FirstOrDefault()
                     ?? new CheckIn((int)(Math.Round(_altFt / 100) * 100), C.ClearedAltitude));
                 break;
         }
@@ -364,7 +380,7 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
             _onFinal = false;
             _passedIntermediate = false;
             _waitingNewApproach = true;
-            if (_o.ReportGoAround) _brain.HandlePilotIntent(new GoingAround());
+            if (_o.ReportGoAround) Call(new GoingAround());
             return;
         }
 

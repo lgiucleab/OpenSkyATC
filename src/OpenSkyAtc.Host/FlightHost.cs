@@ -108,6 +108,8 @@ public sealed class FlightHost : IDisposable
     public static readonly TimeSpan MaxCall = TimeSpan.FromSeconds(30);
     private readonly PanelLink _panel = new();
     private bool _debriefDone;
+    private FlightLogWriter? _logFile;
+    private Core.Recording.FlightRecorder? _recorder;
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private SimState? _state;
     private int _arrowCount;
@@ -201,9 +203,11 @@ public sealed class FlightHost : IDisposable
             var (plan, pln) = await BasePlanAsync(request);
 
             SetStatus(HostStatus.WaitingForSim, "Waiting for MSFS 2024");
-            var origin = await LoadWhenUpAsync(plan.Origin, cancel);
+            var originDump = await LoadWhenUpAsync(plan.Origin, cancel);
+            var origin = FacilityConverter.ToAirportData(originDump);
             SetStatus(HostStatus.LoadingAirports, $"Loading {plan.Origin} and {plan.Destination} from the sim");
-            var destination = await LoadWhenUpAsync(plan.Destination, cancel);
+            var destinationDump = await LoadWhenUpAsync(plan.Destination, cancel);
+            var destination = FacilityConverter.ToAirportData(destinationDump);
             if (pln is not null) plan = await FromPlnAsync(pln, request, origin);
             plan = Overrides(plan, request);
 
@@ -220,6 +224,7 @@ public sealed class FlightHost : IDisposable
                 Timing = new Core.Conversation.ConversationTiming { ReadbackTimeout = TimeSpan.FromSeconds(Math.Clamp(_settings.ReadbackSeconds, 5, 120)) },
             });
             brain.Start(plan, origin, destination, seed);
+            if (_settings.RecordFlights) StartFlightLog(plan, originDump, destinationDump, centers, seed, brain);
             lock (_gate)
             {
                 _brain = brain;
@@ -259,6 +264,7 @@ public sealed class FlightHost : IDisposable
         lock (_gate)
         {
             if (_brain is null) return;
+            _recorder?.Intent(intent);
             _brain.HandlePilotIntent(intent);
             lines = _transcript!.TakeNew();
         }
@@ -327,6 +333,7 @@ public sealed class FlightHost : IDisposable
             {
                 _state = s;
                 _brain!.Tick(s, s.Time);
+                _recorder?.Ticked(s);
                 _radio?.Update(_pttHeld, khz => s.IsTunedTo(khz));
                 _pushback?.Update(_brain.Session.Clearance, _brain.Session.Phase, s);
                 var arrows = _arrows.Update(_brain.Session, s);
@@ -495,7 +502,11 @@ public sealed class FlightHost : IDisposable
             if (a is Dropped d) Notice?.Invoke($"You left {d.Transmission.Unit} before it spoke.");
         };
         brain.Transmission += m => radio.Say(m);
-        radio.Heard += brain.TransmissionHeard; // raised from Update, inside the brain's lock
+        radio.Heard += m =>
+        {
+            brain.TransmissionHeard(m); // raised from Update, inside the brain's lock
+            _recorder?.Heard(m);
+        };
         return radio;
     }
 
@@ -576,14 +587,40 @@ public sealed class FlightHost : IDisposable
     };
 
     /// <summary>Retries every 5 s while the sim is not running.</summary>
-    private async Task<AirportData> LoadWhenUpAsync(string icao, CancellationToken cancel)
+    /// <summary>
+    /// The flight log (owner's choice, after 1.0.0-alpha): everything needed to replay this flight, so a problem the
+    /// pilot saw can be reproduced (`Recorder replay-log FILE`). A log that cannot be written is not worth stopping for.
+    /// </summary>
+    private void StartFlightLog(FlightPlan plan, FacilityDump origin, FacilityDump destination, IReadOnlyList<CenterFrequency> centers, int seed, AtcBrain brain)
+    {
+        try
+        {
+            var file = FlightLogWriter.Open(plan.Origin, plan.Destination, plan.Callsign);
+            var recorder = new Core.Recording.FlightRecorder(file.WriteLine);
+            string version = typeof(FlightHost).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "";
+            recorder.Begin(new Core.Recording.FlightLogStart(plan, origin, destination, centers, seed, Math.Clamp(_settings.ReadbackSeconds, 5, 120),
+                DateTime.UtcNow, $"OpenSkyATC {version}"), brain);
+            lock (_gate)
+            {
+                _logFile = file;
+                _recorder = recorder;
+            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Notice?.Invoke($"The flight log could not be written: {e.Message}");
+        }
+    }
+
+    private async Task<FacilityDump> LoadWhenUpAsync(string icao, CancellationToken cancel)
     {
         while (true)
         {
             cancel.ThrowIfCancellationRequested();
             try
             {
-                return await _provider!.LoadAsync(icao) ?? throw new InvalidOperationException($"The sim has no airport {icao}.");
+                return await _provider!.LoadDumpAsync(icao) ?? throw new InvalidOperationException($"The sim has no airport {icao}.");
             }
             catch (COMException)
             {
@@ -640,6 +677,12 @@ public sealed class FlightHost : IDisposable
         _radio?.Silence();
         _keyboard?.Dispose();
         _loop?.Join(TimeSpan.FromSeconds(3));
+        lock (_gate)
+        {
+            _recorder = null;
+            _logFile?.Dispose();
+            _logFile = null;
+        }
         SetStatus(HostStatus.Stopped, null);
     }
 
