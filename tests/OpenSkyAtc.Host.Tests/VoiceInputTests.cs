@@ -47,3 +47,28 @@ public class VoiceInputTests
     public void ACallWithNoIntent_GetsSayAgain() =>
         Assert.IsType<Unreadable>(VoiceInput.Understand("lovely weather today", 0.95, Ctx, 0.4));
 }
+
+public class HostErrorsTests
+{
+    [Fact]
+    public void AnErrorKind_IsReportedOnce()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "openskyatc-errors-" + Guid.NewGuid().ToString("N"));
+        string real = HostErrors.Folder;
+        HostErrors.Folder = folder; // never the user's real log folder
+        try
+        {
+            string where = "test-" + Guid.NewGuid().ToString("N");
+            var error = new InvalidOperationException("boom");
+            Assert.True(HostErrors.Record(where, error));
+            Assert.False(HostErrors.Record(where, error));
+            Assert.True(HostErrors.Record(where, new ArgumentException("other kind")));
+            Assert.Single(Directory.GetFiles(folder, "errors-*.txt"));
+        }
+        finally
+        {
+            HostErrors.Folder = real;
+            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        }
+    }
+}

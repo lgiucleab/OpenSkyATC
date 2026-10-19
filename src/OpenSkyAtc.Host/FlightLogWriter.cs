@@ -15,6 +15,7 @@ public sealed class FlightLogWriter : IDisposable
     private readonly object _lock = new();
     private readonly StreamWriter _writer;
     private int _sinceFlush;
+    private bool _closed;
 
     public static string Folder { get; } = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenSkyATC", "recordings");
 
@@ -45,6 +46,7 @@ public sealed class FlightLogWriter : IDisposable
     {
         lock (_lock)
         {
+            if (_closed) return; // a late tick or call after the flight ended
             _writer.WriteLine(line);
             bool state = line.StartsWith("{\"k\":\"state\"", StringComparison.Ordinal);
             if (!state || ++_sinceFlush >= 12)
@@ -57,7 +59,11 @@ public sealed class FlightLogWriter : IDisposable
 
     public void Dispose()
     {
-        lock (_lock) _writer.Dispose();
+        lock (_lock)
+        {
+            _closed = true;
+            _writer.Dispose();
+        }
     }
 
     private static string Safe(string text)

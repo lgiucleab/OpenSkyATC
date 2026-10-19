@@ -24,6 +24,14 @@ public class SpokenTextTests
     [InlineData("twenty five", "25")]
     [InlineData("X-ray", "X")]
     public void Normalizes(string transcript, string expected) => Assert.Equal(expected, SpokenText.Normalize(transcript));
+
+    [Fact]
+    public void AVeryLongNumber_BeforeThousand_DoesNotOverflow()
+    {
+        string said = string.Join(" ", Enumerable.Repeat("nine", 25)) + " thousand feet";
+        Assert.StartsWith(new string('9', 25), SpokenText.Normalize(said));
+        Assert.StartsWith("9999999999999999999 HUNDRED", SpokenText.Normalize("9999999999999999999 hundred"));
+    }
 }
 
 public class IntentParserTests

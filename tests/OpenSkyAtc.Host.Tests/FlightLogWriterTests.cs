@@ -27,6 +27,25 @@ public class FlightLogWriterTests
     }
 
     [Fact]
+    public void WritingAfterTheEnd_IsIgnored()
+    {
+        string folder = TempFolder();
+        try
+        {
+            var log = FlightLogWriter.Open("LEMD", "LEBL", "IBE1234", folder);
+            log.WriteLine("{\"k\":\"start\"}");
+            log.Dispose();
+            log.WriteLine("{\"k\":\"state\"}"); // a late tick from the sim thread
+            log.Dispose();
+            Assert.Single(File.ReadAllLines(log.Path));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
     public void OnlyTheNewestLogsAreKept()
     {
         string folder = TempFolder();

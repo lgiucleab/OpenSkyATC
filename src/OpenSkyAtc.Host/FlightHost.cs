@@ -311,13 +311,13 @@ public sealed class FlightHost : IDisposable
             lock (_gate) _panel.Reset();
             if (_status == HostStatus.SimDisconnected) SetStatus(HostStatus.Running, "Reconnected to MSFS");
         };
-        bridge.PanelCommand += text =>
+        bridge.PanelCommand += text => Guarded("panel", () =>
         {
             if (PanelProtocol.Parse(text) is not { } command) return;
             if (command is PanelCommand.Hello) lock (_gate) _panel.Reset();
             PanelCommand?.Invoke(command);
             Updated?.Invoke();
-        };
+        });
         bridge.Disconnected += () =>
         {
             _radio?.Silence();
@@ -326,7 +326,7 @@ public sealed class FlightHost : IDisposable
         };
         bridge.Warning += w => Notice?.Invoke(w);
         bridge.PushToTalkChanged += (_, _) => PushToTalkChanged();
-        bridge.StateReceived += s =>
+        bridge.StateReceived += s => Guarded("sim update", () =>
         {
             IReadOnlyList<TranscriptEntry> lines;
             lock (_gate)
@@ -344,9 +344,27 @@ public sealed class FlightHost : IDisposable
             if (lines.Count > 0) Transcript?.Invoke(lines);
             if (lines.Count > 0 || ++ticks % 2 == 0) Updated?.Invoke();
             if (_brain.Session.Ended) SaveDebrief();
-        };
+        });
         _loop = new Thread(() => bridge.Run(_cancel.Token)) { IsBackground = true, Name = "SimBridge" };
         _loop.Start();
+    }
+
+    /// <summary>
+    /// Runs a handler on the bridge thread so that an unexpected error ends neither the thread nor the app (the sim
+    /// bridge's loop would stop, and an exception on a background thread closes the process). The error goes to the
+    /// log folder and is shown once per kind; the flight carries on with the next update.
+    /// </summary>
+    private void Guarded(string where, Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception e)
+        {
+            bool first = HostErrors.Record(where, e);
+            if (first) Notice?.Invoke($"OpenSkyATC hit an internal error ({where}): {e.Message}. The flight continues; details are in {HostErrors.Folder}.");
+        }
     }
 
     /// <summary>
@@ -424,9 +442,12 @@ public sealed class FlightHost : IDisposable
                 $"Heard: \"{call.Text}\" ({call.Confidence:P0}, {call.Took.TotalSeconds:0.0} s)")]);
             Send(call.Intent);
         }
-        catch (Exception e) when (e is IOException or InvalidOperationException or OperationCanceledException or NAudio.MmException)
+        catch (Exception e)
         {
-            if (!_cancel.IsCancellationRequested) Notice?.Invoke($"Voice input failed: {e.Message}");
+            // fire-and-forget task: report every failure (an unobserved one would just lose the call)
+            if (_cancel.IsCancellationRequested) return;
+            if (e is not (IOException or OperationCanceledException or NAudio.MmException)) HostErrors.Record("voice input", e);
+            Notice?.Invoke($"Voice input failed: {e.Message}. Say it again, or use the buttons.");
         }
         finally
         {

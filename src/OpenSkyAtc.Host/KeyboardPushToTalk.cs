@@ -100,14 +100,21 @@ public sealed class KeyboardPushToTalk : IDisposable
             if (held != Held)
             {
                 Held = held;
-                try
-                {
-                    Changed?.Invoke(held);
-                }
-                catch (Exception)
-                {
-                    // Never let a handler's error escape into the hook: Windows would end the app.
-                }
+                // Handlers run on the thread pool, never in the hook: Windows silently removes a low-level hook whose
+                // callback is slow (opening the microphone can take a while), and an error here would end the app.
+                var changed = Changed;
+                if (changed is not null)
+                    ThreadPool.QueueUserWorkItem(_ =>
+                    {
+                        try
+                        {
+                            changed(held);
+                        }
+                        catch (Exception)
+                        {
+                            // the host reports its own errors
+                        }
+                    });
             }
         }
         return CallNextHookEx(_hook, code, wParam, lParam);

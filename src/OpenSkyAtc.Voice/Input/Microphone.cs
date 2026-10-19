@@ -15,6 +15,10 @@ public sealed class Microphone : IDisposable
     private WaveInEvent? _wave;
     private List<float> _samples = [];
 
+    // A stop waits for the tail; a new press during it ends the tail at once, so the next call is recorded.
+    private TaskCompletionSource? _tailCut;
+    private float[]? _stopped;
+
     /// <param name="device">WinMM input device number; -1 is the Windows default.</param>
     public Microphone(int device = -1) => _device = device;
 
@@ -33,6 +37,7 @@ public sealed class Microphone : IDisposable
         lock (_lock)
         {
             error = null;
+            if (_tailCut is not null) FinishLocked(); // pressed again within the previous call's tail
             if (IsRecording) return true;
             _samples = new List<float>(SpeechRecognizer.SampleRate * 10);
             var wave = new WaveInEvent
@@ -59,23 +64,40 @@ public sealed class Microphone : IDisposable
         }
     }
 
-    /// <summary>Stops after the tail and returns what was recorded.</summary>
+    /// <summary>Stops after the tail (or at once when a new press comes first) and returns what was recorded.</summary>
     public async Task<float[]> StopAsync()
     {
-        if (!IsRecording) return [];
-        await Task.Delay(Tail);
+        Task cut;
         lock (_lock)
         {
-            if (_wave is { } wave)
-            {
-                wave.DataAvailable -= OnData;
-                wave.StopRecording();
-                wave.Dispose();
-            }
-            _wave = null;
-            IsRecording = false;
-            return _samples.ToArray();
+            if (!IsRecording || _tailCut is not null) return [];
+            _tailCut = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            cut = _tailCut.Task;
         }
+        await Task.WhenAny(Task.Delay(Tail), cut);
+        lock (_lock)
+        {
+            if (_tailCut is not null) FinishLocked();
+            var result = _stopped ?? [];
+            _stopped = null;
+            return result;
+        }
+    }
+
+    /// <summary>Ends the current recording and keeps its samples for the waiting <see cref="StopAsync"/> (lock held).</summary>
+    private void FinishLocked()
+    {
+        if (_wave is { } wave)
+        {
+            wave.DataAvailable -= OnData;
+            wave.StopRecording();
+            wave.Dispose();
+        }
+        _wave = null;
+        IsRecording = false;
+        _stopped = _samples.ToArray();
+        _tailCut?.TrySetResult();
+        _tailCut = null;
     }
 
     private void OnData(object? sender, WaveInEventArgs e)
@@ -97,6 +119,8 @@ public sealed class Microphone : IDisposable
             _wave?.Dispose();
             _wave = null;
             IsRecording = false;
+            _tailCut?.TrySetResult();
+            _tailCut = null;
         }
     }
 }

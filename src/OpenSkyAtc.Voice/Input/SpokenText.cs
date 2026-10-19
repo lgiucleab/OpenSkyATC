@@ -88,7 +88,8 @@ public static partial class SpokenText
             if (tok.Kind == Kind.Digits)
             {
                 string number = DigitRun(tokens, ref i, allowDot: true);
-                if (!number.Contains('.') && i < tokens.Count && tokens[i].Text is "THOUSAND" or "HUNDRED")
+                // "5 thousand" -> 5000; a run of digits too long to be an altitude is left as it is (no overflow)
+                if (!number.Contains('.') && number.Length <= 6 && i < tokens.Count && tokens[i].Text is "THOUSAND" or "HUNDRED")
                 {
                     long value = 0;
                     if (tokens[i].Text == "THOUSAND")
@@ -99,7 +100,7 @@ public static partial class SpokenText
                         if (i < tokens.Count && tokens[i].Kind == Kind.Digits)
                         {
                             string hundreds = DigitRun(tokens, ref i, allowDot: false);
-                            if (i < tokens.Count && tokens[i].Text == "HUNDRED") { value += long.Parse(hundreds, CultureInfo.InvariantCulture) * 100; i++; }
+                            if (hundreds.Length <= 6 && i < tokens.Count && tokens[i].Text == "HUNDRED") { value += long.Parse(hundreds, CultureInfo.InvariantCulture) * 100; i++; }
                             else i = save;
                         }
                     }
