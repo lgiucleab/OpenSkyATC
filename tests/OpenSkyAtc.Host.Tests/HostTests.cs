@@ -20,7 +20,7 @@ public class SettingsStoreTests
         var settings = new AppSettings
         {
             PlanSource = PlanSource.PlnFile, SimBriefPilotId = "1234567", LastPlnPath = @"C:\plans\a.pln", Volume = 0.5f,
-            VoiceModels = ["vctk"], Language = "es", HardMode = true, ArrowSpacingM = 15, MainWindow = new WindowPlacement(10, 20, 800, 600),
+            VoiceModels = ["vctk"], Language = "es", HardMode = true, ArrowSpacingM = 15, FirstRunDone = true, MainWindow = new WindowPlacement(10, 20, 800, 600),
         };
         store.Save(settings);
         var back = store.Load();
@@ -39,6 +39,7 @@ public class SettingsStoreTests
         var partial = store.Load();
         Assert.Equal("es", partial.Language);
         Assert.True(partial.TaxiArrows);
+        Assert.False(partial.FirstRunDone); // an older file: the guide shows only if no plan source is set either
         Assert.Equal(6, partial.VoiceModels.Count);
 
         File.WriteAllText(store.Path, "{ not json");

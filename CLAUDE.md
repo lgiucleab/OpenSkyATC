@@ -28,7 +28,7 @@ Run the app (step 13; checklist `docs/step-13-checklist.md`):
 dotnet run --project src/OpenSkyAtc.App
 ```
 
-`OpenSkyATC.exe --screenshot FILE.png [main|compact|settings[:TAB]|readback|debrief|past] [en|es]` renders a window with sample content to a PNG and exits (developer check of the layout, uses a throwaway settings file); `--debrief-html FILE [en|es]` writes the sample debrief's HTML export.
+`OpenSkyATC.exe --screenshot FILE.png [main|compact|settings[:TAB]|welcome[:STEP]|readback|debrief|past] [en|es]` renders a window with sample content to a PNG and exits (developer check of the layout, uses a throwaway settings file); `--debrief-html FILE [en|es]` writes the sample debrief's HTML export.
 
 Debrief (step 16, checklist `docs/step-16-checklist.md`): built from the session log by `Core/Debrief/DebriefBuilder` when a flight ends, saved by `Host/DebriefStore` to `%LOCALAPPDATA%\OpenSkyATC\debriefs\*.json`, shown by the app's debrief window (Gear > Past flights for older ones). The done-when test is `tests/OpenSkyAtc.Replay.Tests/DebriefTests.cs` (simulated pilot with fault options).
 

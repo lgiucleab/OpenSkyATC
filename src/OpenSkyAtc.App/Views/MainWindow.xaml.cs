@@ -110,6 +110,16 @@ public partial class MainWindow : Window, IMainView
         if (dialog.ShowDialog() == true && dialog.Result is { } settings) _vm.SaveSettings(settings);
     }
 
+    private void GettingStarted_Click(object sender, RoutedEventArgs e) => OpenWelcome();
+
+    /// <summary>The first-run guide; its answers (or, when skipped, only "seen") are saved.</summary>
+    public void OpenWelcome()
+    {
+        var dialog = new WelcomeWindow(new WelcomeViewModel(_vm.Settings)) { Owner = IsVisible ? this : _compact };
+        dialog.ShowDialog();
+        if (dialog.Result is { } settings) _vm.SaveSettings(settings);
+    }
+
     public void ShowError(string title, string message) =>
         MessageBox.Show(IsVisible ? this : (Window?)_compact ?? this, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
 

@@ -63,6 +63,9 @@ public sealed record AppSettings
     public double ReadbackSeconds { get; init; } = 20;
     public bool CompactMode { get; init; }
 
+    /// <summary>The first-run guide has been finished or skipped (it then shows only from Gear > Getting started).</summary>
+    public bool FirstRunDone { get; init; }
+
     /// <summary>Main window position and size, restored on start; null for the default.</summary>
     public WindowPlacement? MainWindow { get; init; }
     public WindowPlacement? CompactWindow { get; init; }

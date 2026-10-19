@@ -36,6 +36,7 @@ public partial class App : Application
         MainWindow = window;
         window.Show();
         if (_main.Settings.CompactMode) window.ShowCompact();
+        if (WelcomeViewModel.ShouldShow(_main.Settings)) Dispatcher.InvokeAsync(window.OpenWelcome, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -45,7 +46,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Developer check: "--screenshot FILE.png [main|compact|settings[:TAB]|readback|debrief|past] [en|es]" renders one window with
+    /// Developer check: "--screenshot FILE.png [main|compact|settings[:TAB]|welcome[:STEP]|readback|debrief|past] [en|es]" renders one window with
     /// sample content to a PNG and exits (settings come from a throwaway file, never the user's; TAB is the settings
     /// tab number, from 0).
     /// </summary>
@@ -84,6 +85,14 @@ public partial class App : Application
         return null;
     }
 
+    /// <summary>"welcome[:STEP]": the first-run guide at a step (from 0), as on a fresh install.</summary>
+    private static WelcomeWindow WelcomeAt(string which)
+    {
+        var vm = new WelcomeViewModel(new AppSettings { SimBriefPilotId = "1234567", KeyboardPushToTalk = "F12" });
+        if (which.Split(':') is [_, var step] && int.TryParse(step, out int n)) vm.Step = Math.Clamp(n, 0, WelcomeViewModel.Steps - 1);
+        return new WelcomeWindow(vm);
+    }
+
     private void Screenshot(string file, string which, string language)
     {
         var store = new SettingsStore(Path.Combine(Path.GetTempPath(), "openskyatc-screenshot-settings.json"));
@@ -99,6 +108,7 @@ public partial class App : Application
         {
             "compact" => new CompactWindow(vm, new MainWindow(vm)),
             _ when which.StartsWith("settings", StringComparison.Ordinal) => SettingsAt(vm, which),
+            _ when which.StartsWith("welcome", StringComparison.Ordinal) => WelcomeAt(which),
             "readback" => new ReadbackWindow(new ReadbackFormViewModel(sample)),
             "debrief" => new DebriefWindow(new DebriefViewModel(SampleDebrief())),
             "past" => new PastFlightsWindow([SampleDebrief(), SampleDebrief() with { Debrief = SampleDebrief().Debrief with { Score = 100, Findings = [], EndedAt = SampleDebrief().Debrief.EndedAt!.Value.AddDays(-1) } }]),

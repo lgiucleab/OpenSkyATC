@@ -176,6 +176,78 @@
   <data name="Main.FlightLogs" xml:space="preserve">
     <value>Flight logs</value>
   </data>
+  <data name="Main.GettingStarted" xml:space="preserve">
+    <value>Getting started</value>
+  </data>
+  <data name="Welcome.Title" xml:space="preserve">
+    <value>Getting started</value>
+  </data>
+  <data name="Welcome.Heading" xml:space="preserve">
+    <value>Welcome to OpenSkyATC</value>
+  </data>
+  <data name="Welcome.Sub" xml:space="preserve">
+    <value>Three quick steps and you are ready for your first flight. You can change everything later in Settings.</value>
+  </data>
+  <data name="Welcome.StepOf" xml:space="preserve">
+    <value>Step {0} of {1}</value>
+  </data>
+  <data name="Welcome.Skip" xml:space="preserve">
+    <value>Skip</value>
+  </data>
+  <data name="Welcome.Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Welcome.Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Welcome.Done" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="Welcome.PlanTitle" xml:space="preserve">
+    <value>1. Your flight plan</value>
+  </data>
+  <data name="Welcome.PlanText" xml:space="preserve">
+    <value>ATC needs to know where you are going. Use your latest SimBrief plan, or an MSFS .pln file.</value>
+  </data>
+  <data name="Welcome.NeedSimBriefId" xml:space="preserve">
+    <value>Enter your SimBrief Pilot ID (up to 7 digits).</value>
+  </data>
+  <data name="Welcome.NeedPln" xml:space="preserve">
+    <value>Choose a .pln file.</value>
+  </data>
+  <data name="Welcome.PttTitle" xml:space="preserve">
+    <value>2. Push-to-talk and voice</value>
+  </data>
+  <data name="Welcome.PttText" xml:space="preserve">
+    <value>Hold push-to-talk while you speak to ATC. Use the sim's ATC key, a keyboard key that works in any window, or both. A joystick button can be set later in Settings.</value>
+  </data>
+  <data name="Welcome.UseAtcKey" xml:space="preserve">
+    <value>Use the sim's ATC key as push-to-talk</value>
+  </data>
+  <data name="Welcome.UnknownKey" xml:space="preserve">
+    <value>Unknown key "{0}". Try F12, Ctrl+Space, RCtrl or NumPad0.</value>
+  </data>
+  <data name="Welcome.VoiceText" xml:space="preserve">
+    <value>Your speech is understood on this PC; nothing is sent anywhere. Without it, use the buttons in the app or the in-sim panel.</value>
+  </data>
+  <data name="Welcome.FlyTitle" xml:space="preserve">
+    <value>3. Your first flight</value>
+  </data>
+  <data name="Welcome.Fly1" xml:space="preserve">
+    <value>1. In MSFS, load your flight at a gate or parking spot of the plan's departure airport.</value>
+  </data>
+  <data name="Welcome.Fly2" xml:space="preserve">
+    <value>2. Here, press Start flight. OpenSkyATC imports the plan and waits for the sim.</value>
+  </data>
+  <data name="Welcome.Fly3" xml:space="preserve">
+    <value>3. Tune the frequency shown under Talking to, then call ATC: hold push-to-talk and speak, or use the buttons here or in the in-sim panel.</value>
+  </data>
+  <data name="Welcome.Fly4" xml:space="preserve">
+    <value>4. Read back each instruction and follow it. Taxi arrows show your route on the ground; a debrief opens when the flight ends.</value>
+  </data>
+  <data name="Welcome.FlyNote" xml:space="preserve">
+    <value>You can open this guide again from the gear menu &gt; Getting started.</value>
+  </data>
   <data name="Settings.RecordFlights" xml:space="preserve">
     <value>Record each flight (flight log)</value>
   </data>
