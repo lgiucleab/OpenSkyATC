@@ -6,7 +6,8 @@ namespace OpenSkyAtc.Host;
 /// <summary>A button in the panel: <see cref="Key"/> identifies the intent it stood for when it was sent.</summary>
 public sealed record PanelButton(int Id, string Key, string Label, bool Primary, bool Enabled = true);
 
-public sealed record PanelCall(string Station, string Text);
+/// <summary>A call in the panel's chat: an ATC call, or the pilot's own (<see cref="Pilot"/>, <see cref="Station"/> is then "You").</summary>
+public sealed record PanelCall(string Station, string Text, bool Pilot = false);
 
 /// <summary>
 /// What the in-sim toolbar panel shows (step 15, like the app's compact strip). Built by the app with its own

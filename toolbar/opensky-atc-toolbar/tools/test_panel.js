@@ -7,7 +7,10 @@ const state = {
     version: 1, flight: true, sim: true, paused: false, status: "MSFS connected", ptt: "PTT ready", transmitting: false,
     callsign: "Iberia 1234", frequency: "121.630", com: "COM1", standby: "130.080", talkingTo: "Barajas Ground",
     hint: "Next: Barajas Tower 118.080", hintWarning: true,
-    calls: [{ station: "A", text: "1" }, { station: "B", text: "2" }, { station: "Barajas Ground", text: "taxi via A" }],
+    calls: [
+        { station: "A", text: "1" }, { station: "B", text: "2" },
+        { station: "Barajas Ground", text: "taxi via A" }, { station: "You", text: "Runway 36L", pilot: true },
+    ],
     buttons: [
         { id: 0, key: "0:Readback", label: "Read back: runway 36L · 14 s", primary: true },
         { id: 2, key: "2:SayAgain", label: "Say again", primary: false },
@@ -51,9 +54,20 @@ test("silent for more than 12 s: not connected", () => {
     assert.strictEqual(View.build(state, 1000, 1000 + View.ALIVE_MS).connected, true);
 });
 
-test("only the latest call is shown", () => {
-    assert.deepStrictEqual(View.build(state, 1000, 1000).message, { who: "GROUND", text: "taxi via A" });
-    assert.strictEqual(View.build(Object.assign({}, state, { calls: [] }), 1000, 1000).message, null);
+test("the chat holds ATC's and the pilot's calls, the newest last", () => {
+    const chat = View.build(state, 1000, 1000).chat;
+    assert.deepStrictEqual(chat.map((c) => c.who), ["A", "B", "GROUND", "YOU"]);
+    assert.deepStrictEqual(chat.map((c) => c.pilot), [false, false, false, true]);
+    assert.deepStrictEqual(chat.map((c) => c.latest), [false, false, false, true]);
+    assert.deepStrictEqual(View.build(Object.assign({}, state, { calls: [] }), 1000, 1000).chat, []);
+});
+
+test("the chat keeps the last six calls", () => {
+    const many = [];
+    for (let i = 0; i < 10; i++) many.push({ station: "Ground", text: String(i), pilot: i % 2 === 1 });
+    const chat = View.build(Object.assign({}, state, { calls: many }), 1000, 1000).chat;
+    assert.strictEqual(chat.length, View.CHAT_CALLS);
+    assert.deepStrictEqual(chat.map((c) => c.text), ["4", "5", "6", "7", "8", "9"]);
 });
 
 test("the primary button is the large action, split into title, detail and timer", () => {

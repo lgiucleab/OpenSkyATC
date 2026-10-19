@@ -51,6 +51,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private string _intentKey = "";
     private readonly List<PanelCall> _recentCalls = [];
 
+    /// <summary>Calls the panel's chat keeps: ATC's and the pilot's (owner's request), the newest last.</summary>
+    private const int PanelChatCalls = 8;
+
     public MainViewModel(SettingsStore store, Dispatcher ui)
     {
         _store = store;
@@ -221,8 +224,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             {
                 LastAtc = $"{l.Station}: {l.Text}";
                 _recentCalls.Add(new PanelCall(l.Station ?? "ATC", l.Text));
-                if (_recentCalls.Count > 3) _recentCalls.RemoveAt(0);
             }
+            else if (l.Kind == TranscriptKind.Pilot)
+            {
+                _recentCalls.Add(new PanelCall(who, l.Text, Pilot: true));
+            }
+            while (_recentCalls.Count > PanelChatCalls) _recentCalls.RemoveAt(0);
         }
         while (Transcript.Count > MaxTranscript) Transcript.RemoveAt(0);
     }

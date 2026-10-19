@@ -49,7 +49,7 @@ class OpenSkyAtcPanel extends TemplateElement {
     elements() {
         if (this.el) return this.el;
         const ids = ["osa-com", "osa-frequency", "osa-swap", "osa-standby", "osa-unit", "osa-ptt", "osa-title", "osa-dot", "osa-subtitle",
-                     "osa-hint", "osa-message", "osa-who", "osa-said", "osa-action", "osa-action-title", "osa-action-detail",
+                     "osa-hint", "osa-chat", "osa-action", "osa-action-title", "osa-action-detail",
                      "osa-action-timer", "osa-voice-readback", "osa-buttons", "osa-arrows"];
         const found = {};
         for (const id of ids) {
@@ -95,9 +95,14 @@ class OpenSkyAtcPanel extends TemplateElement {
         el["osa-hint"].className = "osa-hint" + (v.hintWarning ? " warning" : "");
         show(el["osa-hint"], !!v.hint);
 
-        show(el["osa-message"], !!v.message);
-        el["osa-who"].textContent = v.message ? v.message.who : "";
-        el["osa-said"].textContent = v.message ? v.message.text : "";
+        const chat = el["osa-chat"];
+        chat.innerHTML = "";
+        v.chat.forEach((c) => {
+            const line = add(chat, "div", "osa-call" + (c.pilot ? " pilot" : "") + (c.latest ? " latest" : ""));
+            add(line, "span", "osa-who", c.who);
+            add(line, "span", "osa-said", c.text);
+        });
+        show(chat, v.chat.length > 0);
 
         this.actionCommand = v.action ? v.action.command : null;
         show(el["osa-action"], !!v.action);
