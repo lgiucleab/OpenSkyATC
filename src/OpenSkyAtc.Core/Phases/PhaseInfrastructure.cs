@@ -59,6 +59,9 @@ public sealed record PhaseContext(
     public required AtcBrainOptions Options { get; init; }
     public required FlightPlanning Planning { get; init; }
 
+    /// <summary>The airports' ATIS, for "confirm information" (null in tests that build a context by hand).</summary>
+    public Atis.AtisService? Atis { get; init; }
+
     /// <summary>Active-clock time (stops while paused). Use it for every delay and timer.</summary>
     public required TimeSpan Now { get; init; }
 

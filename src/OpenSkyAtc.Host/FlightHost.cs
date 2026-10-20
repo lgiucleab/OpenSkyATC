@@ -121,6 +121,8 @@ public sealed class FlightHost : IDisposable
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private SimState? _state;
     private int _arrowCount;
+    private string? _atisHeard;
+    private readonly OpenSkyAtc.Phraseology.IcaoRenderer _atisText = new(0);
     private HostStatus _status = HostStatus.Idle;
     private string? _statusDetail;
     private string? _spokenCallsign;
@@ -351,6 +353,7 @@ public sealed class FlightHost : IDisposable
                 bridge.ShowArrows(arrows);
                 _arrowCount = arrows.Count;
                 lines = _transcript!.TakeNew();
+                if (Atis(s) is { } atisLine) lines = [.. lines, atisLine];
             }
             if (lines.Count > 0) Transcript?.Invoke(lines);
             if (lines.Count > 0 || ++ticks % 2 == 0) Updated?.Invoke();
@@ -466,6 +469,21 @@ public sealed class FlightHost : IDisposable
             lock (_gate) _transcribing = false;
             Updated?.Invoke();
         }
+    }
+
+    /// <summary>
+    /// The ATIS on COM1 or COM2 (design doc "ATIS"): the radio loops it while tuned; a broadcast the pilot has not
+    /// heard yet (new airport or letter) also goes to the transcript, and from there to the panel's chat. Under the lock.
+    /// </summary>
+    private TranscriptEntry? Atis(SimState s)
+    {
+        var report = _brain!.AtisOn(s.Com1ActiveKhz) ?? _brain.AtisOn(s.Com2ActiveKhz);
+        _radio?.Atis(report);
+        string? key = report is null ? null : $"{report.AirportIcao}:{report.Letter}";
+        if (key is null || key == _atisHeard) return null;
+        _atisHeard = key;
+        return new TranscriptEntry(_brain.Session.SimTime, TranscriptKind.Atc, report!.Unit.Callsign, report.Unit.FrequencyKhz,
+            _atisText.RenderAtis(report).Display);
     }
 
     /// <summary>Keeps the call's audio with the flight log; a clip that cannot be written is not worth a notice.</summary>

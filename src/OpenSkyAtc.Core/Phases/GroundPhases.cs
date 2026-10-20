@@ -37,7 +37,17 @@ public sealed class PreflightPhase : Phase
             .Add(ReadbackItem.Squawk, ReadbackValues.Squawk(squawk), new Squawk(squawk))
             .Build();
 
-        _clearance = ctx.Conversation.Transmit(unit, [new IfrClearance(ctx.Plan.Destination, ctx.Destination.Name, sid, climb, squawk)],
+        // An older ATIS letter: "confirm information Charlie, QNH 1012", then the clearance in the same call (owner's choice).
+        var parts = new List<AtcMessagePart>();
+        if (intent is RequestClearance { AtisLetter: { Length: > 0 } said } && ctx.Atis?.Origin?.Current is { } atis
+            && char.ToUpperInvariant(said[0]) != atis.Letter)
+        {
+            parts.Add(new ConfirmInformation(atis.Letter));
+            parts.Add(new Qnh(atis.Qnh));
+        }
+        parts.Add(new IfrClearance(ctx.Plan.Destination, ctx.Destination.Name, sid, climb, squawk));
+
+        _clearance = ctx.Conversation.Transmit(unit, parts,
             TransmissionPriority.Reply, ctx.Now + ctx.Conversation.ReplyDelay(), expectation,
             onSent: () =>
             {

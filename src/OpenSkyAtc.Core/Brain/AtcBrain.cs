@@ -1,4 +1,5 @@
 using OpenSkyAtc.Core.Airspace;
+using OpenSkyAtc.Core.Atis;
 using OpenSkyAtc.Core.Conformance;
 using OpenSkyAtc.Core.Conversation;
 using OpenSkyAtc.Core.Events;
@@ -22,6 +23,7 @@ public sealed record AtcBrainOptions
     public ConformanceOptions Conformance { get; init; } = new();
     public AirspaceOptions Airspace { get; init; } = new();
     public PlanningOptions Planning { get; init; } = new();
+    public AtisOptions Atis { get; init; } = new();
 
     /// <summary>CENTER frequencies from the sim's facility data along the route (step 6, decision A). Empty: no CTR sectors.</summary>
     public IReadOnlyList<CenterFrequency> CenterFrequencies { get; init; } = [];
@@ -55,6 +57,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
     private IPhase _phase = null!;
     private ConformanceMonitor _monitor = null!;
     private FlightPlanning _planning = null!;
+    private AtisService _atis = null!;
     private bool _phaseEntered;
     private SimState? _state;
 
@@ -87,6 +90,8 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         _airspace = AirspaceModel.Build(origin, destination, plan, _options.CenterFrequencies, new SeededRandom(unchecked(seed ^ 0x0A1125AC)), _options.Airspace);
         _planning = new FlightPlanning(plan, origin, destination, new SeededRandom(unchecked(seed ^ 0x51A221)), _options.Planning, _options.Sops);
         _monitor = new ConformanceMonitor(_options.Conformance);
+        _atis = new AtisService(_airspace.OriginAtis, origin, _airspace.DestinationAtis, destination,
+            new SeededRandom(unchecked(seed ^ 0x0A715)), _options.Atis, _options.Planning.Runways);
         _deferred.Clear();
         _state = null;
         _phase = Create(FlightPhase.Preflight); // replaced by the inferred phase on the first tick
@@ -95,6 +100,9 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
 
     /// <summary>Every controller unit of the flight (terminal units of both airports and the CTR sectors), for the voice layer.</summary>
     public IReadOnlyList<ControllerUnit> Units => _airspace is null ? [] : _airspace.Units;
+
+    /// <summary>The ATIS broadcast on a frequency, when the aircraft is in its range (design doc "ATIS"); null otherwise.</summary>
+    public AtisReport? AtisOn(int khz) => _state is null || _atis is null ? null : _atis.On(khz, _state);
 
     public IReadOnlyList<PilotIntent> AvailableIntents
     {
@@ -132,6 +140,9 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
 
         // Paused or settling after a teleport: every timer and the queue are frozen.
         if (state.IsPaused || _events.IsSettling) return;
+
+        foreach (var station in _atis.Update(state, st => _planning.RunwayInUse(st.IsArrival, state)))
+            Session.Log.Add(new AtisUpdated(simTime, station.Airport.Icao, station.Letter));
 
         // A handoff is complete once the new frequency is tuned (step 5, decision 7).
         if (Session.Clearance.HandoffTo is { } to && state.IsTunedTo(to))
@@ -331,6 +342,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
             Destination = _destination,
             Options = _options,
             Planning = _planning,
+            Atis = _atis,
             Now = _events.ActiveTime,
             CalledUnit = calledUnit,
         };

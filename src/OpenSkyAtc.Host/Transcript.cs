@@ -46,6 +46,7 @@ public sealed class TranscriptWriter(FlightSession session, IcaoRenderer rendere
                 PilotIntentLogged p => new(e.Time, p.Unit is null ? TranscriptKind.Warning : TranscriptKind.Pilot, p.Unit?.Callsign, p.FrequencyKhz,
                     PilotCall(p.Intent) + (p.Unit is null ? " (nobody on this frequency)" : "")),
                 PhaseChanged c => new(e.Time, TranscriptKind.Event, null, null, $"Phase: {PilotPhrase.Phase(c.To)}"),
+                AtisUpdated a => new(e.Time, TranscriptKind.Event, null, null, $"ATIS {a.AirportIcao}: information {Phraseology.Spoken.Letter(a.Letter)} now current"),
                 PhaseInferred i => new(e.Time, TranscriptKind.Event, null, null, $"Phase: {PilotPhrase.Phase(i.Phase)} ({i.Reason})"),
                 ReadbackChecked { Verdict.IsCorrect: true } => null,
                 ReadbackChecked r => new(e.Time, TranscriptKind.Warning, null, null,

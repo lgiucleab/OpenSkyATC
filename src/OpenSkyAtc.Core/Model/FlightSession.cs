@@ -70,6 +70,9 @@ public sealed record TaxiFallback(TimeSpan Time, string Icao, string Destination
 /// <summary>The phase was worked out from the aircraft's situation (session start or after a teleport).</summary>
 public sealed record PhaseInferred(TimeSpan Time, FlightPhase Phase, string Reason) : LogEntry(Time);
 
+/// <summary>An airport's ATIS has a new information letter.</summary>
+public sealed record AtisUpdated(TimeSpan Time, string AirportIcao, char Letter) : LogEntry(Time);
+
 /// <summary>A pilot request the current phase does not handle, with how ATC answered.</summary>
 public sealed record RequestRejected(TimeSpan Time, PilotIntent Intent, string Reason) : LogEntry(Time);
 

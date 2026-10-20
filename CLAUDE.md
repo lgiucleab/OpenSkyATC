@@ -72,7 +72,7 @@ Replay scenarios (`tests/OpenSkyAtc.Replay.Tests/DepartureScenarioTests.cs`) run
 
 ## Layout
 
-- `src/OpenSkyAtc.Core` - the brain (phases, events, clearance, conformance, airspace, planning, taxi routing, end-of-flight debrief in `Debrief/`). No project or package references.
+- `src/OpenSkyAtc.Core` - the brain (phases, events, clearance, conformance, airspace, planning, taxi routing, end-of-flight debrief in `Debrief/`, ATIS in `Atis/`: `AtisService` keeps each airport's letter and report every tick, `AtcBrain.AtisOn(khz)` gives the broadcast within 60 nm; `IcaoRenderer.RenderAtis` words it and `AtcRadio.Atis` loops it while tuned). No project or package references.
 - `src/OpenSkyAtc.Phraseology` - ICAO renderer (display + speech text). References Core.
 - `src/OpenSkyAtc.SimConnect` - sim bridge: `SimBridge` (SimState at 4 Hz, push-to-talk, reconnect every 5 s; its `SimState.Time` only advances while connected), `SimConnectAirportProvider` (airports from the sim, reopens its connection after the sim restarts), `FacilityExporter`. References Core.
 - `src/OpenSkyAtc.Voice` - voice out (net10.0-windows, x64): `VoiceCatalog`/`VoiceAssigner` (a fixed voice per unit per session), `VoiceStore` (download on first use to %LOCALAPPDATA%\OpenSkyATC\voices), `PiperSynthesizer` (sherpa-onnx), `RadioFilter`, `RadioChannel` (queue rules, pure), `AtcRadio` (glue + NAudio playback). Voice in (`Input/`, step 14): `SpokenText` + `IntentParser` (transcript to `PilotIntent`, pure), `SpeechRecognizer` (Whisper.net), `WhisperModels`/`WhisperModelStore` (%LOCALAPPDATA%\OpenSkyATC\whisper), `Microphone`, `SpeechPrompt`, `SpeechPhrases`. References Core and Phraseology.

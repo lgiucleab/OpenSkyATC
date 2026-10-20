@@ -62,6 +62,10 @@ public sealed class AirspaceModel
     public ControllerUnit? DestinationTower { get; private init; }
     public ControllerUnit? DestinationApproach { get; private init; }
 
+    /// <summary>The airports' ATIS (never answers a call: <see cref="UnitOn"/> skips it).</summary>
+    public ControllerUnit? OriginAtis { get; private init; }
+    public ControllerUnit? DestinationAtis { get; private init; }
+
     public IReadOnlyList<ControllerUnit> Units => _units;
     public IReadOnlyList<CtrSector> Sectors => _sectors;
 
@@ -141,11 +145,14 @@ public sealed class AirspaceModel
             DestinationGround = Unit(destination, ControllerRole.Ground),
             DestinationTower = Unit(destination, ControllerRole.Tower),
             DestinationApproach = Unit(destination, ControllerRole.Approach),
+            OriginAtis = Unit(origin, ControllerRole.Atis),
+            DestinationAtis = Unit(destination, ControllerRole.Atis),
         };
         foreach (var u in new[]
                  {
                      model.OriginDelivery, model.OriginGround, model.OriginTower, model.OriginDeparture, model.OriginApproach,
                      model.DestinationGround, model.DestinationTower, model.DestinationApproach,
+                     model.OriginAtis, model.DestinationAtis,
                  })
         {
             if (u is not null && !model._units.Contains(u)) model._units.Add(u);

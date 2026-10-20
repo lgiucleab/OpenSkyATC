@@ -135,6 +135,9 @@ public sealed record ClosingCall : AtcMessagePart;
 /// <summary>Surface wind in degrees magnetic, rounded to 10 degrees. Speed 0 means calm.</summary>
 public sealed record Wind(int DirectionMagDeg, int SpeedKt) : AtcMessagePart;
 
+/// <summary>"confirm information Charlie": the pilot reported an older ATIS letter (design doc "ATIS").</summary>
+public sealed record ConfirmInformation(char Letter) : AtcMessagePart;
+
 public sealed record ClearedTakeoff(string Runway) : AtcMessagePart;
 public sealed record ClearedLand(string Runway) : AtcMessagePart;
 

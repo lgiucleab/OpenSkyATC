@@ -1,3 +1,5 @@
+using System.Globalization;
+using OpenSkyAtc.Core.Atis;
 using OpenSkyAtc.Core.Conversation;
 using OpenSkyAtc.Core.Messages;
 using OpenSkyAtc.Core.Model;
@@ -76,6 +78,55 @@ public sealed class IcaoRenderer
         return new RenderedMessage(string.Join(", ", texts.Select(t => t.Display)), string.Join(", ", texts.Select(t => t.Speech)));
     }
 
+    /// <summary>
+    /// An ATIS broadcast (design doc "ATIS"), in the order of ICAO Annex 11 (4.3.6.1): "Barajas information Bravo,
+    /// time 1020, expect ILS approach runway 32L (arrival) / runway in use 36L, transition level 70, wind 080/5,
+    /// visibility 10 kilometres or more, temperature 14, QNH 1013, acknowledge receipt of information Bravo on first
+    /// contact". Number words follow the rest of the radio (<see cref="Spoken"/>). Fixed wording: no variants, and the
+    /// session's wording choices are not touched.
+    /// </summary>
+    public RenderedMessage RenderAtis(AtisReport a)
+    {
+        string letter = Spoken.Letter(a.Letter);
+        string time = a.TimeUtc.ToString("HHmm", CultureInfo.InvariantCulture);
+        var texts = new List<Text>
+        {
+            Text.Same($"{AtisStationName(a.Unit.Callsign)} information {letter}"),
+            new($"time {time}", $"time {_say.Digits(time)}"),
+        };
+        if (a.Runway is { } rwy)
+            texts.Add(a.ApproachType is { } type ? Text.Same($"expect {type} approach ") + RunwayText(rwy) : new Text($"runway in use {rwy}", $"runway in use {_say.Runway(rwy)}"));
+        if (a.TransitionLevel is { } tl) texts.Add(new Text($"transition level {tl}", $"transition level {_say.Digits(tl)}"));
+        texts.Add(Text.Same("wind ") + WindValue(a.Wind));
+        texts.Add(Visibility(a.VisibilityM));
+        texts.Add(new Text($"temperature {(a.TemperatureC < 0 ? "minus " : "")}{Math.Abs(a.TemperatureC)}",
+            $"temperature {(a.TemperatureC < 0 ? "minus " : "")}{_say.Digits(Math.Abs(a.TemperatureC))}"));
+        texts.Add(new Text($"QNH {a.Qnh}", $"QNH {_say.Qnh(a.Qnh)}"));
+        texts.Add(Text.Same($"acknowledge receipt of information {letter} on first contact"));
+        return new RenderedMessage(string.Join(", ", texts.Select(t => t.Display)), string.Join(", ", texts.Select(t => t.Speech)));
+    }
+
+    /// <summary>"Barajas Information" or "Barajas ATIS" -> "Barajas".</summary>
+    private static string AtisStationName(string callsign)
+    {
+        var words = callsign.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+        if (words.Count > 1 && words[^1].ToUpperInvariant() is "INFORMATION" or "ATIS" or "INFO") words.RemoveAt(words.Count - 1);
+        return string.Join(" ", words);
+    }
+
+    /// <summary>ICAO reporting steps: metres below 5 km (in 100 m), whole kilometres below 10 km, then "10 kilometres or more".</summary>
+    private Text Visibility(double metres)
+    {
+        if (metres >= 10_000) return new Text("visibility 10 kilometres or more", $"visibility {_say.Digits(10)} kilometres or more");
+        if (metres >= 5_000)
+        {
+            int km = (int)Math.Floor(metres / 1000);
+            return new Text($"visibility {km} kilometres", $"visibility {_say.Digits(km)} kilometres");
+        }
+        int m = Math.Max(0, (int)Math.Floor(metres / 100) * 100);
+        return new Text($"visibility {m} metres", $"visibility {(m == 0 ? _say.Digits(0) : _say.Feet(m))} metres");
+    }
+
     /// <summary>Renders one part on its own, choosing a wording with the seeded RNG.</summary>
     public RenderedMessage RenderPart(AtcMessagePart part)
     {
@@ -144,6 +195,7 @@ public sealed class IcaoRenderer
         CrossRunway c => Text.Same("cross ") + RunwayText(c.Runway),
         ClosingCall => Text.Same("good day"),
         Wind w => Text.Same("wind ") + WindValue(w),
+        ConfirmInformation c => new Text($"confirm information {Spoken.Letter(c.Letter)}", $"confirm information {Spoken.Letter(c.Letter)}"),
         ClearedTakeoff t => RunwayText(t.Runway) + Text.Same(", cleared for takeoff"),
         ClearedLand l => RunwayText(l.Runway) + Text.Same(", cleared to land"),
         Negative { Repeated: true } => Text.Same("negative, I say again"),

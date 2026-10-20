@@ -88,6 +88,8 @@ doc     | runway 24L, line up and wait | runway two four left, line up and wait
 doc     | wind 250/12 | wind two five zero degrees, one two knots
 ## Wind calm
 doc     | wind calm | wind calm
+## ConfirmInformation
+doc     | confirm information Charlie | confirm information Charlie
 ## ClearedTakeoff
 doc     | runway 24L, cleared for takeoff | runway two four left, cleared for takeoff
 ## ClearedLand

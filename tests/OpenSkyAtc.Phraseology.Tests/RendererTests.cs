@@ -46,6 +46,7 @@ internal static class Samples
         ("LineUpAndWait", new LineUpAndWait("24L")),
         ("Wind", new Wind(250, 12)),
         ("Wind calm", new Wind(0, 0)),
+        ("ConfirmInformation", new ConfirmInformation('C')),
         ("ClearedTakeoff", new ClearedTakeoff("24L")),
         ("ClearedLand", new ClearedLand("24R")),
         ("Negative", new Negative()),
@@ -130,6 +131,28 @@ public class PartSnapshotTests
             foreach (var v in variants) lines.Add($"variant | {v.Display} | {v.Speech}");
         }
         Snapshot.Verify("phraseology-parts", lines);
+    }
+
+    [Fact]
+    public void Atis_DepartureAndArrival_InAnnex11Order()
+    {
+        var unit = new ControllerUnit(ControllerRole.Atis, "Barajas Information", 118_250);
+        var time = new DateTime(2026, 10, 20, 10, 20, 0, DateTimeKind.Utc);
+        var departure = new Core.Atis.AtisReport(unit, "LEMD", 'B', time, "36L", null, 70, new Wind(80, 5), 20_000, 14, 1013);
+        var r = new IcaoRenderer(1).RenderAtis(departure);
+        Assert.Equal("Barajas information Bravo, time 1020, runway in use 36L, transition level 70, wind 080/5, visibility 10 kilometres or more, "
+            + "temperature 14, QNH 1013, acknowledge receipt of information Bravo on first contact", r.Display);
+        Assert.Equal("Barajas information Bravo, time one zero two zero, runway in use three six left, transition level seven zero, "
+            + "wind zero eight zero degrees, five knots, visibility one zero kilometres or more, temperature one four, QNH one zero one three, "
+            + "acknowledge receipt of information Bravo on first contact", r.Speech);
+
+        var arrival = departure with { Unit = unit with { Callsign = "Barajas ATIS" }, ApproachType = "ILS", Runway = "32L", TransitionLevel = null,
+            VisibilityM = 3_550, TemperatureC = -3, Wind = new Wind(0, 0) };
+        var a = new IcaoRenderer(1).RenderAtis(arrival);
+        Assert.Equal("Barajas information Bravo, time 1020, expect ILS approach runway 32L, wind calm, visibility 3500 metres, "
+            + "temperature minus 3, QNH 1013, acknowledge receipt of information Bravo on first contact", a.Display);
+        Assert.Contains("visibility three thousand five hundred metres, temperature minus three", a.Speech);
+        Assert.Contains("visibility 7 kilometres", new IcaoRenderer(1).RenderAtis(departure with { VisibilityM = 7_900 }).Display);
     }
 
     [Fact]

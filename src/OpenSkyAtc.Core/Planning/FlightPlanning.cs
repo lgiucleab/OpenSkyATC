@@ -165,6 +165,19 @@ public sealed class FlightPlanning
     public RunwayEnd? ChooseDepartureRunway(SimState s) =>
         _departureRunway.Choose(_origin, s.WindDirectionTrueDeg, s.WindSpeedKt, _departureHint, _sops.PreferredFor(_origin.Icao));
 
+    /// <summary>
+    /// The runway an ATIS gives as in use: the locked one once ATC has chosen it, otherwise what the choice would be
+    /// now. Never sets a lock, so tuning the ATIS cannot change which runway ATC later gives.
+    /// </summary>
+    public RunwayEnd? RunwayInUse(bool arrival, SimState s)
+    {
+        var locked = arrival ? _arrivalRunway.Runway : _departureRunway.Runway;
+        if (locked is not null) return locked;
+        var airport = arrival ? _destination : _origin;
+        string? hint = arrival ? ArrivalRunwayHint : _departureHint;
+        return RunwaySelector.Select(airport, s.WindDirectionTrueDeg, s.WindSpeedKt, hint, _sops.PreferredFor(airport.Icao), _o.Runways);
+    }
+
     /// <summary>Procedure altitude when known, else field elevation + 3,000 ft rounded up to 500 ft (decision B2).</summary>
     public int ApproachAltitudeFt()
     {

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using NAudio.Wave;
+using OpenSkyAtc.Core.Atis;
 using OpenSkyAtc.Core.Messages;
 using OpenSkyAtc.Phraseology;
 
@@ -59,7 +60,8 @@ public sealed class ClipPlayer : IDisposable
 /// ATC voice out for a flight: each <see cref="AtcMessage"/> is rendered to speech text (in message order, as the
 /// renderer requires), spoken by its unit's voice on a background worker, radio-filtered, and handed to the
 /// <see cref="RadioChannel"/>, which plays it when the rules allow. Call <see cref="Update"/> often (the bridge tick)
-/// with the radios and push-to-talk state.
+/// with the radios and push-to-talk state. An ATIS the pilot has tuned (<see cref="Atis"/>) loops on its own player,
+/// a little quieter, with a 2 s gap between broadcasts, as long as it stays tuned.
 /// </summary>
 public sealed class AtcRadio : IDisposable
 {
@@ -68,7 +70,16 @@ public sealed class AtcRadio : IDisposable
     private readonly PiperSynthesizer _tts;
     private readonly RadioChannel _channel = new();
     private readonly ClipPlayer _player = new();
-    private readonly BlockingCollection<(AtcMessage Message, string Speech)> _toSpeak = new();
+    private readonly BlockingCollection<(AtcMessage? Message, string Speech, string Voice, string? AtisKey)> _toSpeak = new();
+    private readonly ClipPlayer _atisPlayer = new();
+    private string? _atisKey;
+    private AudioClip? _atisClip;
+    private TimeSpan _atisNextAt;
+    private bool _atisPlaying;
+
+    /// <summary>ATIS volume relative to ATC calls.</summary>
+    public const float AtisVolume = 0.7f;
+    public static readonly TimeSpan AtisGap = TimeSpan.FromSeconds(2);
     private readonly ConcurrentQueue<RadioTransmission> _ready = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly Thread _worker;
@@ -83,11 +94,27 @@ public sealed class AtcRadio : IDisposable
         _tts = tts;
         _seed = seed;
         _player.Finished += () => { lock (_lock) _channel.Stopped(_clock.Elapsed); };
+        _atisPlayer.Finished += () =>
+        {
+            lock (_lock)
+            {
+                _atisPlaying = false;
+                _atisNextAt = _clock.Elapsed + AtisGap;
+            }
+        };
         _worker = new Thread(Work) { IsBackground = true, Name = "ATC voice" };
         _worker.Start();
     }
 
-    public float Volume { get => _player.Volume; set => _player.Volume = value; }
+    public float Volume
+    {
+        get => _player.Volume;
+        set
+        {
+            _player.Volume = value;
+            _atisPlayer.Volume = value * AtisVolume;
+        }
+    }
 
     /// <summary>A call is being synthesised, waiting for the channel or playing.</summary>
     public bool IsBusy
@@ -116,8 +143,26 @@ public sealed class AtcRadio : IDisposable
     public string Say(AtcMessage message)
     {
         var rendered = _renderer.Render(message);
-        _toSpeak.Add((message, rendered.Speech));
+        _toSpeak.Add((message, rendered.Speech, message.Unit.Callsign, null));
         return rendered.Display;
+    }
+
+    /// <summary>
+    /// The ATIS on a tuned frequency, or null for none: a new broadcast is spoken and then looped while it stays
+    /// tuned; null (or another airport or letter) stops the old one at once.
+    /// </summary>
+    public void Atis(AtisReport? report)
+    {
+        string? key = report is null ? null : $"{report.AirportIcao}:{report.Letter}";
+        lock (_lock)
+        {
+            if (key == _atisKey) return;
+            _atisKey = key;
+            _atisClip = null;
+            _atisPlaying = false;
+        }
+        _atisPlayer.Stop();
+        if (report is not null) _toSpeak.Add((null, _renderer.RenderAtis(report).Speech, report.Unit.Callsign, key));
     }
 
     /// <param name="isTuned">Whether COM1 or COM2 is on a frequency.</param>
@@ -141,26 +186,49 @@ public sealed class AtcRadio : IDisposable
             if (a is FinishedPlaying { Transmission.Message: { } heard }) Heard?.Invoke(heard);
             Action?.Invoke(a);
         }
+
+        AudioClip? atis = null;
+        lock (_lock)
+        {
+            if (_atisClip is not null && !_atisPlaying && _clock.Elapsed >= _atisNextAt)
+            {
+                atis = _atisClip;
+                _atisPlaying = true;
+            }
+        }
+        if (atis is not null) _atisPlayer.Play(atis);
     }
 
     /// <summary>Stops the current transmission (app closing, sim disconnected).</summary>
     public void Silence()
     {
         _player.Stop();
+        Atis(null);
         lock (_lock) _channel.Stopped(_clock.Elapsed);
     }
 
     private void Work()
     {
-        foreach (var (message, speech) in _toSpeak.GetConsumingEnumerable())
+        foreach (var (message, speech, unit, atisKey) in _toSpeak.GetConsumingEnumerable())
         {
-            _synthesising = true;
+            _synthesising = message is not null;
             try
             {
-                var voice = _voices.VoiceFor(message.Unit.Callsign);
-                var clean = _tts.Speak(speech, voice);
+                var clean = _tts.Speak(speech, _voices.VoiceFor(unit));
                 var clip = Filter ? RadioFilter.Apply(clean, unchecked(_seed + _filterSeed++)) : clean;
-                _ready.Enqueue(new RadioTransmission(message.Unit.Callsign, message.Unit.FrequencyKhz, message.Priority, clip, speech, message));
+                if (message is not null)
+                {
+                    _ready.Enqueue(new RadioTransmission(message.Unit.Callsign, message.Unit.FrequencyKhz, message.Priority, clip, speech, message));
+                }
+                else
+                {
+                    lock (_lock)
+                    {
+                        if (_atisKey != atisKey) continue; // retuned while it was being spoken
+                        _atisClip = clip;
+                        _atisNextAt = _clock.Elapsed;
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -178,6 +246,7 @@ public sealed class AtcRadio : IDisposable
         _toSpeak.CompleteAdding();
         _worker.Join(TimeSpan.FromSeconds(2));
         _player.Dispose();
+        _atisPlayer.Dispose();
     }
 }
 

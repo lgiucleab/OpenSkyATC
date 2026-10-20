@@ -105,6 +105,27 @@ public class DepartureScenarioTests
         Assert.Equal(2, t.Count(l => l.StartsWith("[") && l.Contains("ATC ") && l.Contains("cleared for takeoff")));
     }
 
+    private const int AtisKhz = 127_600;
+    private static readonly AirportData OriginWithAtis = Origin with { Frequencies = [.. Origin.Frequencies, new AirportFrequency(ControllerRole.Atis, AtisKhz)] };
+
+    [Fact]
+    public void AnOldAtisLetter_IsConfirmedWithTheQnh_BeforeTheClearance()
+    {
+        var probe = new AtcBrain();
+        ReplayRunner.Run(probe, Recording.Take(40).ToList(), [], Plan, OriginWithAtis, Destination, 1, Manual);
+        char current = probe.AtisOn(AtisKhz)!.Letter;
+        char old = current == 'A' ? 'Z' : (char)(current - 1);
+
+        var t = ReplayRunner.Run(new AtcBrain(), Recording, IntentScript.Parse($"00:10 RequestClearance atis={Spoken.Letter(old)}"),
+            Plan, OriginWithAtis, Destination, 1, Manual);
+        Assert.Contains(t, l => l.Contains($"confirm information {Spoken.Letter(current)}, QNH ") && l.Contains("cleared to XDST"));
+
+        var same = ReplayRunner.Run(new AtcBrain(), Recording, IntentScript.Parse($"00:10 RequestClearance atis={Spoken.Letter(current)}"),
+            Plan, OriginWithAtis, Destination, 1, Manual);
+        Assert.DoesNotContain(same, l => l.Contains("confirm information"));
+        Assert.Contains(same, l => l.Contains("cleared to XDST"));
+    }
+
     [Fact]
     public void AnUnreadableCall_GetsSayAgain_ThenTheRequestIsServed()
     {
