@@ -188,6 +188,8 @@
                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                         <CheckBox Content="{Binding [Main.HardMode], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding HardMode}" Margin="0,0,40,0" />
                         <CheckBox Content="{Binding [Main.TaxiArrows], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding TaxiArrows}" Margin="0,0,40,0" />
+                        <CheckBox Content="{Binding [Main.AutoRespond], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding AutoRespond}" Margin="0,0,40,0"
+                                  ToolTip="{Binding [Main.AutoRespondHelp], Source={x:Static app:Loc.Instance}}" />
                         <CheckBox Content="{Binding [Main.AutoTune], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding AutoTune}"
                                   ToolTip="{Binding [Main.AutoTuneHelp], Source={x:Static app:Loc.Instance}}" />
                     </StackPanel>

@@ -116,6 +116,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Answer ATC automatically: readbacks and check-ins (refactor phase 3).</summary>
+    public bool AutoRespond
+    {
+        get => Settings.AutoRespond;
+        set
+        {
+            SaveSettings(Settings with { AutoRespond = value });
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>Tune the next frequency when its change is read back (refactor phase 2).</summary>
     public bool AutoTune
     {
@@ -136,6 +147,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HardMode));
         OnPropertyChanged(nameof(TaxiArrows));
         OnPropertyChanged(nameof(AutoTune));
+        OnPropertyChanged(nameof(AutoRespond));
     }
 
     [RelayCommand]

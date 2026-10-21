@@ -16,6 +16,8 @@ STRINGS = {
     "Main.Compact": ("Compact", "Compacto"),
     "Main.Expand": ("Expand", "Ampliar"),
     "Main.HardMode": ("Hard mode (type readbacks yourself)", "Modo difícil (escribe tú las colaciones)"),
+    "Main.AutoRespond": ("Auto respond", "Respuesta automática"),
+    "Main.AutoRespondHelp": ("Reads back ATC's instructions and checks in on new frequencies for you, a couple of seconds after ATC finishes. Requests stay yours.", "Colaciona las instrucciones del ATC y se presenta en las nuevas frecuencias por ti, un par de segundos después de que el ATC termine. Las peticiones siguen siendo tuyas."),
     "Main.AutoTune": ("Auto tune", "Sintonía automática"),
     "Main.AutoTuneHelp": ("When you read back a frequency change, the new frequency becomes active on the radio you transmit on; the old one goes to standby.", "Al colacionar un cambio de frecuencia, la nueva pasa a activa en la radio con la que transmites; la anterior queda en reserva."),
     "Main.TaxiArrows": ("Taxi arrows", "Flechas de rodaje"),

@@ -34,6 +34,9 @@ public sealed record AppSettings
 
     /// <summary>Tune the new frequency when a frequency change is read back correctly (refactor phase 2).</summary>
     public bool AutoTune { get; init; } = true;
+
+    /// <summary>Answer ATC automatically: readbacks and check-ins, never requests (refactor phase 3).</summary>
+    public bool AutoRespond { get; init; }
     public string? KeyboardPushToTalk { get; init; }
 
     // Speech recognition (step 14)

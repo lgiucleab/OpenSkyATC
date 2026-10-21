@@ -32,6 +32,12 @@
   <data name="Main.HardMode" xml:space="preserve">
     <value>Hard mode (type readbacks yourself)</value>
   </data>
+  <data name="Main.AutoRespond" xml:space="preserve">
+    <value>Auto respond</value>
+  </data>
+  <data name="Main.AutoRespondHelp" xml:space="preserve">
+    <value>Reads back ATC's instructions and checks in on new frequencies for you, a couple of seconds after ATC finishes. Requests stay yours.</value>
+  </data>
   <data name="Main.AutoTune" xml:space="preserve">
     <value>Auto tune</value>
   </data>

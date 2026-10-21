@@ -32,6 +32,12 @@
   <data name="Main.HardMode" xml:space="preserve">
     <value>Modo difícil (escribe tú las colaciones)</value>
   </data>
+  <data name="Main.AutoRespond" xml:space="preserve">
+    <value>Respuesta automática</value>
+  </data>
+  <data name="Main.AutoRespondHelp" xml:space="preserve">
+    <value>Colaciona las instrucciones del ATC y se presenta en las nuevas frecuencias por ti, un par de segundos después de que el ATC termine. Las peticiones siguen siendo tuyas.</value>
+  </data>
   <data name="Main.AutoTune" xml:space="preserve">
     <value>Sintonía automática</value>
   </data>

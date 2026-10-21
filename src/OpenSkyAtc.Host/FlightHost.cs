@@ -122,6 +122,7 @@ public sealed class FlightHost : IDisposable
     private int _arrowCount;
     private string? _atisHeard;
     private readonly List<TranscriptEntry> _hostLines = [];
+    private readonly AutoResponder _autoResponder = new();
     private readonly OpenSkyAtc.Phraseology.IcaoRenderer _atisText = new(0);
     private HostStatus _status = HostStatus.Idle;
     private string? _statusDetail;
@@ -269,16 +270,18 @@ public sealed class FlightHost : IDisposable
         }
     }
 
-    /// <summary>Sends a pilot call (button, readback form, later speech).</summary>
-    public void Send(PilotIntent intent)
+    /// <summary>Sends a pilot call (button, readback form, speech, or auto-respond when <paramref name="auto"/>).</summary>
+    public void Send(PilotIntent intent, bool auto = false)
     {
         IReadOnlyList<TranscriptEntry> lines;
         lock (_gate)
         {
             if (_brain is null) return;
-            _recorder?.Intent(intent);
+            _recorder?.Intent(intent, auto);
             _brain.HandlePilotIntent(intent);
-            lines = [.. _transcript!.TakeNew(), .. _hostLines];
+            var said = _transcript!.TakeNew();
+            if (auto) said = said.Select(l => l.Kind == TranscriptKind.Pilot ? l with { Auto = true, Text = l.Text + " (auto)" } : l).ToList();
+            lines = [.. said, .. _hostLines];
             _hostLines.Clear();
         }
         if (lines.Count > 0) Transcript?.Invoke(lines);
@@ -321,6 +324,7 @@ public sealed class FlightHost : IDisposable
         bridge.StateReceived += s => Guarded("sim update", () =>
         {
             IReadOnlyList<TranscriptEntry> lines;
+            PilotIntent? autoCall = null;
             lock (_gate)
             {
                 _state = s;
@@ -338,8 +342,13 @@ public sealed class FlightHost : IDisposable
                     lines = [.. lines, .. _hostLines];
                     _hostLines.Clear();
                 }
+                if (_settings.AutoRespond && !s.IsPaused)
+                    autoCall = _autoResponder.Next(_brain.AvailableIntents, _brain.ReadbackTimeLeft is not null,
+                        channelFree: !_pttHeld && !_micHeld && !_transcribing && _radio?.IsBusy != true,
+                        _brain.ExpectedUnit, s.TransmitFrequencyKhz, _brain.Session.Phase, s.Time);
             }
             if (lines.Count > 0) Transcript?.Invoke(lines);
+            if (autoCall is not null) Send(autoCall, auto: true);
             if (lines.Count > 0 || ++ticks % 2 == 0) Updated?.Invoke();
             if (_brain.Session.Ended) SaveDebrief();
         });

@@ -22,7 +22,11 @@ public enum TranscriptKind
 }
 
 /// <param name="Station">ATC unit callsign, or "nobody" for a call on a frequency without a unit.</param>
-public sealed record TranscriptEntry(TimeSpan Time, TranscriptKind Kind, string? Station, int? FrequencyKhz, string Text);
+public sealed record TranscriptEntry(TimeSpan Time, TranscriptKind Kind, string? Station, int? FrequencyKhz, string Text)
+{
+    /// <summary>A pilot call auto-respond made (refactor phase 3).</summary>
+    public bool Auto { get; init; }
+}
 
 /// <summary>
 /// Turns new session log entries into transcript lines, rendering ATC messages in order (as the renderer needs).

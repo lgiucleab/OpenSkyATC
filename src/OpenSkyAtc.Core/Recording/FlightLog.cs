@@ -73,11 +73,13 @@ public static class FlightLogFormat
         return node.ToJsonString();
     }
 
-    public static string IntentLine(int afterStates, PilotIntent intent)
+    /// <param name="auto">Sent by auto-respond rather than the pilot (shown in logs; a replay sends it the same way).</param>
+    public static string IntentLine(int afterStates, PilotIntent intent, bool auto = false)
     {
         var node = IntentJson(intent);
         node.Insert(0, "k", "intent");
         node.Insert(1, "after", afterStates);
+        if (auto) node["auto"] = true;
         return node.ToJsonString();
     }
 
@@ -230,9 +232,9 @@ public sealed class FlightRecorder(Action<string> writeLine)
         }
     }
 
-    public void Intent(PilotIntent intent)
+    public void Intent(PilotIntent intent, bool auto = false)
     {
-        lock (_lock) writeLine(FlightLogFormat.IntentLine(_states, intent));
+        lock (_lock) writeLine(FlightLogFormat.IntentLine(_states, intent, auto));
     }
 
     public void Heard(Messages.AtcMessage message)
