@@ -130,6 +130,8 @@ public sealed class FlightHost : IDisposable
     private string? _atisHeard;
     private readonly List<TranscriptEntry> _hostLines = [];
     private readonly AutoResponder _autoResponder = new();
+    private readonly AutoTuner _tuner = new();
+    private ControllerUnit? _tuningTo;
     private readonly OpenSkyAtc.Phraseology.IcaoRenderer _atisText = new(0);
     private HostStatus _status = HostStatus.Idle;
     private string? _statusDetail;
@@ -342,6 +344,7 @@ public sealed class FlightHost : IDisposable
                 _recorder?.Ticked(s);
                 _radio?.Update(_pttHeld, khz => s.IsTunedTo(khz));
                 _pushback?.Update(_brain.Session.Clearance, _brain.Session.Phase, s);
+                AutoTuneTick(s, bridge);
                 var arrows = _arrows.Update(_brain.Session, s);
                 bridge.ShowArrows(arrows);
                 _arrowCount = arrows.Count;
@@ -479,9 +482,35 @@ public sealed class FlightHost : IDisposable
     {
         if (!_settings.AutoTune || _state is not { } s || _bridge is not { IsConnected: true } bridge) return;
         if (AutoTune.Plan(s, unit) is not { } tune) return;
-        bridge.TuneCom(tune.Radio, tune.Khz);
-        _hostLines.Add(new TranscriptEntry(brain.Session.SimTime, TranscriptKind.Event, null, null,
-            $"Auto-tuned COM{tune.Radio} to {OpenSkyAtc.Phraseology.Spoken.DisplayFrequency(tune.Khz)} ({unit.Callsign})"));
+        if (_tuner.Start(tune.Radio, tune.Khz, s.Time) is { } first)
+        {
+            _tuningTo = unit;
+            Send(bridge, first);
+        }
+    }
+
+    /// <summary>Each tick, under the lock: the next auto-tune step, and its outcome in the transcript.</summary>
+    private void AutoTuneTick(SimState s, SimBridge bridge)
+    {
+        var (command, finished) = _tuner.Update(s, s.Time);
+        if (command is not null) Send(bridge, command);
+        if (finished is not { } ok || _tuningTo is not { } unit) return;
+        string khz = OpenSkyAtc.Phraseology.Spoken.DisplayFrequency(unit.FrequencyKhz);
+        _hostLines.Add(ok
+            ? new TranscriptEntry(_brain!.Session.SimTime, TranscriptKind.Event, null, null, $"Auto-tuned to {khz} ({unit.Callsign})")
+            : new TranscriptEntry(_brain!.Session.SimTime, TranscriptKind.Warning, null, null,
+                $"The aircraft did not take {khz}: it may manage its own radios. Auto-tune is off for this flight; tune {unit.Callsign} {khz} yourself."));
+        _tuningTo = null;
+    }
+
+    private static void Send(SimBridge bridge, TuneCommand c)
+    {
+        switch (c.Step)
+        {
+            case TuneStep.SetStandby: bridge.SetComStandby(c.Radio, c.Khz); break;
+            case TuneStep.Swap: bridge.SwapCom(c.Radio); break;
+            case TuneStep.SetActive: bridge.SetComActive(c.Radio, c.Khz); break;
+        }
     }
 
     /// <summary>

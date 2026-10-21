@@ -96,4 +96,17 @@ public class AtisTests
         Assert.NotNull(atis.On(118_250, Weather(nmAway: 55)));
         Assert.Null(atis.On(118_250, Weather(nmAway: 65)));
     }
+
+    [Fact]
+    public void UpHigh_TheReportStays_TheWindAloftDoesNotChangeTheLetter()
+    {
+        var atis = new AtisService(Unit, Airport, null, Airport, new SeededRandom(1));
+        atis.Update(Weather() with { OnGround = true }, _ => North);
+        char letter = atis.Stations[0].Letter;
+        var aloft = Weather(windDir: 270, windKt: 60) with { OnGround = false, AltitudeAglFt = 8000 };
+        Assert.Empty(atis.Update(aloft, _ => South));
+        Assert.Equal(letter, atis.Stations[0].Letter);
+        var low = Weather(qnh: 1009) with { OnGround = false, AltitudeAglFt = 800 };
+        Assert.Single(atis.Update(low, _ => North));   // near the ground it follows the weather again
+    }
 }

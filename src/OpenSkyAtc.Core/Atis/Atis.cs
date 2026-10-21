@@ -14,6 +14,13 @@ public sealed record AtisOptions
     /// (owner's choice); further out, tuning it gives silence, like being out of range.
     /// </summary>
     public double RangeNm { get; init; } = 60;
+
+    /// <summary>
+    /// The sim's weather is at the aircraft, so once a station has a report it is refreshed only on the ground or
+    /// below this height: up high the wind (and pressure) aloft would keep changing the letter (the owner's EGLL
+    /// departure, 2026-10-21: five letters in two minutes after takeoff).
+    /// </summary>
+    public double RefreshBelowAglFt { get; init; } = 1500;
 }
 
 /// <summary>
@@ -110,6 +117,7 @@ public sealed class AtisService
         foreach (var station in _stations)
         {
             if (!InRange(station, s)) continue;
+            if (station.Current is not null && !s.OnGround && s.AltitudeAglFt > _o.RefreshBelowAglFt) continue;
             station.Update(s, runwayInUse(station));
             if (station.Changed) changed.Add(station);
         }

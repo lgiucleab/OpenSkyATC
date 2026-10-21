@@ -138,3 +138,43 @@ public class VoiceChoiceTests
         Assert.Equal(6, FlightHost.Voices(new AppSettings { NaturalVoices = false, VoiceModels = [] }).Count);
     }
 }
+
+public class AutoTunerTests
+{
+    private static OpenSkyAtc.Core.Sim.SimState Com1(int active, int standby) => new() { Com1ActiveKhz = active, Com1StandbyKhz = standby };
+    private static TimeSpan S(double s) => TimeSpan.FromSeconds(s);
+
+    [Fact]
+    public void ANormalRadio_StandbyThenSwap()
+    {
+        var t = new AutoTuner();
+        Assert.Equal(new TuneCommand(TuneStep.SetStandby, 1, 121_705), t.Start(1, 121_705, S(0)));
+        Assert.Equal((null, null), t.Update(Com1(121_980, 121_950), S(0.25)));               // not taken yet
+        Assert.Equal(TuneStep.Swap, t.Update(Com1(121_980, 121_705), S(0.5)).Command!.Step); // standby took it: swap
+        Assert.Equal((null, true), t.Update(Com1(121_705, 121_980), S(0.75)));
+        Assert.False(t.Busy);
+    }
+
+    [Fact]
+    public void ARadioIgnoringStandby_GetsTheActiveSetDirectly_NeverABlindSwap()
+    {
+        // The FlyByWire A380 (owner's flight, 2026-10-21): standby stayed 121.950.
+        var t = new AutoTuner();
+        t.Start(1, 118_505, S(0));
+        Assert.Equal((null, null), t.Update(Com1(121_705, 121_950), S(2)));
+        var (command, _) = t.Update(Com1(121_705, 121_950), S(3.5));
+        Assert.Equal(new TuneCommand(TuneStep.SetActive, 1, 118_505), command);
+        Assert.Equal((null, true), t.Update(Com1(118_505, 121_950), S(4)));
+    }
+
+    [Fact]
+    public void ARadioRefusingBoth_StopsAutoTuneForTheFlight()
+    {
+        var t = new AutoTuner();
+        t.Start(1, 118_505, S(0));
+        t.Update(Com1(121_705, 121_950), S(3.5));                    // -> set active
+        Assert.Equal((null, false), t.Update(Com1(121_705, 121_950), S(7)));
+        Assert.True(t.Disabled);
+        Assert.Null(t.Start(1, 124_225, S(60)));
+    }
+}

@@ -56,15 +56,21 @@ public enum PushbackStage
 /// brake is released, pushes straight back by the planned distance, then turns (left or right, whichever brings the
 /// nose round the short way) until the nose is near the planned heading ("facing south"), then stops. MSFS 2024
 /// steers the tug with three fixed states (straight, left, right), checked in the owner's sim; "left" turns the nose
-/// clockwise. The tug takes up to half a minute to attach and the sim ignores steering before that (and starts its
-/// own turn otherwise), so the wanted state is sent again every 2 s until PUSHBACK STATE shows it. Gives up (and stops the tug) after 3 minutes, when the parking brake is set during the push, or when
-/// the sim ends the pushback itself. Asking for taxi before the push has started does not cancel it (owner's choice,
+/// clockwise. The sim ignores steering until the tug is attached (and starts its own turn otherwise), so the wanted
+/// state is sent again every 2 s until PUSHBACK STATE shows it. A tug can take minutes to attach to a big aircraft
+/// (about 3 minutes for the FlyByWire A380 on the owner's flight, 2026-10-21), so the driver waits up to
+/// <see cref="AttachTimeout"/> for it; once attached, it gives up (and stops the tug) after <see cref="MaxDuration"/>,
+/// when the parking brake is set during the push, or when the sim ends the pushback itself. Asking for taxi before the push has started does not cancel it (owner's choice,
 /// after the 1.0.0 Alpha flight): the push still runs once the brake is released, unless the aircraft has already
 /// left the stand under its own power.
 /// </summary>
 public sealed class PushbackDriver(IPushbackTug tug)
 {
+    /// <summary>Longest push once the tug is attached.</summary>
     public static readonly TimeSpan MaxDuration = TimeSpan.FromMinutes(3);
+
+    /// <summary>Longest wait for the tug to attach (PUSHBACK ATTACHED / active) before giving up.</summary>
+    public static readonly TimeSpan AttachTimeout = TimeSpan.FromMinutes(5);
 
     /// <summary>The tug keeps turning a little after the stop (about 1.5 degrees in the owner's sim): stop this early.</summary>
     public const double StopEarlyDeg = 2;
@@ -73,11 +79,11 @@ public sealed class PushbackDriver(IPushbackTug tug)
 
     /// <summary>Taxiing this far from the stand before the tug started means the pilot left without the push.</summary>
     private const double LeftStandM = 15;
-    private static readonly TimeSpan AttachGrace = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan ResendAfter = TimeSpan.FromSeconds(2);
 
     private Core.Planning.PushPlan? _plan;
     private TimeSpan _startedAt;
+    private TimeSpan? _attachedAt;
     private bool _tugRunning;
     private TugSteer? _steer;
     private TimeSpan _steerSentAt;
@@ -107,14 +113,15 @@ public sealed class PushbackDriver(IPushbackTug tug)
                 tug.Start();
                 _tugRunning = true;
                 _startedAt = now;
+                _attachedAt = null;
                 _steer = null;
                 Steer(TugSteer.Straight, s);
                 Stage = PushbackStage.Straight;
                 return;
 
-            // The tug takes a few seconds to attach; after that, "no pushback" means the sim (or the pilot) ended it.
-            case PushbackStage.Straight or PushbackStage.Turning when s.ParkingBrakeSet || now - _startedAt > MaxDuration
-                                                                  || (now - _startedAt > AttachGrace && !s.PushbackActive):
+            // Until the tug attaches, only a timeout ends the wait; once attached, "no pushback" means the sim (or the
+            // pilot) ended it.
+            case PushbackStage.Straight or PushbackStage.Turning when Over(s, now):
                 Finish();
                 return;
 
@@ -139,6 +146,17 @@ public sealed class PushbackDriver(IPushbackTug tug)
         Stage == PushbackStage.Waiting && clearance.PushbackReadBack && PushPhase(phase) && s.ParkingBrakeSet && s.OnGround;
 
     private static bool PushPhase(FlightPhase phase) => phase is FlightPhase.Cleared or FlightPhase.Pushback or FlightPhase.TaxiOut;
+
+    /// <summary>The push is over: no tug in time, or after it attached the brake, a timeout or the sim ended it.</summary>
+    private bool Over(SimState s, TimeSpan now)
+    {
+        if (_attachedAt is null && s.PushbackActive) _attachedAt = now;
+        if (_attachedAt is not { } attached) return now - _startedAt > AttachTimeout;
+        return s.ParkingBrakeSet || !s.PushbackActive || now - attached > MaxDuration;
+    }
+
+    /// <summary>Waiting for the tug to attach (for the app's hint).</summary>
+    public bool WaitingForTug => Stage is PushbackStage.Straight && _attachedAt is null;
 
     /// <summary>Forgets the push without touching the tug (the sim connection is gone, and with it the pushback).</summary>
     public void Abandon()

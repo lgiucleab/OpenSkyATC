@@ -103,10 +103,30 @@ public class PushbackDriverTests
     {
         var (driver, tug, c) = Approved();
         driver.Update(c, FlightPhase.Pushback, At(0, 0, 0));
-        driver.Update(c, FlightPhase.Pushback, At(10, 0, 0, pushback: 3));   // tug still attaching: not judged yet
+        driver.Update(c, FlightPhase.Pushback, At(10, 0, 0, pushback: 0));  // attached and pushing
         Assert.Equal(PushbackStage.Straight, driver.Stage);
-        driver.Update(c, FlightPhase.Pushback, At(20, 8, 0, pushback: 3));
+        driver.Update(c, FlightPhase.Pushback, At(20, 8, 0, pushback: 3));                // the sim ended it
         Assert.Equal(PushbackStage.Done, driver.Stage);
+    }
+
+    [Fact]
+    public void ASlowTug_IsWaitedFor_ThenTheWaitTimesOut()
+    {
+        // The FlyByWire A380 on the owner's flight: the tug attached about 3 minutes after the request.
+        var (driver, tug, c) = Approved();
+        driver.Update(c, FlightPhase.Pushback, At(0, 0, 0, pushback: 3));
+        driver.Update(c, FlightPhase.Pushback, At(170, 0, 0, pushback: 3));
+        Assert.True(driver.WaitingForTug);
+        Assert.DoesNotContain("stop", tug.Calls);
+        driver.Update(c, FlightPhase.Pushback, At(190, 1, 0, pushback: 0));
+        Assert.False(driver.WaitingForTug);
+        Assert.Equal(PushbackStage.Straight, driver.Stage);
+
+        var (late, lateTug, lc) = Approved();
+        late.Update(lc, FlightPhase.Pushback, At(0, 0, 0, pushback: 3));
+        late.Update(lc, FlightPhase.Pushback, At(PushbackDriver.AttachTimeout.TotalSeconds + 1, 0, 0, pushback: 3));
+        Assert.Equal(PushbackStage.Done, late.Stage);
+        Assert.Contains("stop", lateTug.Calls);
     }
 
     [Fact]
