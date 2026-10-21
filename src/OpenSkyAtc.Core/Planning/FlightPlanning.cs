@@ -100,10 +100,23 @@ public sealed class FlightPlanning
 
     public PlanningOptions Options => _o;
 
-    public AltitudeTarget Cruise { get; }
+    public AltitudeTarget Cruise { get; private set; }
 
     /// <summary>Levels the aircraft is cleared to after the initial climb, ending at cruise.</summary>
-    public IReadOnlyList<AltitudeTarget> ClimbSteps { get; }
+    public IReadOnlyList<AltitudeTarget> ClimbSteps { get; private set; }
+
+    /// <summary>
+    /// A level the pilot asked for and got becomes the cruise (owner's choice, refactor phase 6): the planned steps
+    /// below it stay, the ones above go, and the top of descent is computed from it.
+    /// </summary>
+    public void SetCruise(AltitudeTarget level)
+    {
+        Cruise = level;
+        ClimbSteps = [.. ClimbSteps.Where(s => s.NominalFeet < level.NominalFeet), level];
+    }
+
+    /// <summary>The departure runway the pilot asked for and ATC approved.</summary>
+    public void ApproveDepartureRunway(RunwayEnd runway, SimState s) => _departureRunway.Force(runway, s.WindDirectionTrueDeg, s.WindSpeedKt);
 
     /// <summary>True while a step is being held down "for traffic".</summary>
     public bool HoldingDown { get; private set; }

@@ -12,7 +12,7 @@ public static class IntentFactory
     [
         "RequestClearance", "RequestPushStart", "RequestTaxi", "ReadyForDeparture", "RejectTakeoff", "CheckIn",
         "RequestDescent", "ReportEstablished", "GoingAround", "ReportVacated", "Readback", "SayAgain", "Unreadable", "Wilco",
-        "Unable", "Mayday", "PanPan",
+        "Unable", "Mayday", "PanPan", "RequestStartup", "RequestRunway", "RadioCheck", "RequestWind", "RequestLevel", "RequestDirect",
     ];
 
     public static bool IsKnown(string name) => Names.Contains(name);
@@ -36,6 +36,16 @@ public static class IntentFactory
         "Unable" => new Unable(s.Args.GetValueOrDefault("reason")),
         "Mayday" => new Mayday(),
         "PanPan" => new PanPan(),
+        "RequestStartup" => new RequestStartup(),
+        "RequestRunway" => new RequestRunway(s.Args.GetValueOrDefault("runway") ?? throw new ArgumentException("RequestRunway needs runway=")),
+        "RadioCheck" => new RadioCheck(),
+        "RequestWind" => new RequestWind(),
+        // "RequestLevel" alone: the first level offered; "RequestLevel fl=240": that level.
+        "RequestLevel" => s.Args.GetValueOrDefault("fl") is { } fl
+            ? new RequestLevel(Core.Model.AltitudeTarget.FlightLevel(int.Parse(fl, System.Globalization.CultureInfo.InvariantCulture)))
+            : available.OfType<RequestLevel>().FirstOrDefault() ?? throw new ArgumentException("No level request offered."),
+        "RequestDirect" => s.Args.GetValueOrDefault("fix") is { } f ? new RequestDirect(f)
+            : available.OfType<RequestDirect>().FirstOrDefault() ?? throw new ArgumentException("No direct offered."),
         _ => throw new ArgumentException($"Unknown intent '{s.Name}'."),
     };
 
@@ -60,6 +70,9 @@ public static class IntentFactory
         CheckIn c => $"CheckIn passing={c.AltitudeFt?.ToString() ?? "-"} cleared={c.ClearedAltitude?.ToString() ?? "-"}",
         RequestClearance { AtisLetter: { } a } => $"RequestClearance atis={a}",
         Unable { Reason: { } r } => $"Unable reason={r}",
+        RequestRunway r => $"RequestRunway runway={r.Runway}",
+        RequestLevel l => $"RequestLevel {l.Level}",
+        RequestDirect d => $"RequestDirect fix={d.Fix}",
         _ => intent.GetType().Name,
     };
 }

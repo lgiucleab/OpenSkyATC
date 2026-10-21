@@ -425,6 +425,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Readback { Items.Count: 0 } => Loc.Get("Intent.Readback"),
         Readback when HardMode => Loc.Get("Intent.ReadbackForm"),
         Readback r => $"{Loc.Get("Intent.Readback")}: {PilotPhrase.Of(r)}",
+        RequestLevel l => Loc.Format("Intent.RequestLevelTo", l.Level.Kind == Core.Model.AltitudeKind.FlightLevel ? $"FL{l.Level.Value:000}" : $"{l.Level.Value} ft"),
+        RequestDirect d => Loc.Format("Intent.RequestDirectTo", d.Fix),
+        RequestRunway r => Loc.Format("Intent.RequestRunwayTo", r.Runway),
         _ => Loc.Get($"Intent.{intent.GetType().Name}"),
     };
 

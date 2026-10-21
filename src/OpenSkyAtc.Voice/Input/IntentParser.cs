@@ -38,6 +38,7 @@ public static partial class IntentParser
         if (Has(n, "MAYDAY")) return new Mayday();
         if (Has(n, "PAN PAN")) return new PanPan();
         if (Has(n, "SAY AGAIN")) return new SayAgain();
+        if (Has(n, "RADIO CHECK")) return new RadioCheck();
 
         var request = Request(n, ctx);
         if (request is not null && IsAvailable(request, ctx)) return request;
@@ -66,16 +67,20 @@ public static partial class IntentParser
         if (Has(n, "ESTABLISHED")) return new ReportEstablished();
 
         if (asks && Has(n, "DIRECT") && Match(n, DirectFix()) is { } fix) return new RequestDirect(fix);
+        if (asks && (Has(n, "HIGHER") || Has(n, "LOWER")) && ctx.Available.OfType<RequestLevel>().ToList() is { Count: > 0 } offered)
+            return Has(n, "HIGHER") ? offered.MaxBy(l => l.Level.NominalFeet) : offered.MinBy(l => l.Level.NominalFeet);
+        if ((asks && Has(n, "WIND")) || Has(n, "WIND CHECK")) return new RequestWind();
         if (asks && (Has(n, "CLIMB") || Has(n, "DESCENT") || Has(n, "DESCEND") || Has(n, "FLIGHT LEVEL") || Has(n, "FL") || Has(n, "FEET"))
             && Altitudes(n).Cast<AltitudeTarget?>().FirstOrDefault() is { } level)
             return new RequestLevel(level);
         if (asks && (Has(n, "DESCENT") || Has(n, "DESCEND"))) return new RequestDescent();
 
         if (Pushes(n) && (asks || Has(n, "READY"))) return new RequestPushStart();
-        if ((Has(n, "START UP") || Has(n, "STARTUP")) && asks && !Has(n, "CLEARANCE")) return new RequestPushStart();
+        if ((Has(n, "START UP") || Has(n, "STARTUP")) && asks && !Has(n, "CLEARANCE")) return new RequestStartup();
         if (Has(n, "TAXI") && (asks || Has(n, "READY"))) return new RequestTaxi();
         if (Has(n, "READY TO COPY") || (Has(n, "CLEARANCE") && (asks || Has(n, "INFORMATION"))) || (asks && Has(n, "IFR")))
             return new RequestClearance(Match(n, AtisLetter()));
+        if (asks && !Has(n, "TAXI") && Runways(n, holdShort: false) is [var runway, ..]) return new RequestRunway(runway);
         if (Has(n, "READY") && !Has(n, "COPY")) return new ReadyForDeparture();
 
         bool greets = Has(n, "PASSING") || Has(n, "WITH YOU") || Has(n, "CHECKING IN") || Has(n, "GOOD MORNING")

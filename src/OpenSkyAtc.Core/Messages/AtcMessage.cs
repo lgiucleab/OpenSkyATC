@@ -135,6 +135,21 @@ public sealed record ClosingCall : AtcMessagePart;
 /// <summary>Surface wind in degrees magnetic, rounded to 10 degrees. Speed 0 means calm.</summary>
 public sealed record Wind(int DirectionMagDeg, int SpeedKt) : AtcMessagePart;
 
+/// <summary>"readability 5" (CAP 413 2.94), the reply to a radio check.</summary>
+public sealed record Readability(int Value) : AtcMessagePart;
+
+/// <summary>"start up approved" (CAP 413 4.10).</summary>
+public sealed record StartUpApproved : AtcMessagePart;
+
+/// <summary>"surface wind 220/6" (CAP 413), the reply to "request surface wind".</summary>
+public sealed record SurfaceWind(int DirectionMagDeg, int SpeedKt) : AtcMessagePart;
+
+/// <summary>"unable approve runway 14": a runway request refused (built like CAP 413 7.5's "unable approve FL240", owner's choice).</summary>
+public sealed record UnableApproveRunway(string Runway) : AtcMessagePart;
+
+/// <summary>"unable approve FL450, FL410 available" (CAP 413 7.5).</summary>
+public sealed record UnableApproveLevel(AltitudeTarget Requested, AltitudeTarget Available) : AtcMessagePart;
+
 /// <summary>"confirm information Charlie": the pilot reported an older ATIS letter (design doc "ATIS").</summary>
 public sealed record ConfirmInformation(char Letter) : AtcMessagePart;
 

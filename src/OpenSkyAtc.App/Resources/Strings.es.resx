@@ -557,6 +557,24 @@
   <data name="Intent.CheckIn" xml:space="preserve">
     <value>Notificar contacto</value>
   </data>
+  <data name="Intent.RequestLevelTo" xml:space="preserve">
+    <value>Pedir {0}</value>
+  </data>
+  <data name="Intent.RequestDirectTo" xml:space="preserve">
+    <value>Pedir directo a {0}</value>
+  </data>
+  <data name="Intent.RequestRunwayTo" xml:space="preserve">
+    <value>Pedir pista {0} para salir</value>
+  </data>
+  <data name="Intent.RequestStartup" xml:space="preserve">
+    <value>Pedir arranque</value>
+  </data>
+  <data name="Intent.RadioCheck" xml:space="preserve">
+    <value>Prueba de radio</value>
+  </data>
+  <data name="Intent.RequestWind" xml:space="preserve">
+    <value>Pedir viento en superficie</value>
+  </data>
   <data name="Intent.RequestLevel" xml:space="preserve">
     <value>Pedir nivel</value>
   </data>

@@ -90,6 +90,13 @@ public sealed class RunwayLock(RunwayRules? rules = null)
         return Runway;
     }
 
+    /// <summary>Locks a runway the pilot asked for (and ATC approved), from this wind on.</summary>
+    public void Force(RunwayEnd runway, double windFromTrueDeg, double windKt)
+    {
+        Runway = runway;
+        _wind = (windFromTrueDeg, windKt);
+    }
+
     private bool Shifted((double Dir, double Kt) was, double dir, double kt)
     {
         if (Math.Abs(kt - was.Kt) > _rules.LockShiftKt) return true;

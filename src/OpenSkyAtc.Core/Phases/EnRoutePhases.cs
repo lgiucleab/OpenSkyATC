@@ -60,6 +60,58 @@ internal sealed class StepClimber(object owner)
         Issue(ctx, unit, TransmissionPriority.Reply, ctx.Now + ctx.Conversation.ReplyDelay());
     }
 
+    /// <summary>Highest level above the planned cruise ATC approves on request (refactor phase 6).</summary>
+    public const int MaxAboveCruiseFt = 4000;
+
+    /// <summary>Lowest level ATC approves en route on request.</summary>
+    public const int MinRequestFt = 10_000;
+
+    /// <summary>
+    /// The pilot asks for a level (refactor phase 6, CAP 413 7.5). Higher up to the planned cruise: the next step as
+    /// before (or "stand by" while held down for traffic); a level above the cruise by up to 4,000 ft: approved, and it
+    /// becomes the cruise; higher than that: "unable approve FL450, FL410 available". Lower, down to FL100 (10,000 ft):
+    /// approved and it becomes the cruise (owner's choice); below: "unable approve ..., FL100 available".
+    /// </summary>
+    public void RequestLevel(PhaseContext ctx, ControllerUnit unit, AltitudeTarget level)
+    {
+        var cleared = ctx.Clearance.ClearedAltitude;
+        int clearedFt = cleared?.NominalFeet ?? (int)ctx.State.IndicatedAltitudeFt;
+        var reply = ctx.Now + ctx.Conversation.ReplyDelay();
+        if (level.NominalFeet > clearedFt)
+        {
+            int cruiseFt = ctx.Planning.Cruise.NominalFeet;
+            if (level.NominalFeet <= cruiseFt)
+            {
+                Request(ctx, unit);
+                return;
+            }
+            if (level.NominalFeet - cruiseFt > MaxAboveCruiseFt)
+            {
+                var best = ctx.Planning.ToTarget(cruiseFt + MaxAboveCruiseFt, ctx.Destination);
+                ctx.Conversation.Say(unit, [new UnableApproveLevel(level, best)], TransmissionPriority.Reply, reply);
+                return;
+            }
+            ctx.Planning.SetCruise(level);
+            Phase.ClearAltitude(ctx, unit, level, TransmissionPriority.Reply, reply, tag: "level-request");
+            ctx.Planning.StepIssued();
+            return;
+        }
+        if (level.NominalFeet < clearedFt)
+        {
+            if (level.NominalFeet < MinRequestFt)
+            {
+                var lowest = ctx.Planning.ToTarget(MinRequestFt, ctx.Destination);
+                ctx.Conversation.Say(unit, [new UnableApproveLevel(level, lowest)], TransmissionPriority.Reply, reply);
+                return;
+            }
+            ctx.Planning.SetCruise(level);
+            Phase.ClearAltitude(ctx, unit, level, TransmissionPriority.Reply, reply, tag: "level-request");
+            ctx.Planning.StepIssued();
+            return;
+        }
+        ctx.Conversation.Say(unit, [new SayAgainRequest()], TransmissionPriority.Reply, reply);
+    }
+
     public void Issue(PhaseContext ctx, ControllerUnit unit, TransmissionPriority priority, TimeSpan due, IEnumerable<AtcMessagePart>? before = null)
     {
         if (ctx.Planning.NextClimbStep(ctx.Clearance.ClearedAltitude) is not { } next) return;
@@ -130,8 +182,8 @@ public abstract class AreaPhase : Phase
                 CheckedIn = true;
                 OnCheckedIn(ctx, intent, firstRadarUnit);
                 return PhaseResult.Stay;
-            case RequestLevel when called == _unit && CheckedIn:
-                _climber.Request(ctx, _unit!);
+            case RequestLevel l when called == _unit && CheckedIn:
+                _climber.RequestLevel(ctx, _unit!, l.Level);
                 return PhaseResult.Stay;
             case RequestDirect d when called == _unit && CheckedIn:
                 var direct = new Direct(d.Fix);
@@ -163,19 +215,28 @@ public abstract class AreaPhase : Phase
         var list = new List<PilotIntent>();
         if (!CheckedIn || ctx.Clearance.HandoffTo is not null)
             list.Add(new CheckIn((int)(Math.Round(ctx.State.IndicatedAltitudeFt / 100) * 100), ctx.Clearance.ClearedAltitude));
-        if (CheckedIn && ctx.Planning.NextClimbStep(ctx.Clearance.ClearedAltitude) is { } next) list.Add(new RequestLevel(next));
-        if (CheckedIn && NextWaypoint(ctx) is { } wp) list.Add(new RequestDirect(wp));
+        if (CheckedIn && ctx.Clearance.ClearedAltitude is { Kind: AltitudeKind.FlightLevel } fl)
+        {
+            // Higher: the next planned step, or above the cruise once there; lower: 2,000 ft down, at FL150 and above.
+            if (ctx.Planning.NextClimbStep(fl) is { } next) list.Add(new RequestLevel(next));
+            else list.Add(new RequestLevel(AltitudeTarget.FlightLevel(fl.Value + 20)));
+            if (fl.Value >= 150) list.Add(new RequestLevel(AltitudeTarget.FlightLevel(fl.Value - 20)));
+        }
+        else if (CheckedIn && ctx.Planning.NextClimbStep(ctx.Clearance.ClearedAltitude) is { } next) list.Add(new RequestLevel(next));
+        if (CheckedIn) list.AddRange(DirectFixes(ctx).Select(f => new RequestDirect(f)));
         return list;
     }
 
-    private static string? NextWaypoint(PhaseContext ctx)
+    /// <summary>
+    /// Fixes worth asking direct to: the second and third waypoints ahead (the next one would not shorten the route).
+    /// </summary>
+    private static IEnumerable<string> DirectFixes(PhaseContext ctx)
     {
         double along = ctx.Airspace.Route.AlongNm(ctx.Position);
         var route = ctx.Plan.Route;
-        if (route.Count == 0) return null;
-        // The second waypoint ahead, so "direct" actually shortens the route.
-        var ahead = route.Where(w => ctx.Airspace.Route.AlongNm(w.Position) > along + 1).Select(w => w.Ident).ToList();
-        return ahead.Count >= 2 ? ahead[1] : ahead.FirstOrDefault();
+        if (route.Count == 0) return [];
+        var ahead = route.Where(w => ctx.Airspace.Route.AlongNm(w.Position) > along + 1).Select(w => w.Ident).Distinct().ToList();
+        return ahead.Count >= 2 ? ahead.Skip(1).Take(2) : ahead.Take(1);
     }
 }
 

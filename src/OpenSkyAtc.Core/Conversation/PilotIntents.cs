@@ -11,6 +11,18 @@ public abstract record PilotIntent;
 /// <param name="AtisLetter">Information letter the pilot reports, if any. Not checked until ATIS is built.</param>
 public sealed record RequestClearance(string? AtisLetter = null) : PilotIntent;
 public sealed record RequestPushStart : PilotIntent;
+
+/// <summary>"request start up": engines without a push (CAP 413 4.9), e.g. from a stand the aircraft taxis out of.</summary>
+public sealed record RequestStartup : PilotIntent;
+
+/// <summary>"request runway 14 for departure" (CAP 413 aerodrome examples).</summary>
+public sealed record RequestRunway(string Runway) : PilotIntent;
+
+/// <summary>"radio check 121.630" (CAP 413 2.93).</summary>
+public sealed record RadioCheck : PilotIntent;
+
+/// <summary>"request surface wind" (CAP 413 aerodrome examples).</summary>
+public sealed record RequestWind : PilotIntent;
 public sealed record RequestTaxi : PilotIntent;
 public sealed record ReadyForDeparture : PilotIntent;
 public sealed record RejectTakeoff : PilotIntent;

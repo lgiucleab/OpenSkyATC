@@ -12,6 +12,7 @@ internal static class GrantedRequests
 {
     private static readonly string[] Clearance = ["ifr-clearance"];
     private static readonly string[] PushStart = ["push-start"];
+    private static readonly string[] Startup = ["startup", "push-start"];
     private static readonly string[] Taxi = ["taxi"];
     private static readonly string[] TaxiIn = ["taxi-in"];
     private static readonly string[] Departure = ["takeoff", "line-up"];
@@ -20,6 +21,7 @@ internal static class GrantedRequests
     {
         RequestClearance when phase is FlightPhase.Preflight or FlightPhase.Cleared or FlightPhase.Pushback or FlightPhase.TaxiOut or FlightPhase.Holding => Clearance,
         RequestPushStart when phase is FlightPhase.Cleared or FlightPhase.Pushback or FlightPhase.TaxiOut => PushStart,
+        RequestStartup when phase is FlightPhase.Cleared or FlightPhase.Pushback or FlightPhase.TaxiOut => Startup,
         RequestTaxi when phase is FlightPhase.TaxiOut => Taxi,
         RequestTaxi when phase is FlightPhase.TaxiIn => TaxiIn,
         ReadyForDeparture when phase is FlightPhase.Holding => Departure,

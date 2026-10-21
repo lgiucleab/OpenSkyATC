@@ -90,6 +90,16 @@ doc     | wind 250/12 | wind two five zero degrees, one two knots
 doc     | wind calm | wind calm
 ## ConfirmInformation
 doc     | confirm information Charlie | confirm information Charlie
+## Readability
+doc     | readability 5 | readability five
+## StartUpApproved
+doc     | start up approved | start up approved
+## SurfaceWind
+doc     | surface wind 220/6 | surface wind two two zero degrees, six knots
+## UnableApproveRunway
+doc     | unable approve runway 14 | unable approve runway one four
+## UnableApproveLevel
+doc     | unable approve FL450, FL410 available | unable approve flight level four five zero, flight level four one zero available
 ## ClearedTakeoff
 doc     | runway 24L, cleared for takeoff | runway two four left, cleared for takeoff
 ## ClearedLand

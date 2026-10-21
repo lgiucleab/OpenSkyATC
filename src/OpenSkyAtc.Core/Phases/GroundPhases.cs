@@ -93,6 +93,7 @@ public sealed class PreflightPhase : Phase
 public sealed class ClearedPhase : Phase
 {
     private Exchange? _push;
+    private Exchange? _startup;
 
     public override FlightPhase Id => FlightPhase.Cleared;
     public override ControllerUnit? Unit(PhaseContext ctx) => ctx.Airspace.GroundUnit;
@@ -116,6 +117,14 @@ public sealed class ClearedPhase : Phase
                     },
                     tag: "push-start", onReadBack: () => ctx.Clearance.PushbackReadBack = true);
                 return PhaseResult.Stay;
+            case RequestStartup when _push is null && _startup is null:
+                var groundUnit = Unit(ctx)!;
+                _startup = ctx.Conversation.Transmit(groundUnit, [new StartUpApproved()], TransmissionPriority.Reply,
+                    ctx.Now + ctx.Conversation.ReplyDelay(), onSent: () => ctx.Clearance.CurrentFrequencyKhz = groundUnit.FrequencyKhz, tag: "startup");
+                return PhaseResult.Stay;
+            case RequestRunway r:
+                RunwayRequests.Reclear(ctx, Unit(ctx)!, r.Runway);
+                return PhaseResult.Stay;
             case RequestTaxi:
                 return PhaseResult.To(FlightPhase.TaxiOut, "taxi requested without pushback");
             default:
@@ -126,8 +135,15 @@ public sealed class ClearedPhase : Phase
     public override PhaseResult Tick(PhaseContext ctx) =>
         _push?.State is ExchangeState.Done or ExchangeState.Correct ? PhaseResult.To(FlightPhase.Pushback, "push and start approved") : PhaseResult.Stay;
 
-    public override IEnumerable<PilotIntent> AvailableIntents(PhaseContext ctx) =>
-        _push is null ? [new RequestPushStart(), new RequestTaxi()] : [];
+    public override IEnumerable<PilotIntent> AvailableIntents(PhaseContext ctx)
+    {
+        if (_push is not null) return [];
+        var list = new List<PilotIntent> { new RequestPushStart() };
+        if (_startup is null) list.Add(new RequestStartup());
+        list.Add(new RequestTaxi());
+        list.AddRange(RunwayRequests.Options(ctx).Select(e => new RequestRunway(e.Designator)));
+        return list;
+    }
 }
 
 /// <summary>Phase 3: pushing back and starting; ends when the pilot requests taxi.</summary>
@@ -136,10 +152,23 @@ public sealed class PushbackPhase : Phase
     public override FlightPhase Id => FlightPhase.Pushback;
     public override ControllerUnit? Unit(PhaseContext ctx) => ctx.Airspace.GroundUnit;
 
-    public override PhaseResult OnPilotIntent(PhaseContext ctx, PilotIntent intent) =>
-        intent is RequestTaxi && CallsMe(ctx) ? PhaseResult.To(FlightPhase.TaxiOut, "taxi requested") : PhaseResult.Unhandled;
+    public override PhaseResult OnPilotIntent(PhaseContext ctx, PilotIntent intent)
+    {
+        if (!CallsMe(ctx)) return PhaseResult.Unhandled;
+        switch (intent)
+        {
+            case RequestTaxi:
+                return PhaseResult.To(FlightPhase.TaxiOut, "taxi requested");
+            case RequestRunway r:
+                RunwayRequests.Reclear(ctx, Unit(ctx)!, r.Runway);
+                return PhaseResult.Stay;
+            default:
+                return PhaseResult.Unhandled;
+        }
+    }
 
-    public override IEnumerable<PilotIntent> AvailableIntents(PhaseContext ctx) => [new RequestTaxi()];
+    public override IEnumerable<PilotIntent> AvailableIntents(PhaseContext ctx) =>
+        [new RequestTaxi(), .. RunwayRequests.Options(ctx).Select(e => new RequestRunway(e.Designator))];
 }
 
 /// <summary>
@@ -190,15 +219,21 @@ public sealed class TaxiOutPhase : Phase
 
     private TaxiPlan? _plan;
     private Exchange? _handoff;
-    private readonly CrossingClearances _crossings = new();
+    private CrossingClearances _crossings = new();
 
     public override FlightPhase Id => FlightPhase.TaxiOut;
     public override ControllerUnit? Unit(PhaseContext ctx) => ctx.Airspace.GroundUnit;
 
     public override void OnEnter(PhaseContext ctx)
     {
+        if (ctx.DepartureRunway is { } runway) IssueTaxi(ctx, runway);
+    }
+
+    /// <summary>"taxi to holding point ... runway ... via ...", read back; also for a runway change while taxiing.</summary>
+    private void IssueTaxi(PhaseContext ctx, RunwayEnd runway)
+    {
         var unit = Unit(ctx)!;
-        if (ctx.DepartureRunway is not { } runway) return;
+        _crossings = new CrossingClearances(); // a new route has its own crossings
 
         var position = new GeoPoint(ctx.State.Latitude, ctx.State.Longitude);
         var plan = _plan = ctx.Options.TaxiPlanner.PlanToHoldingPoint(ctx.Origin, position, runway);
@@ -242,9 +277,26 @@ public sealed class TaxiOutPhase : Phase
     {
         if (intent is ReadyForDeparture or CheckIn && ctx.CalledUnit is { } u && u == ctx.Airspace.OriginTower)
             return PhaseResult.To(FlightPhase.Holding, _handoff is null ? "called tower before the handoff" : "checked in with tower", redispatch: true);
+        if (intent is RequestRunway r && CallsMe(ctx) && _handoff is null)
+        {
+            // CAP 413: the new runway comes as a new taxi clearance (when the SID stays the same).
+            if (RunwayRequests.ForTaxi(ctx, Unit(ctx)!, r.Runway) is { } end)
+            {
+                ctx.Clearance.Runway = end.Designator;
+                IssueTaxi(ctx, end);
+            }
+            return PhaseResult.Stay;
+        }
         return PhaseResult.Unhandled;
     }
 
-    public override IEnumerable<PilotIntent> AvailableIntents(PhaseContext ctx) =>
-        _handoff is { State: not ExchangeState.Queued } ? [new ReadyForDeparture()] : [];
+    public override IEnumerable<PilotIntent> AvailableIntents(PhaseContext ctx)
+    {
+        if (_handoff is { State: not ExchangeState.Queued }) return [new ReadyForDeparture()];
+        if (_handoff is not null) return [];
+        return RunwayRequests.Options(ctx)
+            .Where(e => SidChooser.Choose(ctx.Origin, ctx.Plan.PlannedSid, e) == ctx.Clearance.Sid)
+            .Select(e => (PilotIntent)new RequestRunway(e.Designator))
+            .ToList();
+    }
 }

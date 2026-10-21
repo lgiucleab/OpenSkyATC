@@ -46,6 +46,12 @@ public sealed record SimulatedPilotOptions
 
     /// <summary>The start line for <see cref="Recorder"/>: the airports given here stand in for the sim's data.</summary>
     public Func<Core.Model.FlightPlan, int, Core.Recording.FlightLogStart>? RecorderStart { get; init; }
+
+    /// <summary>
+    /// Extra calls, each made once: in its phase, when nothing waits for a readback, the call the picker chooses from
+    /// the calls available then (null: not yet).
+    /// </summary>
+    public IReadOnlyList<(FlightPhase Phase, Func<IReadOnlyList<PilotIntent>, PilotIntent?> Pick)> ExtraCalls { get; init; } = [];
 }
 
 /// <summary>
@@ -96,10 +102,27 @@ public sealed class SimulatedPilot(SimulatedPilotOptions? options = null)
             _brain.Tick(state, _t);
             _o.Recorder?.Ticked(state);
             Radio();
+            ExtraCalls();
             Move();
             _t += Dt;
         }
         return ReplayRunner.Transcript(_brain.Session, new IcaoRenderer(seed, _o.Phraseology));
+    }
+
+    private readonly HashSet<int> _extraDone = [];
+
+    private void ExtraCalls()
+    {
+        for (int i = 0; i < _o.ExtraCalls.Count; i++)
+        {
+            var (phase, pick) = _o.ExtraCalls[i];
+            if (_extraDone.Contains(i) || Phase != phase) continue;
+            var available = _brain.AvailableIntents;
+            if (available.OfType<Readback>().Any(r => r.Items.Count > 0)) continue;
+            if (pick(available) is not { } call) continue;
+            _extraDone.Add(i);
+            Call(call);
+        }
     }
 
     /// <summary>A pilot call to the brain (and the flight log).</summary>

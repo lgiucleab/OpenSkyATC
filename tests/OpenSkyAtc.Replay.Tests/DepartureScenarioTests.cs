@@ -125,6 +125,57 @@ public class DepartureScenarioTests
         Assert.Empty(none);
     }
 
+    [Fact]
+    public void RadioCheck_WindCheck_AndStartUpOnly()
+    {
+        var t = RunScenario("""
+            00:05 RadioCheck
+            00:10 RequestClearance
+            00:45 RequestWind
+            00:50 RequestStartup
+            01:00 RequestStartup
+            01:40 RequestTaxi
+            """, seed: 1, AutoFixed);
+        Assert.Contains(t, l => l.Contains("ATC Testville Delivery") && l.EndsWith("readability 5"));
+        Assert.Contains(t, l => l.Contains("ATC Testville Ground") && l.Contains("surface wind "));
+        // Asked twice: approved, then repeated as already given.
+        Assert.Equal(2, t.Count(l => l.Contains("ATC Testville Ground") && l.EndsWith("start up approved")));
+        Assert.Contains(t, l => l.Contains("REPEATED RequestStartup: startup"));
+        Assert.Contains(t, l => l.Contains("PHASE Cleared -> TaxiOut (taxi requested without pushback)"));
+    }
+
+    [Fact]
+    public void ADifferentRunwayBeforeTaxi_IsAFreshClearanceReadBack()
+    {
+        var t = RunScenario("""
+            00:10 RequestClearance
+            00:45 RequestRunway runway=18
+            01:40 RequestTaxi
+            """, seed: 1, AutoFixed);
+        Fixtures.VerifyTranscript("runway-request-before-taxi", t);
+        Assert.Contains(t, l => l.Contains("ATC Testville Ground") && l.Contains("roger, runway 18, cleared to XDST via TEST1A departure"));
+        var lines = t.ToList();
+        int reclear = lines.FindIndex(x => x.Contains("runway 18, cleared"));
+        Assert.Contains(lines.Skip(reclear), l => l.Contains("READBACK") && l.Contains("ifr-clearance: correct"));
+        Assert.Contains(t, l => l.Contains("taxi to holding point") && l.Contains("runway 18"));
+    }
+
+    [Fact]
+    public void ADifferentRunwayWhileTaxiing_IsANewTaxiClearance_AnUnknownOneIsRefused()
+    {
+        var t = RunScenario("""
+            00:10 RequestClearance
+            00:45 RequestPushStart
+            01:40 RequestTaxi
+            02:00 RequestRunway runway=18
+            02:30 RequestRunway runway=09
+            """, seed: 1, AutoFixed);
+        int first = t.ToList().FindIndex(l => l.Contains("taxi to holding point") && l.Contains("runway 36"));
+        int second = t.ToList().FindIndex(l => l.Contains("taxi to holding point") && l.Contains("runway 18"));
+        Assert.InRange(first, 0, second - 1);
+        Assert.Contains(t, l => l.EndsWith("unable approve runway 09"));
+    }
+
     private const int AtisKhz = 127_600;
     private static readonly AirportData OriginWithAtis = Origin with { Frequencies = [.. Origin.Frequencies, new AirportFrequency(ControllerRole.Atis, AtisKhz)] };
 

@@ -136,7 +136,10 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
             if (_conversation.PendingReadback() is { } ex)
                 list.Add(new Readback(ex.Outstanding.ToDictionary(kv => kv.Key, kv => kv.Value), ex.Id));
             list.AddRange(_phase.AvailableIntents(ctx));
+            if (Session.Phase is FlightPhase.Cleared or FlightPhase.Pushback or FlightPhase.TaxiOut or FlightPhase.Holding
+                or FlightPhase.Approach or FlightPhase.Final) list.Add(new RequestWind());
             list.Add(new SayAgain());
+            list.Add(new RadioCheck());
             return list;
         }
     }
@@ -234,6 +237,14 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
                 return;
             case Unreadable:
                 _conversation.Say(unit, [new SayAgainRequest()], TransmissionPriority.Reply, now + _conversation.ReplyDelay());
+                return;
+            case RadioCheck:
+                // CAP 413 2.94: the radio is always perfect here.
+                _conversation.Say(unit, [new Readability(5)], TransmissionPriority.Reply, now + _conversation.ReplyDelay());
+                return;
+            case RequestWind:
+                var wind = WindReport.From(_state!);
+                _conversation.Say(unit, [new SurfaceWind(wind.DirectionMagDeg, wind.SpeedKt)], TransmissionPriority.Reply, now + _conversation.ReplyDelay());
                 return;
             case Mayday or PanPan:
                 var kind = intent is Mayday ? EmergencyKind.Mayday : EmergencyKind.PanPan;

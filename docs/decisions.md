@@ -451,3 +451,8 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **Removed (owner's choice):** the compact always-on-top strip (`CompactWindow`, settings `CompactMode` and `CompactWindow`). The main window gets "Always on top" (setting `AlwaysOnTop`) and can be resized small. Old settings files still load: unknown fields are ignored.
 - **New data:** the host snapshot carries the cleared SID, the ATIS that matters now (`AtcBrain.CurrentAtis`: the destination's once en route and in range, else the origin's) and the QNH at the aircraft.
 - **Developer check:** `--screenshot FILE main en|es light|dark` renders either theme whatever Windows uses (`Palette.Force`). Checked in dark, light and Spanish; the hard mode switch is "Hard mode", with the long text as a tooltip.
+
+## 2026-10-21 - Refactor phase 6: more requests (in progress)
+
+- **Wording (CAP 413 edition 24):** radio check gets "readability 5" (2.93-2.94); "request start up" gets "start up approved" (4.9-4.10); "request surface wind" gets "surface wind 220/6"; "request FL240" gets the climb, or "unable approve FL450, FL410 available" (7.5); "request direct X" gets "route direct X" (Figure 15, existing). Runway change (owner's choice): before taxi, "roger, runway 14, cleared to ... via <new SID> departure ...", read back again; while taxiing, a new taxi clearance (CAP 413) if the SID stays the same; otherwise "unable approve runway 14" (built like 7.5). A lower level becomes the new cruise (owner's choice). Higher levels: up to 4,000 ft above the planned cruise; lower: down to FL100.
+- **Open:** the gate-to-gate test for a lower level is skipped until its transcript check is fixed. Not checked in the app or the sim yet.

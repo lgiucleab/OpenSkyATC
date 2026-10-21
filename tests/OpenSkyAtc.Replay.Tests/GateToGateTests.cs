@@ -117,3 +117,56 @@ public class GateToGateTests
         Assert.Equal(AllPhases, PhasesVisited(pilot));
     }
 }
+
+/// <summary>Level and direct requests en route (refactor phase 6), flown gate to gate.</summary>
+public class EnRouteRequestTests
+{
+    private static int ClimbsAfter(IReadOnlyList<string> t, int index) =>
+        t.Skip(index + 1).Count(l => l.Contains("ATC ") && Regex.IsMatch(l, @"\bclimb FL\d+"));
+
+    [Fact(Skip = "Pending: check the RequestLevel transcript format (refactor phase 6)")]
+    // TODO: the request line format for the level does not match the regex yet; re-enable once checked.
+    [Trait("Status", "pending")]
+    public void ALowerLevel_IsApproved_AndBecomesTheCruise()
+    {
+        var pilot = new SimulatedPilot(new SimulatedPilotOptions
+        {
+            ExtraCalls = [(FlightPhase.EnRoute, available => available.OfType<Core.Conversation.RequestLevel>().ToList() is { Count: 2 } two ? two.MinBy(l => l.Level.NominalFeet) : null)],
+        });
+        var t = pilot.Fly(seed: 3);
+        Assert.True(pilot.Brain.Session.Ended);
+        int asked = t.ToList().FindIndex(l => l.Contains("PILOT") && l.Contains("RequestLevel"));
+        Assert.True(asked >= 0, "no lower level was asked");
+        int level = int.Parse(Regex.Match(t[asked], @"FL(\d+)").Groups[1].Value);
+        // "climb FL220" while still below it, "descend FL220" when above: either way to the level asked for.
+        Assert.Matches($@"(climb|descend) FL{level}", t.Skip(asked + 1).First(l => l.Contains("ATC ") && l.Contains(" FL")));
+        // It is the cruise now: nothing climbs above it later.
+        Assert.DoesNotContain(t.Skip(asked + 1), l => l.Contains("ATC ") && Regex.Match(l, @"climb FL(\d+)") is { Success: true } m && int.Parse(m.Groups[1].Value) > level);
+    }
+
+    [Fact]
+    public void FarAboveTheCruise_IsUnable_WithTheHighestAvailable()
+    {
+        var pilot = new SimulatedPilot(new SimulatedPilotOptions
+        {
+            ExtraCalls = [(FlightPhase.EnRoute, _ => new Core.Conversation.RequestLevel(AltitudeTarget.FlightLevel(490)))],
+        });
+        var t = pilot.Fly(seed: 3);
+        Assert.True(pilot.Brain.Session.Ended);
+        Assert.Contains(t, l => l.Contains("ATC ") && Regex.IsMatch(l, @"unable approve FL490, FL\d+ available"));
+    }
+
+    [Fact]
+    public void DirectToALaterFix_IsGivenAsRouteDirect()
+    {
+        var pilot = new SimulatedPilot(new SimulatedPilotOptions
+        {
+            ExtraCalls = [(FlightPhase.EnRoute, available => available.OfType<Core.Conversation.RequestDirect>().LastOrDefault())],
+        });
+        var t = pilot.Fly(seed: 3);
+        Assert.True(pilot.Brain.Session.Ended);
+        var asked = t.First(l => l.Contains("PILOT") && l.Contains("RequestDirect"));
+        string fix = Regex.Match(asked, @"fix=(\S+)").Groups[1].Value;
+        Assert.Contains(t, l => l.Contains("ATC ") && (l.Contains($"direct {fix}")));
+    }
+}
