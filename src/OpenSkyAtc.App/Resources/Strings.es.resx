@@ -32,6 +32,12 @@
   <data name="Main.HardMode" xml:space="preserve">
     <value>Modo difícil (escribe tú las colaciones)</value>
   </data>
+  <data name="Main.AutoTune" xml:space="preserve">
+    <value>Sintonía automática</value>
+  </data>
+  <data name="Main.AutoTuneHelp" xml:space="preserve">
+    <value>Al colacionar un cambio de frecuencia, la nueva pasa a activa en la radio con la que transmites; la anterior queda en reserva.</value>
+  </data>
   <data name="Main.TaxiArrows" xml:space="preserve">
     <value>Flechas de rodaje</value>
   </data>

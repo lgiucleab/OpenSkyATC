@@ -105,6 +105,26 @@ public class DepartureScenarioTests
         Assert.Equal(2, t.Count(l => l.StartsWith("[") && l.Contains("ATC ") && l.Contains("cleared for takeoff")));
     }
 
+    [Fact]
+    public void EveryHandoffReadBackCorrectly_IsReportedForAutoTune_AWrongOneIsNot()
+    {
+        var brain = new AtcBrain();
+        var tuned = new List<string>();
+        brain.FrequencyChangeReadBack += u => tuned.Add(u.Callsign);
+        ReplayRunner.Run(brain, Recording, IntentScript.Parse(NormalRequests), Plan, Origin, Destination, 1, AutoFixed);
+        Assert.Equal(["Testville Ground", "Testville Tower", "Testville Departure"], tuned);
+
+        var wrong = new AtcBrain();
+        var none = new List<string>();
+        wrong.FrequencyChangeReadBack += u => none.Add(u.Callsign);
+        ReplayRunner.Run(wrong, Recording, IntentScript.Parse("""
+            00:10 RequestClearance
+            00:20 Readback
+            00:30 Readback frequency=121800
+            """), Plan, Origin, Destination, 1, Manual);
+        Assert.Empty(none);
+    }
+
     private const int AtisKhz = 127_600;
     private static readonly AirportData OriginWithAtis = Origin with { Frequencies = [.. Origin.Frequencies, new AirportFrequency(ControllerRole.Atis, AtisKhz)] };
 

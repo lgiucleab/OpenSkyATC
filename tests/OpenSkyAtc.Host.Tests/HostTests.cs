@@ -101,3 +101,28 @@ public class TranscriptTests
         Assert.Equal("Roger", PilotPhrase.Of(new Readback(new Dictionary<ReadbackItem, string>())));
     }
 }
+
+public class AutoTuneTests
+{
+    private static readonly OpenSkyAtc.Core.Model.ControllerUnit Ground = new(OpenSkyAtc.Core.Model.ControllerRole.Ground, "Barajas Ground", 121_630, OtherFrequenciesKhz: [121_850]);
+
+    private static OpenSkyAtc.Core.Sim.SimState Radios(int com1, int com2, bool txOn2 = false) => new()
+    {
+        Com1ActiveKhz = com1, Com2ActiveKhz = com2, Com1Transmit = !txOn2, Com2Transmit = txOn2,
+    };
+
+    [Fact]
+    public void TunesTheRadioThePilotTransmitsOn() =>
+        Assert.Equal((1, 121_630), AutoTune.Plan(Radios(121_800, 118_250), Ground));
+
+    [Fact]
+    public void TransmittingOnCom2_TunesCom2() =>
+        Assert.Equal((2, 121_630), AutoTune.Plan(Radios(118_250, 121_800, txOn2: true), Ground));
+
+    [Fact]
+    public void AlreadyOnTheUnit_NothingToDo()
+    {
+        Assert.Null(AutoTune.Plan(Radios(121_630, 118_250), Ground));
+        Assert.Null(AutoTune.Plan(Radios(121_850, 118_250), Ground)); // the unit's other frequency counts
+    }
+}

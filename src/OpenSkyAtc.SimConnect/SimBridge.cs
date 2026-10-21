@@ -49,7 +49,7 @@ public sealed class SimBridge
 {
     private enum Definitions { State, Title, ArrowPosition }
     private enum Requests { State, Title }
-    private enum Events { Pause, PttDown, PttUp, Atc, TogglePushback, GroundService }
+    private enum Events { Pause, PttDown, PttUp, Atc, TogglePushback, GroundService, Com1StandbySet, Com1Swap, Com2StandbySet, Com2Swap }
 
     private enum Groups { Atc }
 
@@ -93,6 +93,17 @@ public sealed class SimBridge
     /// (TUG_HEADING is refused). Safe to call from any thread.
     /// </summary>
     public void GroundService(GroundServiceMessage message) => _commands.Enqueue((Events.GroundService, (uint)message));
+
+    /// <summary>
+    /// Makes <paramref name="khz"/> the active frequency of COM1 or COM2 (auto-tune): it goes into standby and is
+    /// swapped, so the old active frequency ends up in standby. Sent at the next loop pass.
+    /// </summary>
+    public void TuneCom(int radio, int khz)
+    {
+        bool two = radio == 2;
+        _commands.Enqueue((two ? Events.Com2StandbySet : Events.Com1StandbySet, (uint)khz * 1000));
+        _commands.Enqueue((two ? Events.Com2Swap : Events.Com1Swap, 0));
+    }
 
     /// <summary>Arrows currently placed in the sim.</summary>
     public int ArrowCount => _arrows?.Count ?? 0;
@@ -183,6 +194,10 @@ public sealed class SimBridge
         SetUpPushToTalk(sim);
         sim.MapClientEventToSimEvent(Events.TogglePushback, "TOGGLE_PUSHBACK");
         sim.MapClientEventToSimEvent(Events.GroundService, "GROUND_SERVICE_ATC_MESSAGE");
+        sim.MapClientEventToSimEvent(Events.Com1StandbySet, "COM_STBY_RADIO_SET_HZ");
+        sim.MapClientEventToSimEvent(Events.Com1Swap, "COM_STBY_RADIO_SWAP");
+        sim.MapClientEventToSimEvent(Events.Com2StandbySet, "COM2_STBY_RADIO_SET_HZ");
+        sim.MapClientEventToSimEvent(Events.Com2Swap, "COM2_RADIO_SWAP");
         while (_commands.TryDequeue(out _)) { } // commands from before this connection are stale
         _arrows = new SimArrows(sim, _o.ArrowTitle, Definitions.ArrowPosition, w => Warning?.Invoke(w));
         lock (_arrowLock) _arrowsChanged = true; // a new connection starts with no arrows: place the wanted ones again

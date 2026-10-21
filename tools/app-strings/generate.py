@@ -16,6 +16,8 @@ STRINGS = {
     "Main.Compact": ("Compact", "Compacto"),
     "Main.Expand": ("Expand", "Ampliar"),
     "Main.HardMode": ("Hard mode (type readbacks yourself)", "Modo difícil (escribe tú las colaciones)"),
+    "Main.AutoTune": ("Auto tune", "Sintonía automática"),
+    "Main.AutoTuneHelp": ("When you read back a frequency change, the new frequency becomes active on the radio you transmit on; the old one goes to standby.", "Al colacionar un cambio de frecuencia, la nueva pasa a activa en la radio con la que transmites; la anterior queda en reserva."),
     "Main.TaxiArrows": ("Taxi arrows", "Flechas de rodaje"),
     "Main.You": ("You", "Tú"),
     "Main.Callsign": ("Callsign", "Indicativo"),

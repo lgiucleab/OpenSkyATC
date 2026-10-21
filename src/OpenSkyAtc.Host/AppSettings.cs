@@ -31,6 +31,9 @@ public sealed record AppSettings
     // works in any window (step 14, "F12", "Ctrl+Space"...; see KeyboardPushToTalk).
     public string? PushToTalkInput { get; init; }
     public bool UseAtcKey { get; init; } = true;
+
+    /// <summary>Tune the new frequency when a frequency change is read back correctly (refactor phase 2).</summary>
+    public bool AutoTune { get; init; } = true;
     public string? KeyboardPushToTalk { get; init; }
 
     // Speech recognition (step 14)

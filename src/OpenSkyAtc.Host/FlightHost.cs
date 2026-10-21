@@ -121,6 +121,7 @@ public sealed class FlightHost : IDisposable
     private SimState? _state;
     private int _arrowCount;
     private string? _atisHeard;
+    private readonly List<TranscriptEntry> _hostLines = [];
     private readonly OpenSkyAtc.Phraseology.IcaoRenderer _atisText = new(0);
     private HostStatus _status = HostStatus.Idle;
     private string? _statusDetail;
@@ -238,6 +239,7 @@ public sealed class FlightHost : IDisposable
             lock (_gate)
             {
                 _brain = brain;
+                brain.FrequencyChangeReadBack += unit => OnFrequencyChangeReadBack(brain, unit);
                 _plan = plan;
                 _spokenCallsign = SpokenCallsign(plan);
                 _transcript = new TranscriptWriter(brain.Session, new IcaoRenderer(seed, callsigns: Data.Callsigns), _spokenCallsign);
@@ -276,7 +278,8 @@ public sealed class FlightHost : IDisposable
             if (_brain is null) return;
             _recorder?.Intent(intent);
             _brain.HandlePilotIntent(intent);
-            lines = _transcript!.TakeNew();
+            lines = [.. _transcript!.TakeNew(), .. _hostLines];
+            _hostLines.Clear();
         }
         if (lines.Count > 0) Transcript?.Invoke(lines);
         Updated?.Invoke();
@@ -330,6 +333,11 @@ public sealed class FlightHost : IDisposable
                 _arrowCount = arrows.Count;
                 lines = _transcript!.TakeNew();
                 if (Atis(s) is { } atisLine) lines = [.. lines, atisLine];
+                if (_hostLines.Count > 0)
+                {
+                    lines = [.. lines, .. _hostLines];
+                    _hostLines.Clear();
+                }
             }
             if (lines.Count > 0) Transcript?.Invoke(lines);
             if (lines.Count > 0 || ++ticks % 2 == 0) Updated?.Invoke();
@@ -445,6 +453,16 @@ public sealed class FlightHost : IDisposable
             lock (_gate) _transcribing = false;
             Updated?.Invoke();
         }
+    }
+
+    /// <summary>Auto-tune: under the lock, from inside the brain. The line is shown after the readback that caused it.</summary>
+    private void OnFrequencyChangeReadBack(AtcBrain brain, ControllerUnit unit)
+    {
+        if (!_settings.AutoTune || _state is not { } s || _bridge is not { IsConnected: true } bridge) return;
+        if (AutoTune.Plan(s, unit) is not { } tune) return;
+        bridge.TuneCom(tune.Radio, tune.Khz);
+        _hostLines.Add(new TranscriptEntry(brain.Session.SimTime, TranscriptKind.Event, null, null,
+            $"Auto-tuned COM{tune.Radio} to {OpenSkyAtc.Phraseology.Spoken.DisplayFrequency(tune.Khz)} ({unit.Callsign})"));
     }
 
     /// <summary>

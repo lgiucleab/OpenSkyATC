@@ -116,6 +116,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Tune the next frequency when its change is read back (refactor phase 2).</summary>
+    public bool AutoTune
+    {
+        get => Settings.AutoTune;
+        set
+        {
+            SaveSettings(Settings with { AutoTune = value });
+            OnPropertyChanged();
+        }
+    }
+
     public void SaveSettings(AppSettings settings)
     {
         Settings = settings;
@@ -124,6 +135,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _host?.Apply(settings);
         OnPropertyChanged(nameof(HardMode));
         OnPropertyChanged(nameof(TaxiArrows));
+        OnPropertyChanged(nameof(AutoTune));
     }
 
     [RelayCommand]

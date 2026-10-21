@@ -32,6 +32,12 @@
   <data name="Main.HardMode" xml:space="preserve">
     <value>Hard mode (type readbacks yourself)</value>
   </data>
+  <data name="Main.AutoTune" xml:space="preserve">
+    <value>Auto tune</value>
+  </data>
+  <data name="Main.AutoTuneHelp" xml:space="preserve">
+    <value>When you read back a frequency change, the new frequency becomes active on the radio you transmit on; the old one goes to standby.</value>
+  </data>
   <data name="Main.TaxiArrows" xml:space="preserve">
     <value>Taxi arrows</value>
   </data>

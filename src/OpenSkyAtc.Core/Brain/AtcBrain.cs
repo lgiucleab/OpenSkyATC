@@ -74,6 +74,12 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
 
     public event Action<AtcMessage>? Transmission;
 
+    /// <summary>
+    /// The pilot read back a frequency change correctly ("Ground 121.630"): the unit to tune, for auto-tune (owner's
+    /// choice, refactor phase 2). Raised inside <see cref="HandlePilotIntent"/>.
+    /// </summary>
+    public event Action<ControllerUnit>? FrequencyChangeReadBack;
+
     public void Start(FlightPlan plan, AirportData origin, AirportData destination, int seed)
     {
         _plan = plan;
@@ -86,6 +92,7 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
         _events.SetAirports(origin, destination);
         _queue = new TransmissionQueue();
         _conversation = new ConversationManager(_queue, _rng, Session.Log, _options.Timing);
+        _conversation.ContactReadBack += unit => FrequencyChangeReadBack?.Invoke(unit);
         // Airspace and planning draw from their own streams so they never shift the conversation's choices.
         _airspace = AirspaceModel.Build(origin, destination, plan, _options.CenterFrequencies, new SeededRandom(unchecked(seed ^ 0x0A1125AC)), _options.Airspace);
         _planning = new FlightPlanning(plan, origin, destination, new SeededRandom(unchecked(seed ^ 0x51A221)), _options.Planning, _options.Sops);

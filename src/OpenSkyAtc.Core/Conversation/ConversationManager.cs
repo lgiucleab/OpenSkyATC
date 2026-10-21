@@ -29,6 +29,9 @@ public sealed class ConversationManager(TransmissionQueue queue, IRandom rng, Ev
 
     public IReadOnlyList<Exchange> Exchanges => _exchanges;
 
+    /// <summary>An instruction to change frequency ("contact Ground 121.630") was read back correctly: the unit to tune.</summary>
+    public event Action<ControllerUnit>? ContactReadBack;
+
     public TimeSpan ReplyDelay() => Sample(_timing.ReplySeconds);
     public TimeSpan CorrectionDelay() => Sample(_timing.CorrectionSeconds);
     public TimeSpan CheckInDelay() => Sample(_timing.CheckInSeconds);
@@ -73,6 +76,7 @@ public sealed class ConversationManager(TransmissionQueue queue, IRandom rng, Ev
         {
             exchange.State = ExchangeState.Correct;
             exchange.OnReadBack?.Invoke();
+            if (exchange.Parts.OfType<Contact>().FirstOrDefault() is { } contact) ContactReadBack?.Invoke(contact.Unit);
             return true;
         }
 
