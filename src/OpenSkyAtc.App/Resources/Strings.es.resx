@@ -23,14 +23,62 @@
   <data name="Main.Settings" xml:space="preserve">
     <value>Ajustes</value>
   </data>
-  <data name="Main.Compact" xml:space="preserve">
-    <value>Compacto</value>
-  </data>
-  <data name="Main.Expand" xml:space="preserve">
-    <value>Ampliar</value>
+  <data name="Main.HardModeShort" xml:space="preserve">
+    <value>Modo difícil</value>
   </data>
   <data name="Main.HardMode" xml:space="preserve">
     <value>Modo difícil (escribe tú las colaciones)</value>
+  </data>
+  <data name="Main.FilterAll" xml:space="preserve">
+    <value>Todo</value>
+  </data>
+  <data name="Main.FilterAtc" xml:space="preserve">
+    <value>ATC</value>
+  </data>
+  <data name="Main.FilterYou" xml:space="preserve">
+    <value>Tú</value>
+  </data>
+  <data name="Main.FilterEvents" xml:space="preserve">
+    <value>Eventos</value>
+  </data>
+  <data name="Main.AlwaysOnTop" xml:space="preserve">
+    <value>Siempre visible</value>
+  </data>
+  <data name="Main.Requests" xml:space="preserve">
+    <value>Tus llamadas</value>
+  </data>
+  <data name="Main.KeysHint" xml:space="preserve">
+    <value>Las teclas 1-9 envían una llamada</value>
+  </data>
+  <data name="Main.NoStation" xml:space="preserve">
+    <value>Sin frecuencia de ATC</value>
+  </data>
+  <data name="Main.NoFlightShort" xml:space="preserve">
+    <value>Sin vuelo</value>
+  </data>
+  <data name="Main.FlightPlanned" xml:space="preserve">
+    <value>Plan de vuelo</value>
+  </data>
+  <data name="Main.Auto" xml:space="preserve">
+    <value>auto</value>
+  </data>
+  <data name="Tile.Runway" xml:space="preserve">
+    <value>Pista</value>
+  </data>
+  <data name="Tile.Route" xml:space="preserve">
+    <value>Ruta</value>
+  </data>
+  <data name="Tile.Cleared" xml:space="preserve">
+    <value>Autorizado</value>
+  </data>
+  <data name="Tile.Squawk" xml:space="preserve">
+    <value>Squawk</value>
+  </data>
+  <data name="Tile.Next" xml:space="preserve">
+    <value>Siguiente frecuencia</value>
+  </data>
+  <data name="Tile.Atis" xml:space="preserve">
+    <value>ATIS · QNH</value>
   </data>
   <data name="Main.AutoRespond" xml:space="preserve">
     <value>Respuesta automática</value>

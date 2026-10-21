@@ -68,6 +68,13 @@ public sealed record HostSnapshot
     public AltitudeTarget? ClearedAltitude { get; init; }
     public int? Squawk { get; init; }
     public string? Runway { get; init; }
+
+    /// <summary>The cleared SID, or null (flight planned route, or not cleared yet).</summary>
+    public string? Sid { get; init; }
+
+    /// <summary>The ATIS that matters now (letter) and the QNH at the aircraft, for the main window's tiles.</summary>
+    public char? AtisLetter { get; init; }
+    public int? Qnh { get; init; }
     public int TunedKhz { get; init; }
 
     /// <summary>The radio the pilot transmits on (1 or 2) and its standby frequency (0 when unknown).</summary>
@@ -176,6 +183,9 @@ public sealed class FlightHost : IDisposable
                 ClearedAltitude = c?.ClearedAltitude,
                 Squawk = c?.Squawk,
                 Runway = c?.Runway,
+                Sid = c?.Sid,
+                AtisLetter = _brain?.CurrentAtis?.Letter,
+                Qnh = _state is { } q && q.SeaLevelPressureHpa > 800 ? Core.Planning.FlightPlanning.Qnh(q) : null,
                 TunedKhz = _state?.TransmitFrequencyKhz ?? 0,
                 Com = _state is { Com2Transmit: true, Com1Transmit: false } ? 2 : 1,
                 StandbyKhz = _state is { Com2Transmit: true, Com1Transmit: false } ? _state.Com2StandbyKhz : _state?.Com1StandbyKhz ?? 0,

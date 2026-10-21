@@ -10,7 +10,6 @@ namespace OpenSkyAtc.App.Views;
 public partial class MainWindow : Window, IMainView
 {
     private readonly MainViewModel _vm;
-    private CompactWindow? _compact;
 
     public MainWindow(MainViewModel vm)
     {
@@ -20,45 +19,22 @@ public partial class MainWindow : Window, IMainView
         DataContext = vm;
         Restore(this, vm.Settings.MainWindow);
         ((INotifyCollectionChanged)vm.Transcript).CollectionChanged += (_, _) => TranscriptScroll.ScrollToEnd();
-        Closing += (_, _) =>
+        PreviewKeyDown += OnKey;
+        Closing += (_, _) => _vm.SaveSettings(_vm.Settings with { MainWindow = Placement(this) ?? _vm.Settings.MainWindow });
+    }
+
+    /// <summary>Keys 1-9 (top row or keypad) send the call with that number, unless a text box has the focus.</summary>
+    private void OnKey(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.OriginalSource is System.Windows.Controls.Primitives.TextBoxBase || System.Windows.Input.Keyboard.Modifiers != 0) return;
+        int n = e.Key switch
         {
-            IsClosing = true;
-            bool compact = _compact?.IsVisible ?? false;
-            _vm.SaveSettings(_vm.Settings with
-            {
-                MainWindow = Placement(this) ?? _vm.Settings.MainWindow,
-                CompactWindow = _compact is null ? _vm.Settings.CompactWindow : Placement(_compact) ?? _vm.Settings.CompactWindow,
-                CompactMode = compact,
-            });
-            _compact?.Close();
+            >= System.Windows.Input.Key.D1 and <= System.Windows.Input.Key.D9 => e.Key - System.Windows.Input.Key.D0,
+            >= System.Windows.Input.Key.NumPad1 and <= System.Windows.Input.Key.NumPad9 => e.Key - System.Windows.Input.Key.NumPad0,
+            _ => 0,
         };
+        if (n > 0 && _vm.SendNumber(n)) e.Handled = true;
     }
-
-    /// <summary>The app is closing: the compact strip must close too instead of bringing this window back.</summary>
-    public bool IsClosing { get; private set; }
-
-    public void ShowCompact()
-    {
-        _compact ??= new CompactWindow(_vm, this);
-        Restore(_compact, _vm.Settings.CompactWindow);
-        _compact.Show();
-        Hide();
-        _vm.SaveSettings(_vm.Settings with { CompactMode = true });
-    }
-
-    /// <summary>Back from the compact window.</summary>
-    public void ShowFull()
-    {
-        if (_compact is not null)
-        {
-            _vm.SaveSettings(_vm.Settings with { CompactWindow = Placement(_compact) ?? _vm.Settings.CompactWindow, CompactMode = false });
-            _compact.Hide();
-        }
-        Show();
-        Activate();
-    }
-
-    private void Compact_Click(object sender, RoutedEventArgs e) => ShowCompact();
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
@@ -70,30 +46,18 @@ public partial class MainWindow : Window, IMainView
     }
 
     private void PastFlights_Click(object sender, RoutedEventArgs e) =>
-        new PastFlightsWindow(new DebriefStore().List()) { Owner = IsVisible ? this : _compact }.Show();
+        new PastFlightsWindow(new DebriefStore().List()) { Owner = this }.Show();
 
     public void ShowDebrief(SavedDebrief debrief)
     {
-        var window = new DebriefWindow(new DebriefViewModel(debrief)) { Owner = IsVisible ? this : _compact };
+        var window = new DebriefWindow(new DebriefViewModel(debrief)) { Owner = this };
         window.Show();
         window.Activate();
     }
 
-    /// <summary>The gear button opens its menu (settings, compact mode, end flight) on a normal click.</summary>
-    private void Menu_Click(object sender, RoutedEventArgs e)
-    {
-        if (MenuButton.ContextMenu is { } menu)
-        {
-            menu.PlacementTarget = MenuButton;
-            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-            menu.DataContext = DataContext;
-            menu.IsOpen = true;
-        }
-    }
-
     public Readback? AskReadback(Readback expected)
     {
-        var dialog = new ReadbackWindow(new ReadbackFormViewModel(expected)) { Owner = IsVisible ? this : _compact };
+        var dialog = new ReadbackWindow(new ReadbackFormViewModel(expected)) { Owner = this };
         return dialog.ShowDialog() == true ? dialog.Result : null;
     }
 
@@ -106,7 +70,7 @@ public partial class MainWindow : Window, IMainView
 
     public void OpenSettings()
     {
-        var dialog = new SettingsWindow(new SettingsViewModel(_vm.Settings)) { Owner = IsVisible ? this : _compact };
+        var dialog = new SettingsWindow(new SettingsViewModel(_vm.Settings)) { Owner = this };
         if (dialog.ShowDialog() == true && dialog.Result is { } settings) _vm.SaveSettings(settings);
     }
 
@@ -115,13 +79,13 @@ public partial class MainWindow : Window, IMainView
     /// <summary>The first-run guide; its answers (or, when skipped, only "seen") are saved.</summary>
     public void OpenWelcome()
     {
-        var dialog = new WelcomeWindow(new WelcomeViewModel(_vm.Settings)) { Owner = IsVisible ? this : _compact };
+        var dialog = new WelcomeWindow(new WelcomeViewModel(_vm.Settings)) { Owner = this };
         dialog.ShowDialog();
         if (dialog.Result is { } settings) _vm.SaveSettings(settings);
     }
 
     public void ShowError(string title, string message) =>
-        MessageBox.Show(IsVisible ? this : (Window?)_compact ?? this, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageBox.Show(this, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
 
     /// <summary>Where the window is; null when it has never been shown (its bounds are then empty, i.e. infinite).</summary>
     internal static WindowPlacement? Placement(Window w)

@@ -28,6 +28,12 @@ public partial class App : Application
         }
         if (e.Args.Length >= 2 && e.Args[0] == "--screenshot")
         {
+            // A 5th argument "light" or "dark" renders in that theme whatever Windows uses.
+            if (e.Args.Length > 4 && e.Args[4] is "light" or "dark")
+            {
+                ThemeMode = e.Args[4] == "dark" ? ThemeMode.Dark : ThemeMode.Light;
+                Palette.Force(e.Args[4] == "dark");
+            }
             Screenshot(e.Args[1], e.Args.Length > 2 ? e.Args[2] : "main", e.Args.Length > 3 ? e.Args[3] : "en");
             return;
         }
@@ -35,7 +41,6 @@ public partial class App : Application
         var window = new MainWindow(_main);
         MainWindow = window;
         window.Show();
-        if (_main.Settings.CompactMode) window.ShowCompact();
         if (WelcomeViewModel.ShouldShow(_main.Settings)) Dispatcher.InvokeAsync(window.OpenWelcome, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
@@ -46,7 +51,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Developer check: "--screenshot FILE.png [main|compact|settings[:TAB]|welcome[:STEP]|readback|debrief|past] [en|es]" renders one window with
+    /// Developer check: "--screenshot FILE.png [main|settings[:TAB]|welcome[:STEP]|readback|debrief|past] [en|es] [light|dark]" renders one window with
     /// sample content to a PNG and exits (settings come from a throwaway file, never the user's; TAB is the settings
     /// tab number, from 0).
     /// </summary>
@@ -106,7 +111,6 @@ public partial class App : Application
         });
         Window window = which switch
         {
-            "compact" => new CompactWindow(vm, new MainWindow(vm)),
             _ when which.StartsWith("settings", StringComparison.Ordinal) => SettingsAt(vm, which),
             _ when which.StartsWith("welcome", StringComparison.Ordinal) => WelcomeAt(which),
             "readback" => new ReadbackWindow(new ReadbackFormViewModel(sample)),

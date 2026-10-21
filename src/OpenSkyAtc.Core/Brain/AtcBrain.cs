@@ -111,6 +111,21 @@ public sealed class AtcBrain(AtcBrainOptions? options = null) : IAtcBrain
     /// <summary>The ATIS broadcast on a frequency, when the aircraft is in its range (design doc "ATIS"); null otherwise.</summary>
     public AtisReport? AtisOn(int khz) => _state is null || _atis is null ? null : _atis.On(khz, _state);
 
+    /// <summary>
+    /// The ATIS that matters now, for the UI: the destination's once it is in range and the flight is past the
+    /// departure, otherwise the origin's in range; null when none (no ATIS frequency, or out of range).
+    /// </summary>
+    public AtisReport? CurrentAtis
+    {
+        get
+        {
+            if (_state is null || _atis is null) return null;
+            bool arriving = Session.Phase >= FlightPhase.EnRoute;
+            var inRange = _atis.Stations.Where(st => _atis.InRange(st, _state) && st.Current is not null).ToList();
+            return (inRange.FirstOrDefault(st => st.IsArrival == arriving) ?? inRange.FirstOrDefault())?.Current;
+        }
+    }
+
     public IReadOnlyList<PilotIntent> AvailableIntents
     {
         get

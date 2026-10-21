@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
+using System.Windows.Data;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -22,7 +24,23 @@ public interface IMainView
     void ShowDebrief(SavedDebrief debrief);
 }
 
-public sealed record TranscriptLine(string Time, string Who, string Text, TranscriptKind Kind);
+/// <param name="Who">"GROUND" for ATC, "You" for the pilot, empty for events.</param>
+/// <param name="Auto">A call auto-respond made.</param>
+public sealed record TranscriptLine(string Time, string Who, string Text, TranscriptKind Kind, bool Auto = false)
+{
+    public bool IsAtc => Kind == TranscriptKind.Atc;
+    public bool IsPilot => Kind == TranscriptKind.Pilot;
+    public bool IsEvent => Kind is TranscriptKind.Event or TranscriptKind.Warning;
+}
+
+/// <summary>Which calls the conversation shows (the filter buttons above it).</summary>
+public enum TranscriptFilter
+{
+    All,
+    Atc,
+    Pilot,
+    Events,
+}
 
 public sealed partial class IntentButton(PilotIntent intent, string label, bool primary, IRelayCommand<IntentButton> command) : ObservableObject
 {
@@ -33,6 +51,9 @@ public sealed partial class IntentButton(PilotIntent intent, string label, bool 
     /// <summary>The label, with the readback countdown ("Read back: 118.080 · 14 s") when one runs.</summary>
     [ObservableProperty] private string _label = label;
     public bool Primary { get; } = primary;
+
+    /// <summary>"1".."9": the key that sends it (main window), or empty after the ninth.</summary>
+    public string Number { get; init; } = "";
     public IRelayCommand<IntentButton> Command { get; } = command;
 }
 
@@ -52,6 +73,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public MainViewModel(SettingsStore store, Dispatcher ui)
     {
+        TranscriptView = CollectionViewSource.GetDefaultView(Transcript);
+        TranscriptView.Filter = Shows;
         _store = store;
         _ui = ui;
         Settings = store.Load();
@@ -64,6 +87,24 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public IMainView? View { get; set; }
     public AppSettings Settings { get; private set; }
     public ObservableCollection<TranscriptLine> Transcript { get; } = [];
+
+    /// <summary>The conversation as shown: <see cref="Transcript"/> through the filter buttons.</summary>
+    public ICollectionView TranscriptView { get; }
+
+    [ObservableProperty] private TranscriptFilter _filter;
+
+    partial void OnFilterChanged(TranscriptFilter value) => TranscriptView.Refresh();
+
+    [RelayCommand]
+    private void SetFilter(TranscriptFilter filter) => Filter = filter;
+
+    private bool Shows(object item) => item is TranscriptLine l && Filter switch
+    {
+        TranscriptFilter.Atc => l.IsAtc,
+        TranscriptFilter.Pilot => l.IsPilot,
+        TranscriptFilter.Events => l.IsEvent,
+        _ => true,
+    };
     public ObservableCollection<IntentButton> Intents { get; } = [];
     public IRelayCommand<IntentButton> SendCommand { get; }
 
@@ -81,11 +122,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string? _hint;
     [ObservableProperty] private bool _hintIsWarning;
     [ObservableProperty] private string? _arrowsText;
-    [ObservableProperty] private string? _lastAtc;
     [ObservableProperty] private bool _paused;
     [ObservableProperty] private string? _notice;
     [ObservableProperty] private string _pttText = "";
     [ObservableProperty] private bool _showStatusDetail;
+
+    // The main window's tiles and radio box (refactor phase 5); "—" when there is nothing yet.
+    [ObservableProperty] private string _flightLine = "";
+    [ObservableProperty] private string _tileRunway = "—";
+    [ObservableProperty] private string _tileRoute = "—";
+    [ObservableProperty] private string _tileCleared = "—";
+    [ObservableProperty] private string _tileSquawk = "—";
+    [ObservableProperty] private string _tileNext = "—";
+    [ObservableProperty] private string _tileNextName = "";
+    [ObservableProperty] private string _tileAtis = "—";
+    [ObservableProperty] private string _comLabel = "COM1";
+    [ObservableProperty] private string _standby = "";
+    [ObservableProperty] private string _stationLine = "";
 
     /// <summary>Header button: starts a flight with the configured plan source (or ends the current one first).</summary>
     [RelayCommand]
@@ -127,6 +180,25 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Keep the main window above other windows (replaces the compact strip, refactor phase 5).</summary>
+    public bool AlwaysOnTop
+    {
+        get => Settings.AlwaysOnTop;
+        set
+        {
+            SaveSettings(Settings with { AlwaysOnTop = value });
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Keys 1-9 in the main window: the request with that number.</summary>
+    public bool SendNumber(int number)
+    {
+        if (number < 1 || number > Intents.Count || number > 9) return false;
+        Send(Intents[number - 1]);
+        return true;
+    }
+
     /// <summary>Tune the next frequency when its change is read back (refactor phase 2).</summary>
     public bool AutoTune
     {
@@ -148,6 +220,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(TaxiArrows));
         OnPropertyChanged(nameof(AutoTune));
         OnPropertyChanged(nameof(AutoRespond));
+        OnPropertyChanged(nameof(AlwaysOnTop));
     }
 
     [RelayCommand]
@@ -237,8 +310,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 _ => "",
             };
             string time = l.Time.TotalHours >= 1 ? l.Time.ToString(@"h\:mm\:ss", CultureInfo.InvariantCulture) : l.Time.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
-            Transcript.Add(new TranscriptLine(time, who, l.Text, l.Kind));
-            if (l.Kind == TranscriptKind.Atc) LastAtc = $"{l.Station}: {l.Text}";
+            // The host marks auto calls with " (auto)" in the text (for logs); here the flag shows it instead.
+            string text = l.Auto && l.Text.EndsWith(" (auto)", StringComparison.Ordinal) ? l.Text[..^7] : l.Text;
+            Transcript.Add(new TranscriptLine(time, l.Kind == TranscriptKind.Atc ? who.ToUpperInvariant() : who, text, l.Kind, l.Auto));
         }
         while (Transcript.Count > MaxTranscript) Transcript.RemoveAt(0);
     }
@@ -287,6 +361,24 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Frequency = s is { TunedKhz: > 0 } ? Mhz(s.TunedKhz) : "———.———";
         var expected = s?.Expected;
         TalkingTo = expected is not null && s!.TunedKhz != 0 && expected.Answers(s.TunedKhz) ? expected.Callsign : "";
+        ComLabel = $"COM{s?.Com ?? 1}";
+        Standby = s is { StandbyKhz: > 0 } ? Mhz(s.StandbyKhz) : "";
+        StationLine = TalkingTo.Length == 0 ? Loc.Get("Main.NoStation") : s?.Runway is { } rwy ? $"{TalkingTo} · {rwy}" : TalkingTo;
+        FlightLine = s?.Plan is null ? Loc.Get("Main.NoFlightShort") : $"{Callsign} · {Route} · {Phase}";
+        TileRunway = s?.Runway ?? "—";
+        TileRoute = s?.Sid ?? (s?.ClearedAltitude is not null ? Loc.Get("Main.FlightPlanned") : "—");
+        TileCleared = s?.ClearedAltitude is { } alt ? (alt.Kind == Core.Model.AltitudeKind.FlightLevel ? $"FL{alt.Value:000}" : $"{alt.Value} ft") : "—";
+        TileSquawk = s?.Squawk is { } code ? code.ToString("0000", CultureInfo.InvariantCulture) : "—";
+        var nextUnit = s?.HandoffTo ?? (expected is not null && s!.TunedKhz != 0 && !expected.Answers(s.TunedKhz) ? expected : null);
+        TileNext = nextUnit is not null ? Mhz(nextUnit.FrequencyKhz) : "—";
+        TileNextName = nextUnit?.Callsign ?? "";
+        TileAtis = (s?.AtisLetter, s?.Qnh) switch
+        {
+            ({ } letter, { } q) => $"{letter} · {q}",
+            (null, { } q) => q.ToString(CultureInfo.InvariantCulture),
+            ({ } letter, null) => letter.ToString(),
+            _ => "—",
+        };
         if (s?.HandoffTo is { } next)
         {
             Hint = Loc.Format("Main.Next", next.Callsign, Mhz(next.FrequencyKhz));
@@ -316,7 +408,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             _intentKey = key;
             Intents.Clear();
-            foreach (var i in intents) Intents.Add(new IntentButton(i, Label(i), i is Readback, SendCommand));
+            int n = 0;
+            foreach (var i in intents)
+            {
+                n++;
+                Intents.Add(new IntentButton(i, Label(i), i is Readback, SendCommand) { Number = n <= 9 ? n.ToString(CultureInfo.InvariantCulture) : "" });
+            }
         }
         foreach (var b in Intents)
             b.Label = b.Intent is Readback { Items.Count: > 0 } ? b.BaseLabel + countdown : b.BaseLabel;
@@ -350,22 +447,32 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Hint = Loc.Format("Main.Next", "Barajas Tower", "118.080");
         HintIsWarning = true;
         ArrowsText = Loc.Format("Main.Arrows", 30, 300);
-        LastAtc = "Barajas Ground: Iberia 1234, contact Tower 118.080, bye bye";
+        FlightLine = $"{Callsign} · {Route} · {Phase}";
+        TileRunway = "36L";
+        TileRoute = "PINA4N";
+        TileCleared = "5000 ft";
+        TileSquawk = "4774";
+        TileNext = "118.080";
+        TileNextName = "Barajas Tower";
+        TileAtis = "B · 1013";
+        ComLabel = "COM1";
+        Standby = "130.080";
+        StationLine = "Barajas Ground · 36L";
         AddTranscript(
         [
             new(TimeSpan.FromSeconds(25), TranscriptKind.Pilot, "Barajas Delivery", 130_080, "Barajas Delivery, Iberia 1234, request IFR clearance"),
             new(TimeSpan.FromSeconds(27), TranscriptKind.Atc, "Barajas Delivery", 130_080, "Iberia 1234, Barajas Delivery, cleared to LEBL via flight planned route, climb to altitude 5000 ft, squawk 4774"),
             new(TimeSpan.FromSeconds(30), TranscriptKind.Event, null, null, "Phase: cleared"),
             new(TimeSpan.FromSeconds(68), TranscriptKind.Atc, "Barajas Ground", 121_630, "Iberia 1234, taxi to holding point runway 36L via EB, A, L"),
-            new(TimeSpan.FromSeconds(72), TranscriptKind.Pilot, "Barajas Ground", 121_630, "Runway 36L via EB, A, L, Iberia 1234"),
+            new(TimeSpan.FromSeconds(72), TranscriptKind.Pilot, "Barajas Ground", 121_630, "Runway 36L via EB, A, L, Iberia 1234") { Auto = true },
             new(TimeSpan.FromSeconds(190), TranscriptKind.Warning, null, null, "Off the cleared taxi route"),
             new(TimeSpan.FromSeconds(220), TranscriptKind.Atc, "Barajas Ground", 121_630, "Iberia 1234, contact Tower 118.080, bye bye"),
         ]);
         Intents.Clear();
-        Intents.Add(new IntentButton(new Readback(new Dictionary<ReadbackItem, string> { [ReadbackItem.Frequency] = "118080" }), $"{Loc.Get("Intent.Readback")}: 118.080", true, SendCommand));
-        Intents.Add(new IntentButton(new ReadyForDeparture(), Loc.Get("Intent.ReadyForDeparture"), false, SendCommand));
-        Intents.Add(new IntentButton(new SayAgain(), Loc.Get("Intent.SayAgain"), false, SendCommand));
-        Intents.Add(new IntentButton(new Mayday(), Loc.Get("Intent.Mayday"), false, SendCommand));
+        Intents.Add(new IntentButton(new Readback(new Dictionary<ReadbackItem, string> { [ReadbackItem.Frequency] = "118080" }), $"{Loc.Get("Intent.Readback")}: 118.080 · 14 s", true, SendCommand) { Number = "1" });
+        Intents.Add(new IntentButton(new ReadyForDeparture(), Loc.Get("Intent.ReadyForDeparture"), false, SendCommand) { Number = "2" });
+        Intents.Add(new IntentButton(new SayAgain(), Loc.Get("Intent.SayAgain"), false, SendCommand) { Number = "3" });
+        Intents.Add(new IntentButton(new Mayday(), Loc.Get("Intent.Mayday"), false, SendCommand) { Number = "4" });
     }
 
     public void Dispose() => _host?.Dispose();

@@ -76,14 +76,14 @@ public sealed record AppSettings
     /// doc's 10 s is short for clicking a button after a long clearance (owner's choice: 20 s).
     /// </summary>
     public double ReadbackSeconds { get; init; } = 20;
-    public bool CompactMode { get; init; }
+    /// <summary>The main window stays above other windows (replaces the compact strip, refactor phase 5).</summary>
+    public bool AlwaysOnTop { get; init; }
 
     /// <summary>The first-run guide has been finished or skipped (it then shows only from Gear > Getting started).</summary>
     public bool FirstRunDone { get; init; }
 
     /// <summary>Main window position and size, restored on start; null for the default.</summary>
     public WindowPlacement? MainWindow { get; init; }
-    public WindowPlacement? CompactWindow { get; init; }
 }
 
 public sealed record WindowPlacement(double Left, double Top, double Width, double Height);

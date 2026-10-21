@@ -37,9 +37,18 @@ public static class Palette
         };
     }
 
+    private static bool? _forced;
+
+    /// <summary>Screenshots only: one theme whatever Windows uses.</summary>
+    public static void Force(bool dark)
+    {
+        _forced = dark;
+        if (Application.Current is { } app) Load(app);
+    }
+
     private static void Load(Application app)
     {
-        bool dark = IsDark();
+        bool dark = _forced ?? IsDark();
         var dictionary = new ResourceDictionary();
         foreach (var (name, (darkHex, lightHex)) in Colors)
         {

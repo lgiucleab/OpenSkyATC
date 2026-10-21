@@ -23,14 +23,62 @@
   <data name="Main.Settings" xml:space="preserve">
     <value>Settings</value>
   </data>
-  <data name="Main.Compact" xml:space="preserve">
-    <value>Compact</value>
-  </data>
-  <data name="Main.Expand" xml:space="preserve">
-    <value>Expand</value>
+  <data name="Main.HardModeShort" xml:space="preserve">
+    <value>Hard mode</value>
   </data>
   <data name="Main.HardMode" xml:space="preserve">
     <value>Hard mode (type readbacks yourself)</value>
+  </data>
+  <data name="Main.FilterAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Main.FilterAtc" xml:space="preserve">
+    <value>ATC</value>
+  </data>
+  <data name="Main.FilterYou" xml:space="preserve">
+    <value>You</value>
+  </data>
+  <data name="Main.FilterEvents" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="Main.AlwaysOnTop" xml:space="preserve">
+    <value>Always on top</value>
+  </data>
+  <data name="Main.Requests" xml:space="preserve">
+    <value>Your calls</value>
+  </data>
+  <data name="Main.KeysHint" xml:space="preserve">
+    <value>Keys 1-9 send a call</value>
+  </data>
+  <data name="Main.NoStation" xml:space="preserve">
+    <value>Not on an ATC frequency</value>
+  </data>
+  <data name="Main.NoFlightShort" xml:space="preserve">
+    <value>No flight</value>
+  </data>
+  <data name="Main.FlightPlanned" xml:space="preserve">
+    <value>Flight planned</value>
+  </data>
+  <data name="Main.Auto" xml:space="preserve">
+    <value>auto</value>
+  </data>
+  <data name="Tile.Runway" xml:space="preserve">
+    <value>Runway</value>
+  </data>
+  <data name="Tile.Route" xml:space="preserve">
+    <value>Route</value>
+  </data>
+  <data name="Tile.Cleared" xml:space="preserve">
+    <value>Cleared</value>
+  </data>
+  <data name="Tile.Squawk" xml:space="preserve">
+    <value>Squawk</value>
+  </data>
+  <data name="Tile.Next" xml:space="preserve">
+    <value>Next frequency</value>
+  </data>
+  <data name="Tile.Atis" xml:space="preserve">
+    <value>ATIS · QNH</value>
   </data>
   <data name="Main.AutoRespond" xml:space="preserve">
     <value>Auto respond</value>
