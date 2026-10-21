@@ -452,10 +452,10 @@ Read from MSFS 2024 with the new exporter (`OpenSkyAtc.Recorder export ICAO`, `s
 - **New data:** the host snapshot carries the cleared SID, the ATIS that matters now (`AtcBrain.CurrentAtis`: the destination's once en route and in range, else the origin's) and the QNH at the aircraft.
 - **Developer check:** `--screenshot FILE main en|es light|dark` renders either theme whatever Windows uses (`Palette.Force`). Checked in dark, light and Spanish; the hard mode switch is "Hard mode", with the long text as a tooltip.
 
-## 2026-10-21 - Refactor phase 6: more requests (in progress)
+## 2026-10-21 - Refactor phase 6: more requests
 
 - **Wording (CAP 413 edition 24):** radio check gets "readability 5" (2.93-2.94); "request start up" gets "start up approved" (4.9-4.10); "request surface wind" gets "surface wind 220/6"; "request FL240" gets the climb, or "unable approve FL450, FL410 available" (7.5); "request direct X" gets "route direct X" (Figure 15, existing). Runway change (owner's choice): before taxi, "roger, runway 14, cleared to ... via <new SID> departure ...", read back again; while taxiing, a new taxi clearance (CAP 413) if the SID stays the same; otherwise "unable approve runway 14" (built like 7.5). A lower level becomes the new cruise (owner's choice). Higher levels: up to 4,000 ft above the planned cruise; lower: down to FL100.
-- **Open:** the gate-to-gate test for a lower level is skipped until its transcript check is fixed. Not checked in the app or the sim yet.
+- **Where:** radio check (any unit; offered as the last call) and wind check (ground, tower and approach phases) are answered by whoever is on the frequency. Start up and runway changes are handled by the ground phases; level and direct requests by the area phases, which offer the next step or 2,000 ft higher at cruise, 2,000 ft lower from FL150, and the second and third fixes ahead. Voice: "radio check", "request start up" (with push it stays push and start), "request runway 27L (for departure)", "request (surface) wind" / "wind check", "request higher/lower" (picks from the levels offered). The buttons carry the value ("Request FL240", "Request runway 27L for departure"). Not checked in the sim yet.
 
 ## 2026-10-21 - Fixes from the owner's FlyByWire A380 flight (EGLL-KLAX)
 

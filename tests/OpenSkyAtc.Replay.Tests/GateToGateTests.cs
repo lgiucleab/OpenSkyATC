@@ -124,9 +124,7 @@ public class EnRouteRequestTests
     private static int ClimbsAfter(IReadOnlyList<string> t, int index) =>
         t.Skip(index + 1).Count(l => l.Contains("ATC ") && Regex.IsMatch(l, @"\bclimb FL\d+"));
 
-    [Fact(Skip = "Pending: check the RequestLevel transcript format (refactor phase 6)")]
-    // TODO: the request line format for the level does not match the regex yet; re-enable once checked.
-    [Trait("Status", "pending")]
+    [Fact]
     public void ALowerLevel_IsApproved_AndBecomesTheCruise()
     {
         var pilot = new SimulatedPilot(new SimulatedPilotOptions
@@ -139,7 +137,7 @@ public class EnRouteRequestTests
         Assert.True(asked >= 0, "no lower level was asked");
         int level = int.Parse(Regex.Match(t[asked], @"FL(\d+)").Groups[1].Value);
         // "climb FL220" while still below it, "descend FL220" when above: either way to the level asked for.
-        Assert.Matches($@"(climb|descend) FL{level}", t.Skip(asked + 1).First(l => l.Contains("ATC ") && l.Contains(" FL")));
+        Assert.Matches($@"(climb|descend) FL{level}", t.Skip(asked + 1).First(l => l.Contains("ATC ") && l.Contains(" FL")));
         // It is the cruise now: nothing climbs above it later.
         Assert.DoesNotContain(t.Skip(asked + 1), l => l.Contains("ATC ") && Regex.Match(l, @"climb FL(\d+)") is { Success: true } m && int.Parse(m.Groups[1].Value) > level);
     }

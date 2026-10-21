@@ -71,7 +71,7 @@ public static class IntentFactory
         RequestClearance { AtisLetter: { } a } => $"RequestClearance atis={a}",
         Unable { Reason: { } r } => $"Unable reason={r}",
         RequestRunway r => $"RequestRunway runway={r.Runway}",
-        RequestLevel l => $"RequestLevel {l.Level}",
+        RequestLevel l => $"RequestLevel {ReadbackValues.Altitude(l.Level)}",
         RequestDirect d => $"RequestDirect fix={d.Fix}",
         _ => intent.GetType().Name,
     };

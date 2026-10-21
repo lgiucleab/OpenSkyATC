@@ -474,8 +474,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Intents.Clear();
         Intents.Add(new IntentButton(new Readback(new Dictionary<ReadbackItem, string> { [ReadbackItem.Frequency] = "118080" }), $"{Loc.Get("Intent.Readback")}: 118.080 · 14 s", true, SendCommand) { Number = "1" });
         Intents.Add(new IntentButton(new ReadyForDeparture(), Loc.Get("Intent.ReadyForDeparture"), false, SendCommand) { Number = "2" });
-        Intents.Add(new IntentButton(new SayAgain(), Loc.Get("Intent.SayAgain"), false, SendCommand) { Number = "3" });
-        Intents.Add(new IntentButton(new Mayday(), Loc.Get("Intent.Mayday"), false, SendCommand) { Number = "4" });
+        Intents.Add(new IntentButton(new RequestRunway("27L"), Label(new RequestRunway("27L")), false, SendCommand) { Number = "3" });
+        Intents.Add(new IntentButton(new RequestWind(), Label(new RequestWind()), false, SendCommand) { Number = "4" });
+        Intents.Add(new IntentButton(new SayAgain(), Loc.Get("Intent.SayAgain"), false, SendCommand) { Number = "5" });
+        Intents.Add(new IntentButton(new RadioCheck(), Label(new RadioCheck()), false, SendCommand) { Number = "6" });
+        Intents.Add(new IntentButton(new Mayday(), Loc.Get("Intent.Mayday"), false, SendCommand) { Number = "7" });
     }
 
     public void Dispose() => _host?.Dispose();

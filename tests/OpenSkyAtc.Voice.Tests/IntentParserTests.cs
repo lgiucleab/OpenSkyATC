@@ -224,4 +224,31 @@ public class IntentParserTests
     {
         Assert.IsType<Wilco>(Parse("wilco", Pending((ReadbackItem.Squawk, "4721"))));
     }
+
+    // ---- refactor phase 6 requests ----
+
+    [Theory]
+    [InlineData("Heathrow Ground, Emirates 5413, radio check 121.705", typeof(RadioCheck))]
+    [InlineData("Emirates 5413 request start up", typeof(RequestStartup))]
+    [InlineData("Emirates 5413 request startup, information Bravo", typeof(RequestStartup))]
+    [InlineData("Emirates 5413 request push and start", typeof(RequestPushStart))]
+    [InlineData("Emirates 5413 request surface wind", typeof(RequestWind))]
+    [InlineData("Emirates 5413, wind check", typeof(RequestWind))]
+    public void NewRequests(string said, Type expected) => Assert.IsType(expected, Parse(said));
+
+    [Fact]
+    public void ARunwayRequest_KeepsTheRunway_AClearanceRequestStaysOne()
+    {
+        Assert.Equal(new RequestRunway("27L"), Parse("Emirates 5413 request runway two seven left for departure"));
+        Assert.IsType<RequestClearance>(Parse("Emirates 5413 request IFR clearance to Los Angeles, runway 27R"));
+        Assert.IsType<RequestTaxi>(Parse("Emirates 5413 request taxi runway 27R"));
+    }
+
+    [Fact]
+    public void HigherOrLower_PicksFromTheLevelsOffered()
+    {
+        PilotIntent[] offered = [new RequestLevel(AltitudeTarget.FlightLevel(360)), new RequestLevel(AltitudeTarget.FlightLevel(320))];
+        Assert.Equal(offered[0], Parse("Emirates 5413 request higher", offered));
+        Assert.Equal(offered[1], Parse("Emirates 5413 request lower", offered));
+    }
 }
