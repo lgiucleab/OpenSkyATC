@@ -126,3 +126,15 @@ public class AutoTuneTests
         Assert.Null(AutoTune.Plan(Radios(121_850, 118_250), Ground)); // the unit's other frequency counts
     }
 }
+
+public class VoiceChoiceTests
+{
+    [Fact]
+    public void NaturalVoices_AreKokoro_FastVoicesAreTheChosenPiperOnes()
+    {
+        Assert.Equal([OpenSkyAtc.Voice.VoiceCatalog.Kokoro], FlightHost.Voices(new AppSettings()));
+        var fast = FlightHost.Voices(new AppSettings { NaturalVoices = false, VoiceModels = ["vctk", "kokoro"] });
+        Assert.Equal(["vctk"], fast.Select(m => m.Id));
+        Assert.Equal(6, FlightHost.Voices(new AppSettings { NaturalVoices = false, VoiceModels = [] }).Count);
+    }
+}

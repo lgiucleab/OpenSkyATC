@@ -27,6 +27,7 @@ internal static class VoiceCommands
                 "install" => Install(store, args.Skip(2).ToList()),
                 "say" when args.Length > 2 => Say(store, args[2], Option(args, "--voice"), Option(args, "--out"), args.Contains("--clean")),
                 "play" when args.Length > 2 => Play(args[2]),
+                "bench" => Bench(store, (Option(args, "--voices") ?? "kokoro:26,vctk:12").Split(',')),
                 "audition" when args.Length > 2 => Audition(store, args[2], int.Parse(Option(args, "--from") ?? "0"), int.Parse(Option(args, "--count") ?? "10")),
                 _ => Help(),
             };
@@ -75,7 +76,7 @@ internal static class VoiceCommands
     private static int Say(VoiceStore store, string text, string? voiceText, string? output, bool clean)
     {
         var voice = voiceText is null ? new VoiceRef(store.Installed().FirstOrDefault()?.Id ?? "vctk", 0) : VoiceRef.Parse(voiceText);
-        using var tts = new PiperSynthesizer(store);
+        using var tts = new VoiceSynthesizer(store);
         var sw = System.Diagnostics.Stopwatch.StartNew();
         var clip = tts.Speak(text, voice);
         Console.WriteLine($"{voice}: {clip.Duration.TotalSeconds:0.0} s of audio in {sw.ElapsedMilliseconds} ms (first use includes loading the model)");
@@ -90,11 +91,46 @@ internal static class VoiceCommands
         return 0;
     }
 
+    private static readonly string[] BenchCalls =
+    [
+        "Iberia one two three four, Barajas Delivery, cleared to Barcelona via PINA four November departure, climb altitude six thousand feet, squawk four seven two one",
+        "Iberia one two three four, taxi to holding point Lima one runway three six left via Echo Bravo, Mike, hold short runway three six right",
+        "Iberia one two three four, wind zero eight zero degrees, five knots, runway three six left, cleared for takeoff",
+        "Iberia one two three four, climb flight level two four zero",
+        "Iberia one two three four, contact Madrid Control one three two decimal one five five, good day",
+    ];
+
+    /// <summary>
+    /// Time per call once the voice is loaded (what a flight sees): load time, then each call's synthesis time and
+    /// the real-time factor (audio seconds per second of work; above 1 means faster than it plays).
+    /// </summary>
+    private static int Bench(VoiceStore store, string[] voices)
+    {
+        bool sim = System.Diagnostics.Process.GetProcessesByName("FlightSimulator2024").Length > 0;
+        Console.WriteLine($"{Environment.ProcessorCount} cores; MSFS {(sim ? "running" : "not running")}");
+        foreach (var v in voices.Select(VoiceRef.Parse))
+        {
+            using var tts = new VoiceSynthesizer(store);
+            var load = System.Diagnostics.Stopwatch.StartNew();
+            tts.Speak("Roger", v);
+            load.Stop();
+            var times = new List<(double Audio, double Work)>();
+            foreach (var call in BenchCalls)
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var clip = tts.Speak(call, v);
+                times.Add((clip.Duration.TotalSeconds, sw.Elapsed.TotalSeconds));
+            }
+            Console.WriteLine($"{v,-12} load {load.Elapsed.TotalSeconds:0.0} s | per call mean {times.Average(t => t.Work):0.00} s, max {times.Max(t => t.Work):0.00} s | x{times.Sum(t => t.Audio) / times.Sum(t => t.Work):0.0} real time | threads {VoiceSynthesizer.Threads(VoiceCatalog.Get(v.ModelId).Engine)}");
+        }
+        return 0;
+    }
+
     /// <summary>Plays sample lines with several speakers of a model, to choose the clear ones.</summary>
     private static int Audition(VoiceStore store, string model, int from, int count)
     {
         var m = VoiceCatalog.Get(model);
-        using var tts = new PiperSynthesizer(store);
+        using var tts = new VoiceSynthesizer(store);
         foreach (int speaker in m.Speakers.Where(s => s >= from).Take(count))
         {
             var voice = new VoiceRef(m.Id, speaker);

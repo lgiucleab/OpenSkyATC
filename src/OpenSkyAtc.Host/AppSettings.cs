@@ -27,6 +27,12 @@ public sealed record AppSettings
     public IReadOnlyList<string> VoiceModels { get; init; } = ["vctk", "libritts_r", "joe", "norman", "john", "cori"];
     public bool RadioFilter { get; init; } = true;
 
+    /// <summary>
+    /// Natural voices (Kokoro, the default since refactor phase 4) or the fast Piper voices in <see cref="VoiceModels"/>
+    /// (for PCs where Kokoro's 2-3 s per call is too slow with the sim running).
+    /// </summary>
+    public bool NaturalVoices { get; init; } = true;
+
     // Push-to-talk: a key or joystick button through the sim (step 9), the sim's ATC key, and a keyboard key that
     // works in any window (step 14, "F12", "Ctrl+Space"...; see KeyboardPushToTalk).
     public string? PushToTalkInput { get; init; }

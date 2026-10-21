@@ -67,7 +67,7 @@ public sealed class AtcRadio : IDisposable
 {
     private readonly IcaoRenderer _renderer;
     private readonly VoiceAssigner _voices;
-    private readonly PiperSynthesizer _tts;
+    private readonly VoiceSynthesizer _tts;
     private readonly RadioChannel _channel = new();
     private readonly ClipPlayer _player = new();
     private readonly BlockingCollection<(AtcMessage? Message, string Speech, string Voice, string? AtisKey)> _toSpeak = new();
@@ -87,7 +87,7 @@ public sealed class AtcRadio : IDisposable
     private readonly int _seed;
     private int _filterSeed;
 
-    public AtcRadio(IcaoRenderer renderer, VoiceAssigner voices, PiperSynthesizer tts, int seed)
+    public AtcRadio(IcaoRenderer renderer, VoiceAssigner voices, VoiceSynthesizer tts, int seed)
     {
         _renderer = renderer;
         _voices = voices;

@@ -9,16 +9,19 @@ public sealed record AudioClip(float[] Samples, int SampleRate)
 }
 
 /// <summary>
-/// Speaks text with an installed Piper voice through sherpa-onnx, in-process. Each model is loaded once (about a
-/// second) and kept; synthesis of an ATC sentence takes a fraction of a second on CPU. Thread-safe.
+/// Speaks text with an installed voice through sherpa-onnx, in-process: Kokoro (natural, the default since refactor
+/// phase 4) or Piper (VITS, fast). Each model is loaded once and kept. Thread-safe.
 /// </summary>
-public sealed class PiperSynthesizer(VoiceStore store) : IDisposable
+public sealed class VoiceSynthesizer(VoiceStore store) : IDisposable
 {
     private readonly Dictionary<string, OfflineTts> _loaded = new();
     private readonly object _lock = new();
 
     /// <summary>Speech rate: 1 normal; controllers speak a little faster than audiobook readers.</summary>
     public float Speed { get; init; } = 1.1f;
+
+    /// <summary>CPU threads per model: Kokoro gets more, it does more work per sentence; the sim keeps the rest.</summary>
+    public static int Threads(VoiceEngine engine) => engine == VoiceEngine.Kokoro ? Math.Clamp(Environment.ProcessorCount / 4, 2, 4) : 2;
 
     public AudioClip Speak(string text, VoiceRef voice)
     {
@@ -37,12 +40,26 @@ public sealed class PiperSynthesizer(VoiceStore store) : IDisposable
         string file = store.ModelFile(model) ?? throw new InvalidOperationException($"The {model.Id} voice is not installed.");
         string dir = store.FolderOf(model);
         var config = new OfflineTtsConfig();
-        config.Model.Vits.Model = file;
-        config.Model.Vits.Tokens = Path.Combine(dir, "tokens.txt");
-        config.Model.Vits.DataDir = Path.Combine(dir, "espeak-ng-data");
-        config.Model.NumThreads = 2;
+        if (model.Engine == VoiceEngine.Kokoro)
+        {
+            config.Model.Kokoro.Model = file;
+            config.Model.Kokoro.Voices = Path.Combine(dir, "voices.bin");
+            config.Model.Kokoro.Tokens = Path.Combine(dir, "tokens.txt");
+            config.Model.Kokoro.DataDir = store.DataDirOf(model);
+            // English only (the radio is always English): the US lexicon, then espeak-ng for words it lacks. The
+            // package's Chinese dictionary and lexicon are not used (and not shipped).
+            config.Model.Kokoro.Lexicon = Path.Combine(dir, "lexicon-us-en.txt");
+            config.Model.Kokoro.Lang = "en-us";
+        }
+        else
+        {
+            config.Model.Vits.Model = file;
+            config.Model.Vits.Tokens = Path.Combine(dir, "tokens.txt");
+            config.Model.Vits.DataDir = store.DataDirOf(model);
+        }
+        config.Model.NumThreads = Threads(model.Engine);
         config.Model.Provider = "cpu";
-        config.MaxNumSentences = 4;
+        config.MaxNumSentences = model.Engine == VoiceEngine.Kokoro ? 1 : 4; // Kokoro only takes 1
         tts = new OfflineTts(config);
         _loaded[model.Id] = tts;
         return tts;

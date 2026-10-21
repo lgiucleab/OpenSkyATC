@@ -116,14 +116,14 @@ english.ReadyLabel2b=Click Install to start.
 spanish.ReadyLabel2b=Haz clic en Instalar para empezar.
 english.WizardInstalling=Installing OpenSkyATC
 spanish.WizardInstalling=Instalando OpenSkyATC
-english.InstallingLabel=Copying the app, its voices engine and the sim packages. This takes a moment.
-spanish.InstallingLabel=Copiando la aplicación, su motor de voz y los paquetes del simulador. Tarda un momento.
+english.InstallingLabel=Copying the app, its ATC voices and the sim package. This takes a moment.
+spanish.InstallingLabel=Copiando la aplicación, sus voces del ATC y el paquete del simulador. Tarda un momento.
 english.FinishedHeadingLabel=OpenSkyATC is ready
 spanish.FinishedHeadingLabel=OpenSkyATC está listo
-english.FinishedLabelNoIcons=OpenSkyATC is installed.%n%nTo fly: open Settings and enter your SimBrief Pilot ID (or choose a .pln), load a flight at a gate in MSFS 2024, then press Import plan. The ATC voices and the speech model download once, the first time.
-spanish.FinishedLabelNoIcons=OpenSkyATC está instalado.%n%nPara volar: abre Configuración e introduce tu ID de piloto de SimBrief (o elige un .pln), carga un vuelo en una puerta en MSFS 2024 y pulsa Importar plan. Las voces del ATC y el modelo de voz se descargan una vez, la primera vez.
-english.FinishedLabel=OpenSkyATC is installed; find it in the Start menu.%n%nTo fly: open Settings and enter your SimBrief Pilot ID (or choose a .pln), load a flight at a gate in MSFS 2024, then press Import plan. The ATC voices and the speech model download once, the first time.
-spanish.FinishedLabel=OpenSkyATC está instalado; lo encontrarás en el menú Inicio.%n%nPara volar: abre Configuración e introduce tu ID de piloto de SimBrief (o elige un .pln), carga un vuelo en una puerta en MSFS 2024 y pulsa Importar plan. Las voces del ATC y el modelo de voz se descargan una vez, la primera vez.
+english.FinishedLabelNoIcons=OpenSkyATC is installed.%n%nTo fly: open Settings and enter your SimBrief Pilot ID (or choose a .pln), load a flight at a gate in MSFS 2024, then press Import plan. The speech model downloads once, the first time.
+spanish.FinishedLabelNoIcons=OpenSkyATC está instalado.%n%nPara volar: abre Configuración e introduce tu ID de piloto de SimBrief (o elige un .pln), carga un vuelo en una puerta en MSFS 2024 y pulsa Importar plan. El modelo de voz se descarga una vez, la primera vez.
+english.FinishedLabel=OpenSkyATC is installed; find it in the Start menu.%n%nTo fly: open Settings and enter your SimBrief Pilot ID (or choose a .pln), load a flight at a gate in MSFS 2024, then press Import plan. The speech model downloads once, the first time.
+spanish.FinishedLabel=OpenSkyATC está instalado; lo encontrarás en el menú Inicio.%n%nPara volar: abre Configuración e introduce tu ID de piloto de SimBrief (o elige un .pln), carga un vuelo en una puerta en MSFS 2024 y pulsa Importar plan. El modelo de voz se descarga una vez, la primera vez.
 english.ClickFinish=Have a good flight!
 spanish.ClickFinish=¡Buen vuelo!
 english.ExitSetupMessage=OpenSkyATC is not installed yet. You can run this installer again at any time.%n%nExit the installer?
@@ -166,10 +166,10 @@ english.MemoPackages=Sim package (taxi arrows)
 spanish.MemoPackages=Paquete del simulador (flechas de rodaje)
 english.MemoNoPackages=Sim package: not installed
 spanish.MemoNoPackages=Paquete del simulador: no se instala
-english.MemoIncluded=Included:%n   .NET runtime, Microsoft SimConnect, Piper and Whisper engines
-spanish.MemoIncluded=Incluido:%n   entorno .NET, Microsoft SimConnect, motores Piper y Whisper
-english.MemoDownloads=Downloaded on first use:%n   ATC voices (about 70 MB each), speech model (about 140 MB)
-spanish.MemoDownloads=Se descarga al usarlo por primera vez:%n   voces del ATC (unos 70 MB cada una), modelo de voz (unos 140 MB)
+english.MemoIncluded=Included:%n   ATC voices (Kokoro and Piper VCTK), .NET runtime, Microsoft SimConnect, Whisper engine
+spanish.MemoIncluded=Incluido:%n   voces del ATC (Kokoro y Piper VCTK), entorno .NET, Microsoft SimConnect, motor Whisper
+english.MemoDownloads=Downloaded on first use:%n   speech model (about 180 MB); other Piper voices only if you choose them
+spanish.MemoDownloads=Se descarga al usarlo por primera vez:%n   modelo de voz (unos 180 MB); otras voces Piper solo si las eliges
 english.MemoShortcuts=Start menu entry
 spanish.MemoShortcuts=Entrada en el menú Inicio
 english.MemoDesktop=, desktop icon
@@ -187,6 +187,7 @@ Source: "{#Root}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Root}\LICENSE-EXCEPTION.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Root}\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 ; The MSFS 2024 Community packages (removed again by the uninstaller).
+Source: "{#Root}\artifacts\voices\*"; DestDir: "{app}\voices"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#Root}\toolbar\opensky-atc-taxi-arrows\Packages\opensky-atc-taxi-arrows\*"; DestDir: "{code:CommunityDir}\opensky-atc-taxi-arrows"; Tasks: packages; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]

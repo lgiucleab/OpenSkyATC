@@ -30,7 +30,7 @@ public class ReplayAudioTests
 
         var renderer = new IcaoRenderer(seed);
         var voices = new VoiceAssigner(seed, installed);
-        using var tts = new PiperSynthesizer(store);
+        using var tts = new VoiceSynthesizer(store);
         var timeline = new List<float>();
         int rate = 0;
         TimeSpan cursor = TimeSpan.Zero, lastTime = TimeSpan.Zero;

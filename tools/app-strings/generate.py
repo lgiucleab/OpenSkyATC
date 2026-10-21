@@ -226,6 +226,9 @@ STRINGS = {
     "Settings.VoiceEnabled": ("Speak ATC calls", "Leer en voz alta las llamadas del ATC"),
     "Settings.Volume": ("Volume", "Volumen"),
     "Settings.RadioFilter": ("Radio effect", "Efecto de radio"),
+    "Settings.NaturalVoices": ("Natural voices (Kokoro)", "Voces naturales (Kokoro)"),
+    "Settings.NaturalVoicesHelp": ("27 realistic UK and US controller voices. Each call takes 2-3 s to prepare, so ATC answers a little later.", "27 voces realistas de controlador británicas y estadounidenses. Cada llamada tarda 2-3 s en prepararse, así que el ATC responde algo más tarde."),
+    "Settings.FastVoices": ("Fast voices (Piper)", "Voces rápidas (Piper)"),
     "Settings.Voices": ("Controller voices", "Voces de controlador"),
     "Settings.TestVoice": ("Test", "Probar"),
     "Settings.PushToTalk": ("Push-to-talk", "Pulsar para hablar"),
@@ -247,7 +250,7 @@ STRINGS = {
     "Settings.Language": ("Language", "Idioma"),
     "Settings.LanguageHelp": ("The app's language. ATC always speaks English.", "Idioma de la aplicación. El ATC siempre habla inglés."),
     "Settings.AppliesNext": ("Voices, push-to-talk and the plan source apply to the next flight.", "Las voces, el pulsar para hablar y la fuente del plan se aplican al siguiente vuelo."),
-    "Settings.Credits": ("Voices: CSTR VCTK Corpus and LibriTTS-R (CC BY 4.0), Joe (CC0), Norman, John and Cori (public domain); Piper and sherpa-onnx.", "Voces: CSTR VCTK Corpus y LibriTTS-R (CC BY 4.0), Joe (CC0), Norman, John y Cori (dominio público); Piper y sherpa-onnx."),
+    "Settings.Credits": ("Voices: Kokoro-82M by hexgrad (Apache 2.0); CSTR VCTK Corpus and LibriTTS-R (CC BY 4.0), Joe (CC0), Norman, John and Cori (public domain); Piper and sherpa-onnx.", "Voces: Kokoro-82M de hexgrad (Apache 2.0); CSTR VCTK Corpus y LibriTTS-R (CC BY 4.0), Joe (CC0), Norman, John y Cori (dominio público); Piper y sherpa-onnx."),
     # Errors
     "Error.Start": ("Could not start the flight", "No se pudo iniciar el vuelo"),
     "Error.NeedSimBriefId": ("Enter your SimBrief Pilot ID in Settings first.", "Primero introduce tu ID de piloto de SimBrief en Ajustes."),

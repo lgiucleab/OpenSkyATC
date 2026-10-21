@@ -49,7 +49,7 @@ The OpenSkyATC logo, icon and installer images (`branding/`, made by `branding/t
 
 | Component | Licence | Notes |
 | --- | --- | --- |
-| [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (`org.k2fsa.sherpa.onnx` 1.13.8, with its native `sherpa-onnx-c-api.dll`) | Apache-2.0 | Runs the Piper voices in-process (`OpenSkyAtc.Voice`). |
+| [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (`org.k2fsa.sherpa.onnx` 1.13.8, with its native `sherpa-onnx-c-api.dll`) | Apache-2.0 | Runs the Kokoro and Piper voices in-process (`OpenSkyAtc.Voice`). |
 | [ONNX Runtime](https://github.com/microsoft/onnxruntime) (`onnxruntime.dll`, inside the sherpa-onnx runtime package) | MIT | Neural network runtime used by sherpa-onnx. |
 | [NAudio](https://github.com/naudio/NAudio) 2.2.1 | MIT | Audio playback and WAV files. |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) 8.4.2 | MIT | View models of the WPF app (.NET Foundation). |
@@ -64,13 +64,14 @@ The OpenSkyATC logo, icon and installer images (`branding/`, made by `branding/t
 | --- | --- | --- |
 | Whisper English models in ggml format (`ggml-*.en.bin` from [ggerganov/whisper.cpp](https://huggingface.co/ggerganov/whisper.cpp)) | MIT | OpenAI Whisper (Radford et al.), converted by the whisper.cpp project. |
 
-## Voices (downloaded on first use, not in the repo or installer)
+## Voices (not in the repo)
 
-Pre-converted Piper models from the [sherpa-onnx tts-models release](https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models), stored in `%LOCALAPPDATA%\OpenSkyATC\voices`. Each licence is the voice's training dataset licence, as stated in its MODEL_CARD (checked 2026-10-17). Each archive also contains [espeak-ng](https://github.com/espeak-ng/espeak-ng) phoneme data (GPL-3.0).
+Pre-converted models from the [sherpa-onnx tts-models release](https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models). The installer ships **Kokoro** and **en_GB-vctk-medium** next to the app (`voices\`, with their licence files), together with one copy of the [espeak-ng](https://github.com/espeak-ng/espeak-ng) phoneme data (GPL-3.0) that every model uses. The other Piper voices download on first use into `%LOCALAPPDATA%\OpenSkyATC\voices`, only if the user picks them. Each Piper licence is the voice's training dataset licence, as stated in its MODEL_CARD (checked 2026-10-17).
 
 | Voice | Speakers | Licence | Credit |
 | --- | --- | --- | --- |
-| en_GB-vctk-medium | 109 | CC BY 4.0 | CSTR VCTK Corpus, Centre for Speech Technology Research, University of Edinburgh. |
+| kokoro-multi-lang-v1_0 (Kokoro-82M v1.0, shipped) | 53 (27 English used) | Apache-2.0 (LICENSE in the archive, checked 2026-10-21) | [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) by hexgrad; converted for sherpa-onnx by the k2-fsa project. Only its English files are shipped (model, voices, tokens, US English lexicon). |
+| en_GB-vctk-medium (shipped) | 109 | CC BY 4.0 | CSTR VCTK Corpus, Centre for Speech Technology Research, University of Edinburgh. |
 | en_US-libritts_r-medium | 904 (48 used) | CC BY 4.0 | LibriTTS-R (Koizumi et al.), from LibriVox recordings. |
 | en_US-joe-medium | 1 | CC0 | Joe voice dataset, Open Home Foundation. |
 | en_US-norman-medium | 1 | Public domain | Bryce Beattie, from LibriVox recordings. |

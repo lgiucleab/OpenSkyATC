@@ -647,6 +647,15 @@
   <data name="Settings.RadioFilter" xml:space="preserve">
     <value>Efecto de radio</value>
   </data>
+  <data name="Settings.NaturalVoices" xml:space="preserve">
+    <value>Voces naturales (Kokoro)</value>
+  </data>
+  <data name="Settings.NaturalVoicesHelp" xml:space="preserve">
+    <value>27 voces realistas de controlador británicas y estadounidenses. Cada llamada tarda 2-3 s en prepararse, así que el ATC responde algo más tarde.</value>
+  </data>
+  <data name="Settings.FastVoices" xml:space="preserve">
+    <value>Voces rápidas (Piper)</value>
+  </data>
   <data name="Settings.Voices" xml:space="preserve">
     <value>Voces de controlador</value>
   </data>
@@ -711,7 +720,7 @@
     <value>Las voces, el pulsar para hablar y la fuente del plan se aplican al siguiente vuelo.</value>
   </data>
   <data name="Settings.Credits" xml:space="preserve">
-    <value>Voces: CSTR VCTK Corpus y LibriTTS-R (CC BY 4.0), Joe (CC0), Norman, John y Cori (dominio público); Piper y sherpa-onnx.</value>
+    <value>Voces: Kokoro-82M de hexgrad (Apache 2.0); CSTR VCTK Corpus y LibriTTS-R (CC BY 4.0), Joe (CC0), Norman, John y Cori (dominio público); Piper y sherpa-onnx.</value>
   </data>
   <data name="Error.Start" xml:space="preserve">
     <value>No se pudo iniciar el vuelo</value>

@@ -4,14 +4,29 @@ using ICSharpCode.SharpZipLib.BZip2;
 namespace OpenSkyAtc.Voice;
 
 /// <summary>
-/// Voice models on disk, downloaded on first use (owner's choice, step 12) into
-/// %LOCALAPPDATA%\OpenSkyATC\voices\&lt;archive&gt;, never shipped or committed.
+/// Voice models on disk. The installer ships them next to the app in voices\&lt;archive&gt; (owner's choice, refactor
+/// phase 4: everything comes with the installer), sharing one espeak-ng-data folder; a model that is not there (a
+/// development build) is downloaded on first use into %LOCALAPPDATA%\OpenSkyATC\voices\&lt;archive&gt;. Never committed.
 /// </summary>
-public sealed class VoiceStore(string? root = null)
+public sealed class VoiceStore(string? root = null, string? bundled = null)
 {
     public string Root { get; } = root ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenSkyATC", "voices");
 
-    public string FolderOf(VoiceModel model) => Path.Combine(Root, model.Archive);
+    /// <summary>The installer's read-only voices folder (none when a test gives its own root).</summary>
+    public string? Bundled { get; } = bundled ?? (root is null ? Path.Combine(AppContext.BaseDirectory, "voices") : null);
+
+    /// <summary>Where the model is: the bundled copy when there is one, else the downloaded one.</summary>
+    public string FolderOf(VoiceModel model) =>
+        Bundled is { } b && Directory.Exists(Path.Combine(b, model.Archive)) ? Path.Combine(b, model.Archive) : Path.Combine(Root, model.Archive);
+
+    /// <summary>The model's espeak-ng-data: its own, else the installer's shared copy.</summary>
+    public string DataDirOf(VoiceModel model)
+    {
+        string own = Path.Combine(FolderOf(model), "espeak-ng-data");
+        if (Directory.Exists(own) || Bundled is null) return own;
+        string shared = Path.Combine(Bundled, "espeak-ng-data");
+        return Directory.Exists(shared) ? shared : own;
+    }
 
     public bool IsInstalled(VoiceModel model) => ModelFile(model) is not null && File.Exists(Path.Combine(FolderOf(model), "tokens.txt"));
 
@@ -59,7 +74,7 @@ public sealed class VoiceStore(string? root = null)
         }
         string unpacked = Path.Combine(staging, model.Archive);
         if (!Directory.Exists(unpacked)) unpacked = staging;
-        string target = FolderOf(model);
+        string target = Path.Combine(Root, model.Archive); // downloads always go to the user folder
         if (Directory.Exists(target)) Directory.Delete(target, recursive: true);
         Directory.Move(unpacked, target);
         if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);

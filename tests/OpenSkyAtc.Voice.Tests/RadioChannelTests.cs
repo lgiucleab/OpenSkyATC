@@ -169,13 +169,19 @@ public class VoiceAssignerTests
     [Fact]
     public void EachUnitKeepsItsVoice_AndUnitsGetDifferentVoices()
     {
-        var assigner = new VoiceAssigner(42, VoiceCatalog.All);
+        var assigner = new VoiceAssigner(42, VoiceCatalog.Piper);
         var units = new[] { "Barajas Delivery", "Barajas Ground", "Barajas Tower", "Madrid Departure", "Madrid Control", "Barcelona Approach", "Barcelona Tower", "Barcelona Ground" };
         var voices = units.Select(assigner.VoiceFor).ToList();
         Assert.Equal(units.Length, voices.Distinct().Count());
         Assert.Equal(voices, units.Select(assigner.VoiceFor));
-        // Every model is used before any repeats (6 models, 8 units).
-        Assert.Equal(VoiceCatalog.All.Count, voices.Take(6).Select(v => v.ModelId).Distinct().Count());
+        // Every model is used before any repeats (6 Piper models, 8 units).
+        Assert.Equal(VoiceCatalog.Piper.Count, voices.Take(6).Select(v => v.ModelId).Distinct().Count());
+
+        // Natural voices: one model, so the units get different Kokoro speakers.
+        var kokoro = new VoiceAssigner(42, [VoiceCatalog.Kokoro]);
+        var natural = units.Select(kokoro.VoiceFor).ToList();
+        Assert.Equal(units.Length, natural.Distinct().Count());
+        Assert.All(natural, v => Assert.Equal("kokoro", v.ModelId));
     }
 
     [Fact]

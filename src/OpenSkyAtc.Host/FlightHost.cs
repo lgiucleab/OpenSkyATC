@@ -538,18 +538,25 @@ public sealed class FlightHost : IDisposable
         }
     }
 
+    /// <summary>The voice models a flight uses: Kokoro, or the chosen Piper voices (all of them when none is chosen).</summary>
+    public static IReadOnlyList<VoiceModel> Voices(AppSettings s)
+    {
+        if (s.NaturalVoices) return [VoiceCatalog.Kokoro];
+        var chosen = VoiceCatalog.Piper.Where(m => s.VoiceModels.Contains(m.Id, StringComparer.OrdinalIgnoreCase)).ToList();
+        return chosen.Count > 0 ? chosen : VoiceCatalog.Piper;
+    }
+
     private async Task<AtcRadio?> StartRadioAsync(int seed, AtcBrain brain)
     {
         var store = new VoiceStore();
-        var wanted = VoiceCatalog.All.Where(m => _settings.VoiceModels.Contains(m.Id, StringComparer.OrdinalIgnoreCase)).ToList();
-        if (wanted.Count == 0) wanted = [.. VoiceCatalog.All];
+        var wanted = Voices(_settings);
         var missing = wanted.Where(m => !store.IsInstalled(m)).ToList();
         if (missing.Count > 0)
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
             foreach (var m in missing)
             {
-                SetStatus(HostStatus.DownloadingVoices, $"Downloading the {m.Id} ATC voice (once, about 70 MB)");
+                SetStatus(HostStatus.DownloadingVoices, $"Downloading the {m.Id} ATC voice (once, about {(m.Engine == VoiceEngine.Kokoro ? 350 : 70)} MB)");
                 try
                 {
                     await store.InstallAsync(m, http, cancel: _cancel.Token);
@@ -566,7 +573,7 @@ public sealed class FlightHost : IDisposable
             Notice?.Invoke("No ATC voice is installed: text only.");
             return null;
         }
-        var radio = new AtcRadio(new IcaoRenderer(seed, callsigns: Data.Callsigns), new VoiceAssigner(seed, installed), new PiperSynthesizer(store), seed)
+        var radio = new AtcRadio(new IcaoRenderer(seed, callsigns: Data.Callsigns), new VoiceAssigner(seed, installed), new VoiceSynthesizer(store), seed)
         {
             Volume = Math.Clamp(_settings.Volume, 0f, 1f),
             Filter = _settings.RadioFilter,

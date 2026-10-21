@@ -34,13 +34,17 @@
                 </StackPanel>
             </TabItem>
             <TabItem Header="{Binding [Settings.Voice], Source={x:Static app:Loc.Instance}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="12">
                     <CheckBox Content="{Binding [Settings.VoiceEnabled], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding VoiceEnabled}" Margin="0,0,0,8" />
                     <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.Volume], Source={x:Static app:Loc.Instance}}" />
                     <Slider Minimum="0" Maximum="100" Value="{Binding Volume}" Width="260" HorizontalAlignment="Left" Margin="0,4,0,8" />
                     <CheckBox Content="{Binding [Settings.RadioFilter], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding RadioFilter}" Margin="0,0,0,12" />
                     <TextBlock Style="{StaticResource Label}" Text="{Binding [Settings.Voices], Source={x:Static app:Loc.Instance}}" />
-                    <ItemsControl ItemsSource="{Binding Voices}" Margin="0,4">
+                    <RadioButton Content="{Binding [Settings.NaturalVoices], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding NaturalVoices}" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding [Settings.NaturalVoicesHelp], Source={x:Static app:Loc.Instance}}" Opacity="0.7" TextWrapping="Wrap" Margin="28,0,0,4" />
+                    <RadioButton Content="{Binding [Settings.FastVoices], Source={x:Static app:Loc.Instance}}" IsChecked="{Binding FastVoices}" Margin="0,4,0,0" />
+                    <ItemsControl ItemsSource="{Binding Voices}" Margin="28,4,0,4" IsEnabled="{Binding FastVoices}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <CheckBox Content="{Binding Title}" IsChecked="{Binding Enabled}" Margin="0,2" />
@@ -53,6 +57,7 @@
                     </StackPanel>
                     <TextBlock Text="{Binding [Settings.Credits], Source={x:Static app:Loc.Instance}}" Opacity="0.6" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0" />
                 </StackPanel>
+                </ScrollViewer>
             </TabItem>
             <TabItem Header="{Binding [Settings.PushToTalk], Source={x:Static app:Loc.Instance}}">
                 <StackPanel Margin="12">

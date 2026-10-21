@@ -104,7 +104,7 @@ internal static class SttCommands
         var voices = installed.SelectMany(m => m.Speakers.Take(3).Select(s => new VoiceRef(m.Id, s))).ToList();
         string outDir = Path.Combine(dir, "piper");
         Directory.CreateDirectory(outDir);
-        using var tts = new PiperSynthesizer(voiceStore);
+        using var tts = new VoiceSynthesizer(voiceStore);
         foreach (var (p, i) in phrases.Select((p, i) => (p, i)))
         {
             var voice = voices[i % voices.Count];

@@ -8,7 +8,8 @@ namespace OpenSkyAtc.App.ViewModels;
 public sealed partial class VoiceChoice(VoiceModel model, bool enabled, bool installed) : ObservableObject
 {
     public VoiceModel Model { get; } = model;
-    public string Title => $"{Model.Id} ({Model.Speakers.Count} · {Model.Licence})";
+    // "__": WPF reads a single underscore as an access key ("libritts_r" showed as "librittsr").
+    public string Title => $"{Model.Id.Replace("_", "__")} ({Model.Speakers.Count} · {Model.Licence})";
     public bool Installed { get; } = installed;
     [ObservableProperty] private bool _enabled = enabled;
 }
@@ -43,10 +44,22 @@ public sealed partial class SettingsViewModel : ObservableObject
         _arrowSpacingM = s.ArrowSpacingM;
         _language = Languages.FirstOrDefault(l => l.Code == s.Language) ?? Languages[0];
         var store = new VoiceStore();
-        Voices = VoiceCatalog.All.Select(m => new VoiceChoice(m, s.VoiceModels.Contains(m.Id, StringComparer.OrdinalIgnoreCase), store.IsInstalled(m))).ToList();
+        Voices = VoiceCatalog.Piper.Select(m => new VoiceChoice(m, s.VoiceModels.Contains(m.Id, StringComparer.OrdinalIgnoreCase), store.IsInstalled(m))).ToList();
+        _naturalVoices = s.NaturalVoices;
     }
 
     public IReadOnlyList<VoiceChoice> Voices { get; }
+
+    /// <summary>Kokoro (natural) or the Piper voices below (fast).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FastVoices))]
+    private bool _naturalVoices;
+
+    public bool FastVoices
+    {
+        get => !NaturalVoices;
+        set => NaturalVoices = !value;
+    }
     public IReadOnlyList<LanguageChoice> Languages { get; } = [new("en", "English"), new("es", "Español")];
     public IReadOnlyList<string> WhisperModels { get; } = Voice.Input.WhisperModels.All.Select(m => m.Id).ToList();
     public IReadOnlyList<MicrophoneChoice> Microphones { get; }
@@ -90,6 +103,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         Volume = (float)Math.Clamp(Volume / 100, 0, 1),
         RadioFilter = RadioFilter,
         VoiceModels = Voices.Where(v => v.Enabled).Select(v => v.Model.Id).ToList() is { Count: > 0 } chosen ? chosen : _original.VoiceModels,
+        NaturalVoices = NaturalVoices,
         PushToTalkInput = string.IsNullOrWhiteSpace(PushToTalkInput) ? null : PushToTalkInput.Trim(),
         UseAtcKey = UseAtcKey,
         KeyboardPushToTalk = string.IsNullOrWhiteSpace(KeyboardPushToTalk) ? null : KeyboardPushToTalk.Trim(),
@@ -108,7 +122,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task TestVoice()
     {
-        var model = Voices.FirstOrDefault(v => v.Enabled)?.Model ?? VoiceCatalog.All[0];
+        var model = NaturalVoices ? VoiceCatalog.Kokoro : Voices.FirstOrDefault(v => v.Enabled)?.Model ?? VoiceCatalog.Piper[0];
         var store = new VoiceStore();
         try
         {
@@ -122,7 +136,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             var voice = new VoiceRef(model.Id, model.Speakers[Random.Shared.Next(model.Speakers.Count)]);
             var clip = await Task.Run(() =>
             {
-                using var tts = new PiperSynthesizer(store);
+                using var tts = new VoiceSynthesizer(store);
                 var clean = tts.Speak("Iberia one two three four, climb flight level one two zero, contact Madrid Control one three three decimal one.", voice);
                 return RadioFilter ? OpenSkyAtc.Voice.RadioFilter.Apply(clean, 1) : clean;
             });
