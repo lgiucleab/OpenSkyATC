@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="Windows-1252"?>
-<SimBase.Document Type="InGamePanels" version="1,0">
-  <Filename>opensky-atc-toolbar.spb</Filename>
-  <InGamePanels.InGamePanelDefinition id="PANEL_OPENSKYATC" Name="OpenSkyATC" url="html_ui/InGamePanels/OpenSkyATC/OpenSkyATC.html" resizeDirections="Both" minWidth="18" minHeight="22" defaultWidth="24" defaultHeight="42" defaultTop="20" defaultRight="2" icon="ICON_TOOLBAR_OPENSKYATC" buttonVisible="true">
-  </InGamePanels.InGamePanelDefinition>
-</SimBase.Document>

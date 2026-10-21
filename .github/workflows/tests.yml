@@ -35,13 +35,3 @@ jobs:
             dotnet test $p -c Release --logger "console;verbosity=normal"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
-
-  panel:
-    name: Toolbar panel view tests (Node)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: node toolbar/opensky-atc-toolbar/tools/test_panel.js

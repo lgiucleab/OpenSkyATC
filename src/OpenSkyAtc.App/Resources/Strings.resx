@@ -167,9 +167,6 @@
   <data name="Status.Transcribing" xml:space="preserve">
     <value>Understanding</value>
   </data>
-  <data name="Panel.Arrows" xml:space="preserve">
-    <value>Taxi arrows</value>
-  </data>
   <data name="Main.PastFlights" xml:space="preserve">
     <value>Past flights</value>
   </data>
@@ -475,9 +472,6 @@
   </data>
   <data name="Tag.other" xml:space="preserve">
     <value>Instruction</value>
-  </data>
-  <data name="Panel.ReadbackByVoice" xml:space="preserve">
-    <value>Read back by voice: hold push-to-talk</value>
   </data>
   <data name="Intent.Readback" xml:space="preserve">
     <value>Read back</value>

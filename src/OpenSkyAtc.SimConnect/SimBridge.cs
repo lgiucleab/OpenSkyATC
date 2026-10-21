@@ -49,10 +49,8 @@ public sealed class SimBridge
 {
     private enum Definitions { State, Title, ArrowPosition }
     private enum Requests { State, Title }
-    private enum Events { Pause, PttDown, PttUp, Atc, TogglePushback, GroundService, PanelCommand }
+    private enum Events { Pause, PttDown, PttUp, Atc, TogglePushback, GroundService }
 
-    /// <summary>CommBus events shared with the toolbar panel (toolbar/opensky-atc-toolbar).</summary>
-    public const string PanelStateEvent = "OpenSkyATC.State", PanelCommandEvent = "OpenSkyATC.Command";
     private enum Groups { Atc }
 
     /// <summary>With GROUPID_IS_PRIORITY the "group" is a priority: 1 is SIMCONNECT_GROUP_PRIORITY_HIGHEST.</summary>
@@ -66,8 +64,6 @@ public sealed class SimBridge
     private bool _holdDown, _toggleOn;
     private readonly System.Collections.Concurrent.ConcurrentQueue<(Events Event, uint Data)> _commands = new();
     private readonly object _arrowLock = new();
-    private string? _panelOut;
-    private readonly System.Text.StringBuilder _panelIn = new();
     private IReadOnlyList<ArrowPose> _wantedArrows = [];
     private bool _arrowsChanged;
     private SimArrows? _arrows;
@@ -83,8 +79,6 @@ public sealed class SimBridge
     /// <summary>Push-to-talk went down (true) or up (false); the source says which control did it.</summary>
     public event Action<bool, PushToTalkSource>? PushToTalkChanged;
 
-    /// <summary>A command from the toolbar panel (JSON text, see PanelCommand in the host); raised on the bridge thread.</summary>
-    public event Action<string>? PanelCommand;
 
     /// <summary>Raised when a SimConnect call is refused (for example an invalid push-to-talk input string).</summary>
     public event Action<string>? Warning;
@@ -99,12 +93,6 @@ public sealed class SimBridge
     /// (TUG_HEADING is refused). Safe to call from any thread.
     /// </summary>
     public void GroundService(GroundServiceMessage message) => _commands.Enqueue((Events.GroundService, (uint)message));
-
-    /// <summary>
-    /// Sends the panel state (JSON) to the toolbar panel over the MSFS 2024 CommBus at the next loop pass; only the
-    /// latest state is sent if several come between passes. Safe to call from any thread.
-    /// </summary>
-    public void SendToPanel(string json) => Interlocked.Exchange(ref _panelOut, json);
 
     /// <summary>Arrows currently placed in the sim.</summary>
     public int ArrowCount => _arrows?.Count ?? 0;
@@ -196,9 +184,6 @@ public sealed class SimBridge
         sim.MapClientEventToSimEvent(Events.TogglePushback, "TOGGLE_PUSHBACK");
         sim.MapClientEventToSimEvent(Events.GroundService, "GROUND_SERVICE_ATC_MESSAGE");
         while (_commands.TryDequeue(out _)) { } // commands from before this connection are stale
-        sim.OnRecvCommBus += OnCommBus;
-        sim.SubscribeToCommBusEvent(Events.PanelCommand, PanelCommandEvent);
-        _panelIn.Clear();
         _arrows = new SimArrows(sim, _o.ArrowTitle, Definitions.ArrowPosition, w => Warning?.Invoke(w));
         lock (_arrowLock) _arrowsChanged = true; // a new connection starts with no arrows: place the wanted ones again
 
@@ -226,7 +211,6 @@ public sealed class SimBridge
             }
             while (_commands.TryDequeue(out var command))
                 sim.TransmitClientEvent(SC.SIMCONNECT_OBJECT_ID_USER, command.Event, command.Data, EventPriority.Highest, SIMCONNECT_EVENT_FLAG.GROUPID_IS_PRIORITY);
-            if (Interlocked.Exchange(ref _panelOut, null) is { } panel) SendPanel(sim, panel);
             var wait = next - _connected.Elapsed;
             signal.WaitOne(wait > TimeSpan.Zero ? wait : TimeSpan.Zero);
             try
@@ -272,38 +256,6 @@ public sealed class SimBridge
                 TitleReceived?.Invoke(((RawTitle)data.dwData[0]).Title);
                 break;
         }
-    }
-
-    private bool _panelUnavailableReported;
-
-    private void SendPanel(SC sim, string json)
-    {
-        if (!CommBus.Available)
-        {
-            if (!_panelUnavailableReported) Warning?.Invoke("This SimConnect version cannot talk to the toolbar panel.");
-            _panelUnavailableReported = true;
-            return;
-        }
-        try
-        {
-            CommBus.Call(sim, PanelStateEvent, CommBus.ToJs, json);
-        }
-        catch (COMException e)
-        {
-            Warning?.Invoke($"The toolbar panel update was refused: {e.Message}");
-        }
-    }
-
-    /// <summary>A panel command, possibly in several parts (entry n of "out of").</summary>
-    private void OnCommBus(SC sender, SIMCONNECT_RECV_COMM_BUS e)
-    {
-        if ((Events)e.uEventID != Events.PanelCommand) return;
-        if (e.dwEntryNumber == 0) _panelIn.Clear();
-        _panelIn.Append(e.rgData);
-        if (e.dwEntryNumber + 1 < e.dwOutOf) return;
-        string text = _panelIn.ToString();
-        _panelIn.Clear();
-        PanelCommand?.Invoke(text);
     }
 
     private void OnEvent(SC sender, SIMCONNECT_RECV_EVENT e)

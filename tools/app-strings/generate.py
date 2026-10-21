@@ -63,7 +63,6 @@ STRINGS = {
     "Status.PttReady": ("PTT ready", "PTT listo"),
     "Status.Listening": ("Listening", "Escuchando"),
     "Status.Transcribing": ("Understanding", "Interpretando"),
-    "Panel.Arrows": ("Taxi arrows", "Flechas de rodaje"),
     "Main.PastFlights": ("Past flights", "Vuelos anteriores"),
     "Main.FlightLogs": ("Flight logs", "Registros de vuelo"),
     "Main.ReleaseBrake": ("Release the parking brake to start the push", "Suelta el freno de estacionamiento para empezar el remolque"),
@@ -166,7 +165,6 @@ STRINGS = {
     "Tag.contact-ctr": ("Contact Control", "Contacto con Control"),
     "Tag.contact-approach": ("Contact Approach", "Contacto con Aproximación"),
     "Tag.other": ("Instruction", "Instrucción"),
-    "Panel.ReadbackByVoice": ("Read back by voice: hold push-to-talk", "Colaciona por voz: mantén pulsar para hablar"),
     # Pilot calls (buttons)
     "Intent.Readback": ("Read back", "Colacionar"),
     "Intent.ReadbackForm": ("Read back...", "Colacionar..."),

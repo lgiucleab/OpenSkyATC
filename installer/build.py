@@ -2,7 +2,7 @@
 
 1. Publishes the app self-contained for win-x64 into artifacts/publish/app.
    and copies the SimConnect DLLs from the MSFS 2024 SDK next to it (shipped in the installer only, never committed).
-2. Assembles the two MSFS Community packages (toolbar panel, taxi arrows).
+2. Assembles the MSFS Community package (taxi arrows).
 3. Compiles installer/OpenSkyATC.iss with Inno Setup 6 into artifacts/installer/OpenSkyATC-Setup-<version>.exe.
 
 Run from anywhere: python installer/build.py [--version 1.0.0-alpha]
@@ -60,7 +60,6 @@ def main() -> None:
     for dll in simconnect_dlls():
         shutil.copy2(dll, publish / dll.name)
         print(f"Copied {dll}")
-    run(sys.executable, "toolbar/opensky-atc-toolbar/tools/assemble_package.py")
     run(sys.executable, "toolbar/opensky-atc-taxi-arrows/tools/assemble_package.py")
     run(str(iscc()), f"/DAppVersion={version}", "installer/OpenSkyATC.iss")
     print(f"Installer: {ROOT / 'artifacts' / 'installer' / f'OpenSkyATC-Setup-{version}.exe'}")

@@ -84,8 +84,8 @@ english.SelectLanguageLabel=Choose the language for the installer (the app lets 
 spanish.SelectLanguageLabel=Elige el idioma del instalador (en la aplicación podrás elegir inglés o español después).
 english.WelcomeLabel1=Welcome to OpenSkyATC
 spanish.WelcomeLabel1=Bienvenido a OpenSkyATC
-english.WelcomeLabel2=Free, open-source air traffic control for Microsoft Flight Simulator 2024: real controller voices, talk back by voice or with buttons, taxi arrows in the sim, a toolbar panel and an end-of-flight debrief.%n%nThis installs [name/ver] for your Windows user. Everything runs on your PC: no accounts, no cloud, no telemetry.
-spanish.WelcomeLabel2=Control de tráfico aéreo gratuito y de código abierto para Microsoft Flight Simulator 2024: voces de controlador, responde por voz o con botones, flechas de rodaje en el simulador, un panel en la barra de herramientas y un resumen al final del vuelo.%n%nSe instalará [name/ver] para tu usuario de Windows. Todo funciona en tu PC: sin cuentas, sin nube, sin telemetría.
+english.WelcomeLabel2=Free, open-source air traffic control for Microsoft Flight Simulator 2024: real controller voices, talk back by voice or with buttons, taxi arrows in the sim and an end-of-flight debrief.%n%nThis installs [name/ver] for your Windows user. Everything runs on your PC: no accounts, no cloud, no telemetry.
+spanish.WelcomeLabel2=Control de tráfico aéreo gratuito y de código abierto para Microsoft Flight Simulator 2024: voces de controlador, responde por voz o con botones, flechas de rodaje en el simulador y un resumen al final del vuelo.%n%nSe instalará [name/ver] para tu usuario de Windows. Todo funciona en tu PC: sin cuentas, sin nube, sin telemetría.
 english.WizardLicense=Free software licence
 spanish.WizardLicense=Licencia de software libre
 english.LicenseLabel=OpenSkyATC is free software under the GNU GPL version 3.
@@ -104,8 +104,8 @@ english.WizardSelectTasks=Options
 spanish.WizardSelectTasks=Opciones
 english.SelectTasksDesc=What should be installed with the app?
 spanish.SelectTasksDesc=¿Qué se instala junto con la aplicación?
-english.SelectTasksLabel2=The sim packages add the OpenSkyATC panel to the MSFS 2024 toolbar and the blue taxi arrows. Keep them unless you install them yourself.
-spanish.SelectTasksLabel2=Los paquetes del simulador añaden el panel de OpenSkyATC a la barra de herramientas de MSFS 2024 y las flechas azules de rodaje. Déjalos marcados salvo que los instales tú.
+english.SelectTasksLabel2=The sim package adds the blue taxi arrows to MSFS 2024. Keep it unless you install it yourself.
+spanish.SelectTasksLabel2=El paquete del simulador añade las flechas azules de rodaje a MSFS 2024. Déjalo marcado salvo que lo instales tú.
 english.WizardReady=Ready for departure
 spanish.WizardReady=Listo para la salida
 english.ReadyLabel1=Everything is set. OpenSkyATC will be installed with these choices:
@@ -128,16 +128,16 @@ english.ClickFinish=Have a good flight!
 spanish.ClickFinish=¡Buen vuelo!
 english.ExitSetupMessage=OpenSkyATC is not installed yet. You can run this installer again at any time.%n%nExit the installer?
 spanish.ExitSetupMessage=OpenSkyATC aún no está instalado. Puedes volver a ejecutar este instalador cuando quieras.%n%n¿Salir del instalador?
-english.ConfirmUninstall=Remove OpenSkyATC, its toolbar panel and taxi arrows from this PC?
-spanish.ConfirmUninstall=¿Quitar OpenSkyATC, su panel de la barra de herramientas y las flechas de rodaje de este PC?
+english.ConfirmUninstall=Remove OpenSkyATC and its taxi arrows from this PC?
+spanish.ConfirmUninstall=¿Quitar OpenSkyATC y sus flechas de rodaje de este PC?
 english.UninstallStatusLabel=Removing OpenSkyATC and its sim packages...
 spanish.UninstallStatusLabel=Quitando OpenSkyATC y sus paquetes del simulador...
 english.UninstalledAll=OpenSkyATC was removed. Thank you for flying with it!
 spanish.UninstalledAll=OpenSkyATC se ha quitado. ¡Gracias por volar con él!
 
 [CustomMessages]
-english.PackagesTask=Toolbar panel and taxi arrows for MSFS 2024 (in the sim's Community folder)
-spanish.PackagesTask=Panel de la barra de herramientas y flechas de rodaje para MSFS 2024 (en la carpeta Community del simulador)
+english.PackagesTask=Taxi arrows for MSFS 2024 (in the sim's Community folder)
+spanish.PackagesTask=Flechas de rodaje para MSFS 2024 (en la carpeta Community del simulador)
 english.ShortcutsGroup=Shortcuts:
 spanish.ShortcutsGroup=Accesos directos:
 english.DesktopTask=A desktop icon
@@ -150,8 +150,8 @@ english.CommunityPrompt=This is your Community folder, found from the sim's sett
 spanish.CommunityPrompt=Esta es tu carpeta Community, encontrada en la configuración del simulador. Cámbiala solo si la moviste:
 english.CommunityMissing=Choose the Community folder, or go Back and untick the sim packages.
 spanish.CommunityMissing=Elige la carpeta Community, o vuelve Atrás y desmarca los paquetes del simulador.
-english.SimRunning=MSFS 2024 is running: restart the sim to see the OpenSkyATC panel and arrows.
-spanish.SimRunning=MSFS 2024 está en marcha: reinicia el simulador para ver el panel y las flechas de OpenSkyATC.
+english.SimRunning=MSFS 2024 is running: restart the sim to see the OpenSkyATC taxi arrows.
+spanish.SimRunning=MSFS 2024 está en marcha: reinicia el simulador para ver las flechas de rodaje de OpenSkyATC.
 english.DeleteData=Also delete OpenSkyATC's downloaded voices and speech models, its settings and your flight debriefs?
 spanish.DeleteData=¿Borrar también las voces y modelos de voz descargados, la configuración y los resúmenes de vuelo de OpenSkyATC?
 english.UninstallShortcut=Uninstall OpenSkyATC
@@ -162,10 +162,10 @@ english.OpenGuide=Open the getting-started guide (GitHub)
 spanish.OpenGuide=Abrir la guía de inicio (GitHub)
 english.MemoApp=App
 spanish.MemoApp=Aplicación
-english.MemoPackages=Sim packages (toolbar panel, taxi arrows)
-spanish.MemoPackages=Paquetes del simulador (panel, flechas de rodaje)
-english.MemoNoPackages=Sim packages: not installed
-spanish.MemoNoPackages=Paquetes del simulador: no se instalan
+english.MemoPackages=Sim package (taxi arrows)
+spanish.MemoPackages=Paquete del simulador (flechas de rodaje)
+english.MemoNoPackages=Sim package: not installed
+spanish.MemoNoPackages=Paquete del simulador: no se instala
 english.MemoIncluded=Included:%n   .NET runtime, Microsoft SimConnect, Piper and Whisper engines
 spanish.MemoIncluded=Incluido:%n   entorno .NET, Microsoft SimConnect, motores Piper y Whisper
 english.MemoDownloads=Downloaded on first use:%n   ATC voices (about 70 MB each), speech model (about 140 MB)
@@ -187,7 +187,6 @@ Source: "{#Root}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Root}\LICENSE-EXCEPTION.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Root}\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 ; The MSFS 2024 Community packages (removed again by the uninstaller).
-Source: "{#Root}\toolbar\opensky-atc-toolbar\Packages\opensky-atc-toolbar\*"; DestDir: "{code:CommunityDir}\opensky-atc-toolbar"; Tasks: packages; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#Root}\toolbar\opensky-atc-taxi-arrows\Packages\opensky-atc-taxi-arrows\*"; DestDir: "{code:CommunityDir}\opensky-atc-taxi-arrows"; Tasks: packages; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
@@ -288,8 +287,19 @@ begin
   Result := Result + Shortcuts + NewLine + NewLine + CustomMessage('MemoIncluded') + NewLine + CustomMessage('MemoDownloads');
 end;
 
+{ Versions before the refactor installed an in-sim toolbar panel (removed, owner's choice 2026-10-21): delete it on update. }
+procedure RemoveOldPanel();
+var
+  Dir: String;
+begin
+  Dir := Trim(CommunityPage.Values[0]);
+  if (Dir <> '') and DirExists(AddBackslash(Dir) + 'opensky-atc-toolbar') then
+    DelTree(AddBackslash(Dir) + 'opensky-atc-toolbar', True, True, True);
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
+  if CurStep = ssInstall then RemoveOldPanel();
   if (CurStep = ssPostInstall) and not WizardSilent() and WizardIsTaskSelected('packages') and (FindWindowByClassName('AceApp') <> 0) then
     MsgBox(CustomMessage('SimRunning'), mbInformation, MB_OK);
 end;

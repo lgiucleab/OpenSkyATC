@@ -12,7 +12,6 @@ OpenSkyATC is a Windows app that connects to the sim through SimConnect and play
 - controller voices (Piper, local) with a radio effect, a fixed voice per controller;
 - talk back by voice (Whisper, local, push-to-talk) or with click-to-respond buttons, and a hard mode where you type your readbacks;
 - conformance monitoring: altitude, heading, route, speed, squawk, handoffs and runway safety, with warnings that escalate;
-- an in-sim toolbar panel (status, frequency, last calls, buttons, taxi-arrows switch);
 - an end-of-flight debrief with a score;
 - flight plans from SimBrief or an MSFS .pln file; English or Spanish interface (the radio is always English).
 
@@ -20,9 +19,7 @@ Everything runs on your PC. No accounts, no cloud services, no telemetry.
 
 ![Main window](docs/images/main-window.png)
 
-| Toolbar panel in the sim | Debrief |
-| --- | --- |
-| ![Toolbar panel](docs/images/toolbar-panel.jpg) | ![Debrief](docs/images/debrief.png) |
+![Debrief](docs/images/debrief.png)
 
 ## Status
 
@@ -30,10 +27,10 @@ Everything runs on your PC. No accounts, no cloud services, no telemetry.
 
 ## Install
 
-1. Download `OpenSkyATC-Setup-<version>.exe` from [Releases](https://github.com/lgiucleab/OpenSkyATC/releases) and run it. It installs the app for your Windows user (no administrator rights; .NET and Microsoft's SimConnect library included, no SDK needed) and puts the toolbar panel and taxi-arrow packages in the sim's Community folder (found automatically for the Microsoft Store and Steam versions).
+1. Download `OpenSkyATC-Setup-<version>.exe` from [Releases](https://github.com/lgiucleab/OpenSkyATC/releases) and run it. It installs the app for your Windows user (no administrator rights; .NET and Microsoft's SimConnect library included, no SDK needed) and puts the taxi-arrow package in the sim's Community folder (found automatically for the Microsoft Store and Steam versions).
 2. Start OpenSkyATC, enter your SimBrief Pilot ID in Settings (or pick a .pln), load a flight in MSFS 2024 at a gate, and press **Import plan**. Voices (about 70 MB each) and the speech model (about 140 MB) download once, on first use.
 
-To uninstall: Start menu > OpenSkyATC > Uninstall OpenSkyATC (or Windows Settings > Apps). It removes the app and both sim packages, and asks whether to delete the downloaded voices, your settings and debriefs.
+To uninstall: Start menu > OpenSkyATC > Uninstall OpenSkyATC (or Windows Settings > Apps). It removes the app and the taxi-arrow package, and asks whether to delete the downloaded voices, your settings and debriefs.
 
 ## Building
 
@@ -44,7 +41,7 @@ dotnet build
 dotnet test
 ```
 
-GitHub runs the tests that need no MSFS SDK (brain, phraseology, replays, flight plans, taxi arrows, the panel's view logic) on every push: [.github/workflows/tests.yml](.github/workflows/tests.yml).
+GitHub runs the tests that need no MSFS SDK (brain, phraseology, replays, flight plans, taxi arrows) on every push: [.github/workflows/tests.yml](.github/workflows/tests.yml).
 
 Installer: `python installer/build.py` (needs Inno Setup 6: `winget install JRSoftware.InnoSetup`) writes `artifacts/installer/OpenSkyATC-Setup-<version>.exe`.
 

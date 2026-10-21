@@ -6,7 +6,7 @@ namespace OpenSkyAtc.TaxiArrows;
 
 public sealed record TaxiArrowOptions
 {
-    /// <summary>Settings toggle (app settings and toolbar panel); off hides every arrow at once.</summary>
+    /// <summary>Settings toggle (app settings and the main window); off hides every arrow at once.</summary>
     public bool Enabled { get; init; } = true;
 
     /// <summary>Arrows are shown this far along the route ahead of the aircraft (owner's default, a setting).</summary>
